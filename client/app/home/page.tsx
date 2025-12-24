@@ -1,9 +1,238 @@
-import React from 'react'
+'use client';
 
-const home = () => {
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { Navbar } from '@/components/layout';
+import { Button, Card, CardBody, CardHeader, Avatar, Badge, Input } from '@/components/ui';
+import { Plus, Users, Calendar, Search, Loader2 } from 'lucide-react';
+import { useAuthStore } from '@/lib/auth';
+import { api, Group } from '@/lib/api';
+import { toast } from '@/lib/toast';
+
+export default function HomePage() {
+  const { accessToken, user } = useAuthStore();
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isCreating, setIsCreating] = useState(false);
+  const [newGroup, setNewGroup] = useState({
+    name: '',
+    description: '',
+  });
+
+  // Fetch groups on mount
+  useEffect(() => {
+    async function fetchGroups() {
+      if (!accessToken) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        setIsLoading(true);
+        setError(null);
+        const fetchedGroups = await api.getGroups(accessToken);
+        setGroups(fetchedGroups);
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load groups';
+        setError(message);
+        toast.error(message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchGroups();
+  }, [accessToken]);
+  
+  const filteredGroups = groups.filter(
+    group =>
+      group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      group.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const handleCreateGroup = async () => {
+    if (!accessToken || !newGroup.name.trim() || !newGroup.description.trim()) return;
+    
+    try {
+      setIsCreating(true);
+      const created = await api.createGroup(accessToken, {
+        name: newGroup.name.trim(),
+        description: newGroup.description.trim(),
+      });
+      setGroups(prev => [...prev, { ...created, memberCount: 1 }]);
+      setShowCreateModal(false);
+      setNewGroup({ name: '', description: '' });
+      toast.success('Group created successfully!');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create group';
+      setError(message);
+      toast.error(message);
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
   return (
-    <div>home</div>
-  )
-}
+    <div className="min-h-screen bg-[#212121]">
+      <Navbar />
+      
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-white">My Groups</h1>
+            <p className="text-gray-400 mt-1">Collaborate with your research teams</p>
+          </div>
+          <Button onClick={() => setShowCreateModal(true)}>
+            <Plus size={20} className="mr-2" />
+            Create Group
+          </Button>
+        </div>
 
-export default home
+        {/* Search Bar */}
+        <div className="mb-6 relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={20} />
+          <input
+            type="text"
+            placeholder="Search groups..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-[#0D7377] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#14FFEC] bg-[#323232] text-white"
+          />
+        </div>
+
+        {/* Error State */}
+        {error && (
+          <div className="bg-red-900/30 border border-red-500 rounded-lg p-4 mb-6">
+            <p className="text-red-400">{error}</p>
+          </div>
+        )}
+
+        {/* Loading State */}
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
+            <p className="text-gray-400">Loading your groups...</p>
+          </div>
+        ) : filteredGroups.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="w-24 h-24 bg-[#323232] rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users size={40} className="text-gray-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-white mb-2">
+              {searchQuery ? 'No groups found' : 'No groups yet'}
+            </h3>
+            <p className="text-gray-400 mb-6">
+              {searchQuery
+                ? 'Try adjusting your search query'
+                : 'Create your first group to start collaborating'}
+            </p>
+            {!searchQuery && (
+              <Button onClick={() => setShowCreateModal(true)}>
+                <Plus size={20} className="mr-2" />
+                Create Your First Group
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredGroups.map((group) => {
+              const isOwner = group.ownerId === user?.id;
+              return (
+                <Link key={group.id} href={`/group?id=${group.id}`}>
+                  <Card hover>
+                    <CardHeader className="flex flex-row items-start justify-between">
+                      <div className="flex items-start space-x-3">
+                        <Avatar src={group.avatar} alt={group.name} size="lg" />
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-lg font-semibold text-white truncate">
+                            {group.name}
+                          </h3>
+                          <p className="text-sm text-gray-400">
+                            {isOwner ? 'Owner: You' : `Role: ${group.role || 'Member'}`}
+                          </p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardBody>
+                      <p className="text-gray-300 text-sm mb-4 line-clamp-2">
+                        {group.description}
+                      </p>
+                      <div className="flex items-center justify-between text-sm">
+                        <div className="flex items-center text-gray-400">
+                          <Users size={16} className="mr-1" />
+                          <span>{group.memberCount} members</span>
+                        </div>
+                        <div className="flex items-center text-gray-400">
+                          <Calendar size={16} className="mr-1" />
+                          <span>{new Date(group.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </CardBody>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </main>
+
+      {/* Create Group Modal */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+          <div className="bg-[#323232] rounded-xl shadow-2xl max-w-md w-full p-6 border border-[#0D7377]">
+            <h2 className="text-2xl font-bold text-white mb-4">Create New Group</h2>
+            <div className="space-y-4">
+              <Input
+                label="Group Name"
+                placeholder="e.g., AI Research Lab"
+                value={newGroup.name}
+                onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Description
+                </label>
+                <textarea
+                  placeholder="What's this group about?"
+                  value={newGroup.description}
+                  onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
+                  className="w-full px-3 py-2 border border-[#0D7377] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#14FFEC] resize-none bg-[#212121] text-white"
+                  rows={4}
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 mt-6">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setNewGroup({ name: '', description: '' });
+                }}
+                disabled={isCreating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleCreateGroup}
+                disabled={!newGroup.name.trim() || !newGroup.description.trim() || isCreating}
+              >
+                {isCreating ? (
+                  <>
+                    <Loader2 size={20} className="mr-2 animate-spin" />
+                    Creating...
+                  </>
+                ) : (
+                  'Create Group'
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
