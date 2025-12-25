@@ -6,8 +6,203 @@ import { createError } from '../middleware/error.js';
 
 const router = Router();
 
+// External API configurations
+const SEMANTIC_SCHOLAR_API = 'https://api.semanticscholar.org/graph/v1';
+const ARXIV_API = 'https://export.arxiv.org/api/query';
+
+// Types for external APIs
+interface SemanticScholarPaper {
+  paperId: string;
+  title: string;
+  abstract: string | null;
+  authors: { name: string }[];
+  year: number | null;
+  citationCount: number;
+  url: string;
+  fieldsOfStudy: string[] | null;
+  publicationDate: string | null;
+}
+
+// Helper to search Semantic Scholar
+async function searchSemanticScholar(query: string, limit: number = 10): Promise<any[]> {
+  try {
+    const fields = 'paperId,title,abstract,authors,year,citationCount,url,fieldsOfStudy,publicationDate';
+    const response = await fetch(
+      `${SEMANTIC_SCHOLAR_API}/paper/search?query=${encodeURIComponent(query)}&limit=${limit}&fields=${fields}`,
+      {
+        headers: {
+          'Accept': 'application/json',
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error('Semantic Scholar API error:', response.status);
+      return [];
+    }
+
+    const data = await response.json() as { data?: SemanticScholarPaper[] };
+    
+    return (data.data || []).map((paper: SemanticScholarPaper) => ({
+      id: `ss-${paper.paperId}`,
+      title: paper.title,
+      authors: paper.authors?.map(a => a.name) || [],
+      abstract: paper.abstract || 'No abstract available',
+      tags: paper.fieldsOfStudy || [],
+      url: paper.url || `https://www.semanticscholar.org/paper/${paper.paperId}`,
+      publishedDate: paper.publicationDate || (paper.year ? `${paper.year}-01-01` : null),
+      citations: paper.citationCount || 0,
+      source: 'semantic_scholar',
+    }));
+  } catch (error) {
+    console.error('Semantic Scholar search failed:', error);
+    return [];
+  }
+}
+
+// Helper to search arXiv
+async function searchArxiv(query: string, limit: number = 10): Promise<any[]> {
+  try {
+    const response = await fetch(
+      `${ARXIV_API}?search_query=all:${encodeURIComponent(query)}&start=0&max_results=${limit}`
+    );
+
+    if (!response.ok) {
+      console.error('arXiv API error:', response.status);
+      return [];
+    }
+
+    const xmlText = await response.text();
+    
+    // Simple XML parsing for arXiv response
+    const entries: any[] = [];
+    const entryMatches = xmlText.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
+    
+    for (const entryXml of entryMatches) {
+      const getId = (xml: string) => {
+        const match = xml.match(/<id>(.*?)<\/id>/);
+        return match ? match[1] : '';
+      };
+      const getTitle = (xml: string) => {
+        const match = xml.match(/<title>([\s\S]*?)<\/title>/);
+        return match ? match[1].replace(/\s+/g, ' ').trim() : '';
+      };
+      const getSummary = (xml: string) => {
+        const match = xml.match(/<summary>([\s\S]*?)<\/summary>/);
+        return match ? match[1].replace(/\s+/g, ' ').trim() : '';
+      };
+      const getAuthors = (xml: string) => {
+        const matches = xml.match(/<author>[\s\S]*?<name>(.*?)<\/name>[\s\S]*?<\/author>/g) || [];
+        return matches.map(m => {
+          const nameMatch = m.match(/<name>(.*?)<\/name>/);
+          return nameMatch ? nameMatch[1] : '';
+        }).filter(Boolean);
+      };
+      const getPublished = (xml: string) => {
+        const match = xml.match(/<published>(.*?)<\/published>/);
+        return match ? match[1].split('T')[0] : null;
+      };
+      const getCategory = (xml: string) => {
+        const match = xml.match(/<arxiv:primary_category[^>]*term="([^"]+)"/);
+        return match ? [match[1]] : [];
+      };
+
+      const id = getId(entryXml);
+      const arxivId = id.split('/abs/').pop()?.split('v')[0] || id;
+      
+      entries.push({
+        id: `arxiv-${arxivId}`,
+        title: getTitle(entryXml),
+        authors: getAuthors(entryXml),
+        abstract: getSummary(entryXml),
+        tags: getCategory(entryXml),
+        url: id,
+        publishedDate: getPublished(entryXml),
+        citations: 0, // arXiv doesn't provide citation count
+        source: 'arxiv',
+      });
+    }
+
+    return entries;
+  } catch (error) {
+    console.error('arXiv search failed:', error);
+    return [];
+  }
+}
+
 // All routes require authentication
 router.use(authenticate);
+
+// Search external APIs (Semantic Scholar + arXiv)
+router.get('/search/external', async (req: AuthRequest, res: Response, next) => {
+  try {
+    const { query, source = 'all', limit = '10' } = req.query;
+    
+    if (!query || typeof query !== 'string') {
+      throw createError('Search query is required', 400);
+    }
+
+    const limitNum = Math.min(parseInt(limit as string) || 10, 50);
+    const results: any[] = [];
+
+    if (source === 'all' || source === 'semantic_scholar') {
+      const ssPapers = await searchSemanticScholar(query, limitNum);
+      results.push(...ssPapers);
+    }
+
+    if (source === 'all' || source === 'arxiv') {
+      const arxivPapers = await searchArxiv(query, limitNum);
+      results.push(...arxivPapers);
+    }
+
+    // Sort by citations (descending)
+    results.sort((a, b) => (b.citations || 0) - (a.citations || 0));
+
+    res.json(results.slice(0, limitNum * 2)); // Return up to 2x limit when using both sources
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Import paper from external source to database
+router.post('/import', async (req: AuthRequest, res: Response, next) => {
+  try {
+    const { title, authors, abstract, tags, url, publishedDate, citations } = req.body;
+
+    if (!title || !url) {
+      throw createError('Title and URL are required', 400);
+    }
+
+    // Check if paper already exists by URL
+    const [existing] = await db
+      .select()
+      .from(papers)
+      .where(eq(papers.url, url))
+      .limit(1);
+
+    if (existing) {
+      res.json({ ...existing, alreadyExists: true });
+      return;
+    }
+
+    const [newPaper] = await db
+      .insert(papers)
+      .values({
+        title,
+        authors: authors || [],
+        abstract: abstract || 'No abstract available',
+        tags: tags || [],
+        url,
+        publishedDate,
+        citations: citations || 0,
+      })
+      .returning();
+
+    res.status(201).json(newPaper);
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Get all papers (with search/filter)
 router.get('/', async (req: AuthRequest, res: Response, next) => {

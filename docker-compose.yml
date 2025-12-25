@@ -1,0 +1,77 @@
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: openresearch-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-openresearch}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openresearch}
+      POSTGRES_DB: ${POSTGRES_DB:-openresearch}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-openresearch}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Node.js Backend API
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: openresearch-server
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://${POSTGRES_USER:-openresearch}:${POSTGRES_PASSWORD:-openresearch}@postgres:5432/${POSTGRES_DB:-openresearch}
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production}
+      AI_SERVER_URL: http://aiserver:8000
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Python AI Server
+  aiserver:
+    build:
+      context: ./aiserver
+      dockerfile: Dockerfile
+    container_name: openresearch-ai
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      PORT: 8000
+      HOST: 0.0.0.0
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  # Next.js Frontend
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+        NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3001}
+    container_name: openresearch-client
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
+      NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3001}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: openresearch-network
