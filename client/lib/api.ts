@@ -236,6 +236,20 @@ class ApiClient {
     return this.request<string[]>('/api/papers/meta/tags', { token });
   }
 
+  // External Paper Search (Semantic Scholar + arXiv)
+  async searchExternalPapers(token: string, query: string, source: 'all' | 'semantic_scholar' | 'arxiv' = 'all', limit: number = 10) {
+    const params = new URLSearchParams({ query, source, limit: limit.toString() });
+    return this.request<ExternalPaper[]>(`/api/papers/search/external?${params.toString()}`, { token });
+  }
+
+  async importPaper(token: string, paper: ExternalPaper) {
+    return this.request<Paper & { alreadyExists?: boolean }>('/api/papers/import', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(paper),
+    });
+  }
+
   // AI Features
   async getAIHealth() {
     return this.request<{ status: string; gemini_configured: boolean }>('/api/ai/health');
@@ -344,6 +358,10 @@ export interface Paper {
   url: string;
   publishedDate?: string;
   citations?: number;
+}
+
+export interface ExternalPaper extends Paper {
+  source: 'semantic_scholar' | 'arxiv';
 }
 
 export interface Task {
