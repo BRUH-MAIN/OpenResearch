@@ -3,6 +3,9 @@ import { db, papers, savedPapers, users } from '../db/index.js';
 import { eq, and, or, ilike, desc } from 'drizzle-orm';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { createError } from '../middleware/error.js';
+import { validateQuery } from '../middleware/validate.js';
+import { searchPapersSchema } from '../validation/schemas.js';
+import { searchLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -134,24 +137,22 @@ async function searchArxiv(query: string, limit: number = 10): Promise<any[]> {
 router.use(authenticate);
 
 // Search external APIs (Semantic Scholar + arXiv)
-router.get('/search/external', async (req: AuthRequest, res: Response, next) => {
+router.get('/search/external', searchLimiter, validateQuery(searchPapersSchema), async (req: AuthRequest, res: Response, next) => {
   try {
     const { query, source = 'all', limit = '10' } = req.query;
     
-    if (!query || typeof query !== 'string') {
-      throw createError('Search query is required', 400);
-    }
-
-    const limitNum = Math.min(parseInt(limit as string) || 10, 50);
+    const queryStr = typeof query === 'string' ? query : '';
+    const sourceStr = typeof source === 'string' ? source : 'all';
+    const limitNum = Math.min(parseInt(typeof limit === 'string' ? limit : '10') || 10, 50);
     const results: any[] = [];
 
-    if (source === 'all' || source === 'semantic_scholar') {
-      const ssPapers = await searchSemanticScholar(query, limitNum);
+    if (sourceStr === 'all' || sourceStr === 'semantic_scholar') {
+      const ssPapers = await searchSemanticScholar(queryStr, limitNum);
       results.push(...ssPapers);
     }
 
-    if (source === 'all' || source === 'arxiv') {
-      const arxivPapers = await searchArxiv(query, limitNum);
+    if (sourceStr === 'all' || sourceStr === 'arxiv') {
+      const arxivPapers = await searchArxiv(queryStr, limitNum);
       results.push(...arxivPapers);
     }
 

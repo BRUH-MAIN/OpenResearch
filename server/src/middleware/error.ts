@@ -1,34 +1,113 @@
 import { Request, Response, NextFunction } from 'express';
+import logger from '../utils/logger.js';
 
-export interface AppError extends Error {
-  statusCode?: number;
-  isOperational?: boolean;
+export class AppError extends Error {
+  public statusCode: number;
+  public isOperational: boolean;
+  public code?: string;
+  public details?: unknown;
+
+  constructor(
+    message: string,
+    statusCode: number = 500,
+    code?: string,
+    details?: unknown
+  ) {
+    super(message);
+    this.name = 'AppError';
+    this.statusCode = statusCode;
+    this.isOperational = true;
+    this.code = code;
+    this.details = details;
+    Error.captureStackTrace(this, this.constructor);
+  }
 }
 
 export const errorHandler = (
-  err: AppError,
+  err: Error | AppError,
   req: Request,
   res: Response,
   next: NextFunction
 ): void => {
-  console.error('Error:', err);
+  // Log error with context
+  logger.error({
+    error: {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+    },
+    request: {
+      method: req.method,
+      url: req.url,
+      ip: req.ip,
+    },
+  }, 'Request error');
 
-  const statusCode = err.statusCode || 500;
-  const message = err.isOperational ? err.message : 'Internal server error';
+  if (err instanceof AppError) {
+    const response: Record<string, unknown> = {
+      error: err.message,
+      code: err.code,
+    };
+    if (err.details) {
+      response.details = err.details;
+    }
+    if (process.env.NODE_ENV === 'development') {
+      response.stack = err.stack;
+    }
+    res.status(err.statusCode).json(response);
+    return;
+  }
+
+  // Handle known error types
+  if (err.name === 'JsonWebTokenError') {
+    res.status(401).json({ error: 'Invalid token', code: 'INVALID_TOKEN' });
+    return;
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    res.status(401).json({ error: 'Token expired', code: 'TOKEN_EXPIRED' });
+    return;
+  }
+
+  if (err.name === 'ValidationError') {
+    res.status(400).json({ error: err.message, code: 'VALIDATION_ERROR' });
+    return;
+  }
+
+  // Generic error response
+  const statusCode = 500;
+  const message = process.env.NODE_ENV === 'production' 
+    ? 'Internal server error' 
+    : err.message;
 
   res.status(statusCode).json({
     error: message,
+    code: 'INTERNAL_ERROR',
     ...(process.env.NODE_ENV === 'development' && { stack: err.stack }),
   });
 };
 
 export const notFoundHandler = (req: Request, res: Response): void => {
-  res.status(404).json({ error: 'Route not found' });
+  logger.warn({ method: req.method, url: req.url }, 'Route not found');
+  res.status(404).json({ 
+    error: 'Route not found',
+    code: 'NOT_FOUND',
+    path: req.url,
+  });
 };
 
-export const createError = (message: string, statusCode: number): AppError => {
-  const error: AppError = new Error(message);
-  error.statusCode = statusCode;
-  error.isOperational = true;
-  return error;
+export const createError = (
+  message: string, 
+  statusCode: number, 
+  code?: string,
+  details?: unknown
+): AppError => {
+  return new AppError(message, statusCode, code, details);
+};
+
+// Async error wrapper for route handlers
+export const asyncHandler = (fn: Function) => {
+  return (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
 };

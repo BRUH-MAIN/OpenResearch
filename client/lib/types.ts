@@ -43,10 +43,6 @@ export interface Message {
   content: string;
   timestamp: string;
   type: 'user' | 'ai';
-  metadata?: {
-    isTask?: boolean;
-    isSummary?: boolean;
-  };
 }
 
 export interface Paper {
@@ -60,21 +56,26 @@ export interface Paper {
   citations?: number;
 }
 
-export interface SavedPaper {
-  userId: string;
-  paperId: string;
-  sessionId?: string;
+export interface SavedPaper extends Paper {
   savedAt: string;
   notes?: string;
 }
 
-export interface Task {
+// Group invitation types
+export interface GroupInvitation {
   id: string;
-  sessionId: string;
-  title: string;
-  description?: string;
-  status: 'pending' | 'in-progress' | 'completed';
-  assignedTo?: string;
+  groupId: string;
+  groupName?: string;
+  groupAvatar?: string;
+  groupDescription?: string;
+  invitedBy: string;
+  inviterName?: string;
+  inviterAvatar?: string;
+  invitedUserId?: string;
+  invitedUserName?: string;
+  invitedUserEmail?: string;
+  status: 'pending' | 'accepted' | 'declined';
+  message?: string;
   createdAt: string;
-  extractedFromMessageId?: string;
+  expiresAt?: string;
 }

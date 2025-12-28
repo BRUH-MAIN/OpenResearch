@@ -2,7 +2,8 @@ import { Server as SocketServer, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { db, messages, sessions, groupMembers, users } from '../db/index.js';
-import { eq, and } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
+import { aiClient } from '../services/aiClient.js';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -179,6 +180,52 @@ export function initializeSocket(httpServer: HttpServer) {
 
         // Broadcast to all in session (including sender)
         io.to(`session:${sessionId}`).emit('message:new', messageWithUser);
+
+        // Check for @ai mention and trigger AI response
+        if (content.trim().toLowerCase().startsWith('@ai')) {
+          try {
+            // Process @ai message
+            const aiResponse = await aiClient.processAtAiMessage(
+              content,
+              sessionId,
+              socket.userId!
+            );
+
+            if (aiResponse) {
+              // Save AI response to database
+              const [aiMessage] = await db
+                .insert(messages)
+                .values({
+                  sessionId,
+                  userId: null, // AI messages have no user
+                  content: aiResponse.answer,
+                  type: 'ai',
+                  metadata: {
+                    sources: aiResponse.sources,
+                    model: aiResponse.model,
+                    latency_ms: aiResponse.latency_ms,
+                    context_messages_used: aiResponse.context_messages_used,
+                    papers_used: aiResponse.papers_used,
+                  },
+                })
+                .returning();
+
+              // Broadcast AI response
+              const aiMessageWithMeta = {
+                ...aiMessage,
+                userName: 'AI Assistant',
+                userAvatar: null,
+              };
+
+              io.to(`session:${sessionId}`).emit('message:new', aiMessageWithMeta);
+            }
+          } catch (aiError) {
+            console.error('AI response error:', aiError);
+            // Send error as AI message so user sees feedback
+            const errorMessage = aiError instanceof Error ? aiError.message : 'AI service unavailable';
+            socket.emit('error', { message: `AI: ${errorMessage}` });
+          }
+        }
       } catch (error) {
         console.error('Error sending message:', error);
         socket.emit('error', { message: 'Failed to send message' });

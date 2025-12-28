@@ -1,189 +1,169 @@
-import { Router, Request, Response } from 'express';
-import { authenticate } from '../middleware/auth.js';
-import { db } from '../db/index.js';
-import { messages } from '../db/schema.js';
-import { eq } from 'drizzle-orm';
+/**
+ * AI Routes
+ * 
+ * Proxy routes to the FastAPI AI service.
+ * These provide REST access to AI features for clients that prefer HTTP over WebSocket.
+ */
+
+import { Router, Response } from 'express';
+import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { aiClient } from '../services/aiClient.js';
+import { db, sessions, groupMembers, messages } from '../db/index.js';
+import { eq, and } from 'drizzle-orm';
+import { createError } from '../middleware/error.js';
 
 const router = Router();
 
-// AI Server URL - configurable via environment variable
-const AI_SERVER_URL = process.env.AI_SERVER_URL || 'http://localhost:8000';
+// Helper to check session access
+async function checkSessionAccess(sessionId: string, userId: string) {
+  const [session] = await db
+    .select()
+    .from(sessions)
+    .where(eq(sessions.id, sessionId))
+    .limit(1);
 
-// Helper to proxy requests to AI server
-async function proxyToAI(endpoint: string, data: any): Promise<any> {
-  const response = await fetch(`${AI_SERVER_URL}${endpoint}`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(data),
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ detail: 'AI service error' })) as { detail?: string };
-    throw new Error(error.detail || `AI service returned ${response.status}`);
+  if (!session) {
+    return null;
   }
 
-  return response.json();
+  const [membership] = await db
+    .select()
+    .from(groupMembers)
+    .where(
+      and(
+        eq(groupMembers.groupId, session.groupId),
+        eq(groupMembers.userId, userId)
+      )
+    )
+    .limit(1);
+
+  return membership ? session : null;
 }
 
-// Format messages for AI server
-interface DBMessage {
-  id: string;
-  content: string;
-  type: string;
-  createdAt: Date;
-  user: { name: string } | null;
-}
-
-function formatMessages(dbMessages: DBMessage[]) {
-  return dbMessages.map(msg => ({
-    id: msg.id,
-    content: msg.content,
-    user_name: msg.user?.name || 'Unknown',
-    type: msg.type,
-    created_at: msg.createdAt.toISOString(),
-  }));
-}
-
-// Check AI server health
-router.get('/health', async (req: Request, res: Response) => {
+// Health check - no auth required
+router.get('/health', async (req, res, next) => {
   try {
-    const response = await fetch(`${AI_SERVER_URL}/health`);
-    const data = await response.json();
-    res.json(data);
+    const health = await aiClient.health();
+    res.json(health);
   } catch (error) {
     res.status(503).json({
       status: 'unavailable',
-      gemini_configured: false,
-      error: 'AI server is not reachable',
+      error: error instanceof Error ? error.message : 'AI service not reachable',
     });
   }
 });
 
-// Summarize a session's conversation
-router.post('/summarize/:sessionId', authenticate, async (req: Request, res: Response) => {
+// All other routes require authentication
+router.use(authenticate);
+
+// Chat Q&A
+router.post('/chat', async (req: AuthRequest, res: Response, next) => {
   try {
-    const { sessionId } = req.params;
+    const { question, sessionId, includePapers = true, maxContextMessages = 30 } = req.body;
+    const userId = req.user!.id;
 
-    // Get session and its messages
-    const session = await db.query.sessions.findFirst({
-      where: (s, { eq }) => eq(s.id, sessionId),
-      with: {
-        messages: {
-          with: {
-            user: true,
-          },
-          orderBy: (m, { asc }) => [asc(m.createdAt)],
-        },
-      },
-    });
-
-    if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
+    if (!question || typeof question !== 'string') {
+      throw createError('Question is required', 400);
     }
 
-    if (!session.messages || session.messages.length === 0) {
-      return res.status(400).json({ message: 'No messages in session to summarize' });
+    // If sessionId provided, verify access
+    if (sessionId) {
+      const session = await checkSessionAccess(sessionId, userId);
+      if (!session) {
+        throw createError('Session not found or access denied', 404);
+      }
     }
 
-    const result = await proxyToAI('/api/summarize', {
-      session_title: session.title,
-      messages: formatMessages(session.messages as unknown as DBMessage[]),
+    const response = await aiClient.chat({
+      question,
+      session_id: sessionId,
+      user_id: userId,
+      include_papers: includePapers,
+      max_context_messages: maxContextMessages,
     });
 
-    res.json(result);
+    res.json(response);
   } catch (error) {
-    console.error('Summarize error:', error);
-    res.status(500).json({
-      message: error instanceof Error ? error.message : 'Failed to generate summary',
-    });
+    next(error);
   }
 });
 
-// Extract tasks from a session
-router.post('/extract-tasks/:sessionId', authenticate, async (req: Request, res: Response) => {
-  try {
-    const { sessionId } = req.params;
-
-    // Get session and its messages
-    const session = await db.query.sessions.findFirst({
-      where: (s, { eq }) => eq(s.id, sessionId),
-      with: {
-        messages: {
-          with: {
-            user: true,
-          },
-          orderBy: (m, { asc }) => [asc(m.createdAt)],
-        },
-      },
-    });
-
-    if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
-    }
-
-    if (!session.messages || session.messages.length === 0) {
-      return res.status(400).json({ message: 'No messages in session' });
-    }
-
-    const result = await proxyToAI('/api/extract-tasks', {
-      session_title: session.title,
-      messages: formatMessages(session.messages as unknown as DBMessage[]),
-    });
-
-    res.json(result);
-  } catch (error) {
-    console.error('Extract tasks error:', error);
-    res.status(500).json({
-      message: error instanceof Error ? error.message : 'Failed to extract tasks',
-    });
-  }
-});
-
-// Ask a question about a session
-router.post('/ask/:sessionId', authenticate, async (req: Request, res: Response) => {
+// Ask in session context (with @ai prefix handling)
+router.post('/ask/:sessionId', async (req: AuthRequest, res: Response, next) => {
   try {
     const { sessionId } = req.params;
     const { question } = req.body;
+    const userId = req.user!.id;
 
     if (!question || typeof question !== 'string') {
-      return res.status(400).json({ message: 'Question is required' });
+      throw createError('Question is required', 400);
     }
 
-    // Get session and its messages
-    const session = await db.query.sessions.findFirst({
-      where: (s, { eq }) => eq(s.id, sessionId),
-      with: {
-        messages: {
-          with: {
-            user: true,
-          },
-          orderBy: (m, { asc }) => [asc(m.createdAt)],
-        },
-      },
-    });
-
+    // Verify session access
+    const session = await checkSessionAccess(sessionId, userId);
     if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
+      throw createError('Session not found or access denied', 404);
     }
 
-    if (!session.messages || session.messages.length === 0) {
-      return res.status(400).json({ message: 'No messages in session to analyze' });
+    // Process the question (strip @ai prefix if present)
+    const cleanQuestion = question.trim().toLowerCase().startsWith('@ai')
+      ? question.trim().slice(3).trim()
+      : question.trim();
+
+    if (!cleanQuestion) {
+      throw createError('Please provide a question', 400);
     }
 
-    const result = await proxyToAI('/api/ask', {
-      question,
-      session_title: session.title,
-      messages: formatMessages(session.messages as unknown as DBMessage[]),
+    const response = await aiClient.chat({
+      question: cleanQuestion,
+      session_id: sessionId,
+      user_id: userId,
+      include_papers: true,
+      max_context_messages: 30,
     });
 
-    res.json(result);
+    // Optionally save AI response as a message
+    if (req.query.save === 'true') {
+      await db.insert(messages).values({
+        sessionId,
+        userId: null,
+        content: response.answer,
+        type: 'ai',
+        metadata: {
+          sources: response.sources,
+          model: response.model,
+          latency_ms: response.latency_ms,
+        },
+      });
+    }
+
+    res.json(response);
   } catch (error) {
-    console.error('Ask question error:', error);
-    res.status(500).json({
-      message: error instanceof Error ? error.message : 'Failed to answer question',
+    next(error);
+  }
+});
+
+// Summarize session
+router.post('/summarize/:sessionId', async (req: AuthRequest, res: Response, next) => {
+  try {
+    const { sessionId } = req.params;
+    const { maxMessages = 100 } = req.body;
+    const userId = req.user!.id;
+
+    // Verify session access
+    const session = await checkSessionAccess(sessionId, userId);
+    if (!session) {
+      throw createError('Session not found or access denied', 404);
+    }
+
+    const response = await aiClient.summarize({
+      session_id: sessionId,
+      max_messages: maxMessages,
     });
+
+    res.json(response);
+  } catch (error) {
+    next(error);
   }
 });
 

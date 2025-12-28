@@ -7,6 +7,8 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-openresearch}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-openresearch}
       POSTGRES_DB: ${POSTGRES_DB:-openresearch}
+      # Performance tuning
+      POSTGRES_INITDB_ARGS: "-E UTF8 --locale=C"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     ports:
@@ -16,62 +18,148 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - openresearch-network
+    # Security: run as non-root
+    user: postgres
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
 
   # Node.js Backend API
   server:
     build:
       context: ./server
       dockerfile: Dockerfile
+      target: production
+      network: host
     container_name: openresearch-server
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: postgresql://${POSTGRES_USER:-openresearch}:${POSTGRES_PASSWORD:-openresearch}@postgres:5432/${POSTGRES_DB:-openresearch}
       JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-change-in-production}
-      AI_SERVER_URL: http://aiserver:8000
+      CLIENT_URL: ${CLIENT_URL:-http://localhost:3000}
+      AI_SERVICE_URL: http://ai-service:8000
     ports:
       - "3001:3001"
     depends_on:
       postgres:
         condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
     restart: unless-stopped
-
-  # Python AI Server
-  aiserver:
-    build:
-      context: ./aiserver
-      dockerfile: Dockerfile
-    container_name: openresearch-ai
-    environment:
-      GEMINI_API_KEY: ${GEMINI_API_KEY}
-      PORT: 8000
-      HOST: 0.0.0.0
-    ports:
-      - "8000:8000"
-    restart: unless-stopped
+    networks:
+      - openresearch-network
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
 
   # Next.js Frontend
   client:
     build:
       context: ./client
       dockerfile: Dockerfile
+      target: production
+      network: host
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
         NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3001}
     container_name: openresearch-client
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3001}
       NEXT_PUBLIC_SOCKET_URL: ${NEXT_PUBLIC_SOCKET_URL:-http://localhost:3001}
+      NODE_ENV: production
     ports:
       - "3000:3000"
     depends_on:
-      - server
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 15s
     restart: unless-stopped
+    networks:
+      - openresearch-network
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+
+  # FastAPI AI Service
+  ai-service:
+    build:
+      context: ./ai-service
+      dockerfile: Dockerfile
+      network: host
+    container_name: openresearch-ai-service
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-openresearch}:${POSTGRES_PASSWORD:-openresearch}@postgres:5432/${POSTGRES_DB:-openresearch}
+      DEBUG: ${AI_DEBUG:-false}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - openresearch-network
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
 
 volumes:
   postgres_data:
+    driver: local
 
 networks:
-  default:
-    name: openresearch-network
+  openresearch-network:
+    driver: bridge

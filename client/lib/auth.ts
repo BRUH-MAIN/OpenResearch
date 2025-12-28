@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { api, User } from './api';
 
+// Mutex for preventing concurrent token refresh
+let refreshPromise: Promise<boolean> | null = null;
+
 interface AuthState {
   user: User | null;
   accessToken: string | null;
@@ -83,23 +86,35 @@ export const useAuthStore = create<AuthState>()(
         const { refreshToken } = get();
         if (!refreshToken) return false;
 
-        try {
-          const result = await api.refreshToken(refreshToken);
-          set({
-            accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
-          });
-          return true;
-        } catch {
-          // Refresh failed, clear auth state
-          set({
-            user: null,
-            accessToken: null,
-            refreshToken: null,
-            isAuthenticated: false,
-          });
-          return false;
+        // If a refresh is already in progress, wait for it
+        if (refreshPromise) {
+          return refreshPromise;
         }
+
+        // Start a new refresh
+        refreshPromise = (async () => {
+          try {
+            const result = await api.refreshToken(refreshToken);
+            set({
+              accessToken: result.accessToken,
+              refreshToken: result.refreshToken,
+            });
+            return true;
+          } catch {
+            // Refresh failed, clear auth state
+            set({
+              user: null,
+              accessToken: null,
+              refreshToken: null,
+              isAuthenticated: false,
+            });
+            return false;
+          } finally {
+            refreshPromise = null;
+          }
+        })();
+
+        return refreshPromise;
       },
 
       updateUser: async (data: Partial<User>) => {
