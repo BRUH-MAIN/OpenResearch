@@ -1,0 +1,125 @@
+import { z } from 'zod';
+// Auth validation schemas
+export const registerSchema = z.object({
+    name: z.string()
+        .min(2, 'Name must be at least 2 characters')
+        .max(100, 'Name must be less than 100 characters')
+        .trim(),
+    email: z.string()
+        .email('Invalid email address')
+        .toLowerCase()
+        .trim(),
+    password: z.string()
+        .min(6, 'Password must be at least 6 characters')
+        .max(100, 'Password must be less than 100 characters'),
+    interests: z.array(z.string()).optional(),
+});
+export const loginSchema = z.object({
+    email: z.string()
+        .email('Invalid email address')
+        .toLowerCase()
+        .trim(),
+    password: z.string().min(1, 'Password is required'),
+});
+export const refreshTokenSchema = z.object({
+    refreshToken: z.string().min(1, 'Refresh token is required'),
+});
+export const updateProfileSchema = z.object({
+    name: z.string()
+        .min(2, 'Name must be at least 2 characters')
+        .max(100, 'Name must be less than 100 characters')
+        .trim()
+        .optional(),
+    avatar: z.string().url('Invalid avatar URL').optional().nullable(),
+    interests: z.array(z.string()).optional(),
+});
+// Group validation schemas
+export const createGroupSchema = z.object({
+    name: z.string()
+        .min(1, 'Group name is required')
+        .max(255, 'Group name must be less than 255 characters')
+        .trim(),
+    description: z.string()
+        .min(1, 'Description is required')
+        .max(2000, 'Description must be less than 2000 characters')
+        .trim(),
+    avatar: z.string().url('Invalid avatar URL').optional().nullable(),
+});
+export const updateGroupSchema = z.object({
+    name: z.string()
+        .min(1, 'Group name is required')
+        .max(255, 'Group name must be less than 255 characters')
+        .trim()
+        .optional(),
+    description: z.string()
+        .max(2000, 'Description must be less than 2000 characters')
+        .trim()
+        .optional(),
+    avatar: z.string().url('Invalid avatar URL').optional().nullable(),
+});
+// Session validation schemas
+export const createSessionSchema = z.object({
+    groupId: z.string().uuid('Invalid group ID'),
+    title: z.string()
+        .min(1, 'Title is required')
+        .max(500, 'Title must be less than 500 characters')
+        .trim(),
+});
+export const updateSessionSchema = z.object({
+    title: z.string()
+        .min(1, 'Title is required')
+        .max(500, 'Title must be less than 500 characters')
+        .trim()
+        .optional(),
+    status: z.enum(['active', 'archived']).optional(),
+});
+// Message validation schemas
+export const sendMessageSchema = z.object({
+    content: z.string()
+        .min(1, 'Message content is required')
+        .max(10000, 'Message must be less than 10000 characters'),
+});
+// Paper validation schemas
+export const searchPapersSchema = z.object({
+    q: z.string().min(1, 'Search query is required').max(500),
+    limit: z.string().regex(/^\d+$/).transform(Number).optional(),
+    offset: z.string().regex(/^\d+$/).transform(Number).optional(),
+    source: z.enum(['local', 'semantic_scholar', 'arxiv', 'all']).optional(),
+});
+export const savePaperSchema = z.object({
+    paperId: z.string().uuid('Invalid paper ID').optional(),
+    externalPaper: z.object({
+        id: z.string(),
+        title: z.string(),
+        authors: z.array(z.string()),
+        abstract: z.string(),
+        url: z.string().url(),
+        tags: z.array(z.string()).optional(),
+        publishedDate: z.string().optional(),
+        citations: z.number().optional(),
+    }).optional(),
+    notes: z.string().max(5000).optional(),
+    sessionId: z.string().uuid().optional().nullable(),
+});
+// Group invitation validation schemas
+export const sendGroupInviteSchema = z.object({
+    userId: z.string().uuid('Invalid user ID').optional(),
+    email: z.string().email('Invalid email address').optional(),
+    message: z.string().max(500, 'Message must be less than 500 characters').optional(),
+}).refine((data) => data.userId || data.email, 'Either userId or email is required');
+// Common param schemas
+export const uuidParamSchema = z.object({
+    id: z.string().uuid('Invalid ID format'),
+});
+export const groupIdParamSchema = z.object({
+    groupId: z.string().uuid('Invalid group ID format'),
+});
+export const sessionIdParamSchema = z.object({
+    sessionId: z.string().uuid('Invalid session ID format'),
+});
+// Pagination query schema
+export const paginationSchema = z.object({
+    limit: z.string().regex(/^\d+$/).optional().default('50').transform(Number),
+    offset: z.string().regex(/^\d+$/).optional().default('0').transform(Number),
+});
+//# sourceMappingURL=schemas.js.map

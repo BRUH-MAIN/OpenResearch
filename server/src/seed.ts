@@ -137,35 +137,10 @@ async function seed() {
         userId: bob.id,
         content: "Sure! I'll prepare a comparison table with training time, memory usage, and accuracy metrics. Give me a day.",
         type: 'user'
-      },
-      {
-        sessionId: session1.id,
-        userId: null,
-        content: '**Task Extracted:** Bob will prepare a comparison table with training time, memory usage, and accuracy metrics for sparse attention vs vanilla attention.',
-        type: 'ai'
       }
     ]);
     
     console.log('✅ Created messages');
-
-    // Create tasks
-    await db.insert(schema.tasks).values([
-      {
-        sessionId: session1.id,
-        title: 'Prepare sparse attention benchmark comparison',
-        description: 'Create comparison table with training time, memory usage, and accuracy metrics',
-        status: 'in-progress',
-        assignedTo: bob.id
-      },
-      {
-        sessionId: session1.id,
-        title: 'Schedule follow-up discussion on vision transformers',
-        status: 'pending',
-        assignedTo: david.id
-      }
-    ]);
-
-    console.log('✅ Created tasks');
 
     // Create papers
     await db.insert(schema.papers).values([

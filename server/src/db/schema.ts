@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, boolean, integer, jsonb, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Users table
@@ -52,7 +52,7 @@ export const messages = pgTable('messages', {
   userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }), // null for AI messages
   content: text('content').notNull(),
   type: varchar('type', { length: 50 }).notNull().default('user'), // 'user' | 'ai'
-  metadata: jsonb('metadata').$type<{ isTask?: boolean; isSummary?: boolean }>(),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -101,6 +101,37 @@ export const refreshTokens = pgTable('refresh_tokens', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
+// Friends table - bidirectional friendship
+export const friends = pgTable('friends', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  friendId: uuid('friend_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// Friend requests table
+export const friendRequests = pgTable('friend_requests', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  fromUserId: uuid('from_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  toUserId: uuid('to_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  status: varchar('status', { length: 50 }).notNull().default('pending'), // 'pending' | 'accepted' | 'rejected'
+  message: text('message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+// Group invitations table
+export const groupInvitations = pgTable('group_invitations', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  invitedBy: uuid('invited_by').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  invitedUserId: uuid('invited_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  status: varchar('status', { length: 50 }).notNull().default('pending'), // 'pending' | 'accepted' | 'declined'
+  message: text('message'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  expiresAt: timestamp('expires_at'),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   ownedGroups: many(groups),
@@ -109,6 +140,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   savedPapers: many(savedPapers),
   tasks: many(tasks),
   refreshTokens: many(refreshTokens),
+  friends: many(friends),
+  friendRequestsSent: many(friendRequests, { relationName: 'fromUser' }),
+  friendRequestsReceived: many(friendRequests, { relationName: 'toUser' }),
+  groupInvitationsReceived: many(groupInvitations, { relationName: 'invitedUser' }),
 }));
 
 export const groupsRelations = relations(groups, ({ one, many }) => ({
@@ -118,6 +153,7 @@ export const groupsRelations = relations(groups, ({ one, many }) => ({
   }),
   members: many(groupMembers),
   sessions: many(sessions),
+  invitations: many(groupInvitations),
 }));
 
 export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
@@ -193,18 +229,42 @@ export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
   }),
 }));
 
-// Type exports
-export type User = typeof users.$inferSelect;
-export type NewUser = typeof users.$inferInsert;
-export type Group = typeof groups.$inferSelect;
-export type NewGroup = typeof groups.$inferInsert;
-export type GroupMember = typeof groupMembers.$inferSelect;
-export type Session = typeof sessions.$inferSelect;
-export type NewSession = typeof sessions.$inferInsert;
-export type Message = typeof messages.$inferSelect;
-export type NewMessage = typeof messages.$inferInsert;
-export type Paper = typeof papers.$inferSelect;
-export type NewPaper = typeof papers.$inferInsert;
-export type SavedPaper = typeof savedPapers.$inferSelect;
-export type Task = typeof tasks.$inferSelect;
-export type NewTask = typeof tasks.$inferInsert;
+export const friendsRelations = relations(friends, ({ one }) => ({
+  user: one(users, {
+    fields: [friends.userId],
+    references: [users.id],
+  }),
+  friend: one(users, {
+    fields: [friends.friendId],
+    references: [users.id],
+  }),
+}));
+
+export const friendRequestsRelations = relations(friendRequests, ({ one }) => ({
+  fromUser: one(users, {
+    fields: [friendRequests.fromUserId],
+    references: [users.id],
+    relationName: 'fromUser',
+  }),
+  toUser: one(users, {
+    fields: [friendRequests.toUserId],
+    references: [users.id],
+    relationName: 'toUser',
+  }),
+}));
+
+export const groupInvitationsRelations = relations(groupInvitations, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupInvitations.groupId],
+    references: [groups.id],
+  }),
+  inviter: one(users, {
+    fields: [groupInvitations.invitedBy],
+    references: [users.id],
+  }),
+  invitedUser: one(users, {
+    fields: [groupInvitations.invitedUserId],
+    references: [users.id],
+    relationName: 'invitedUser',
+  }),
+}));

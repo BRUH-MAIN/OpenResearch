@@ -5,13 +5,8 @@ import { Navbar } from '@/components/layout';
 import { Button, Card, CardBody, CardHeader, Badge } from '@/components/ui';
 import { Search, BookMarked, ExternalLink, Calendar, Quote, Loader2, BookmarkCheck, Globe, Download } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
-import { api, Paper, ExternalPaper } from '@/lib/api';
+import { api, Paper, ExternalPaper, SavedPaper } from '@/lib/api';
 import { toast } from '@/lib/toast';
-
-interface SavedPaper extends Paper {
-  savedAt: string;
-  notes?: string;
-}
 
 type SearchSource = 'local' | 'semantic_scholar' | 'arxiv' | 'all';
 
@@ -160,7 +155,7 @@ export default function PaperPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#212121]">
+    <div className="min-h-screen bg-[#0f0f0f]">
       <Navbar />
       
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -168,9 +163,9 @@ export default function PaperPage() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-white">Explore Papers</h1>
-            <p className="text-gray-400 mt-1">Discover and save research papers</p>
+            <p className="text-[#71717a] mt-1">Discover and save research papers</p>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex gap-2">
             <Button
               variant={showSaved ? 'ghost' : 'primary'}
               onClick={() => setShowSaved(false)}
@@ -189,16 +184,16 @@ export default function PaperPage() {
 
         {/* Search Bar */}
         <div className="mb-4">
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" size={20} />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#52525b]" size={20} />
               <input
                 type="text"
                 placeholder="Search papers by title, author, or content..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && searchSource !== 'local' && handleExternalSearch()}
-                className="w-full pl-10 pr-4 py-3 border border-[#0D7377] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#14FFEC] bg-[#323232] text-white"
+                className="w-full pl-12 pr-4 py-3 border border-[#2a2a2a] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] bg-[#1a1a1a] text-white placeholder-[#52525b] transition-all hover:border-[#3a3a3a]"
               />
             </div>
             {searchSource !== 'local' && (
@@ -212,7 +207,7 @@ export default function PaperPage() {
 
         {/* Search Source Selector */}
         <div className="mb-6 flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-gray-400 mr-2">Search in:</span>
+          <span className="text-sm text-[#71717a] mr-2">Search in:</span>
           <Button
             size="sm"
             variant={searchSource === 'local' ? 'primary' : 'ghost'}
@@ -267,16 +262,16 @@ export default function PaperPage() {
 
         {/* Error State */}
         {error && (
-          <div className="bg-red-900/30 border border-red-500 rounded-lg p-4 mb-6">
-            <p className="text-red-400">{error}</p>
+          <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-xl p-4 mb-6">
+            <p className="text-[#f87171]">{error}</p>
           </div>
         )}
 
         {/* Loading State */}
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center py-16">
+          <div className="flex flex-col items-center justify-center py-20">
             <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
-            <p className="text-gray-400">Loading papers...</p>
+            <p className="text-[#71717a]">Loading papers...</p>
           </div>
         ) : (
           <>
@@ -301,10 +296,10 @@ export default function PaperPage() {
                             <h3 className="text-lg font-bold text-white mb-2">
                               {paper.title}
                             </h3>
-                            <p className="text-sm text-gray-400 mb-2">
+                            <p className="text-sm text-[#a1a1aa] mb-2">
                               {paper.authors.slice(0, 5).join(', ')}{paper.authors.length > 5 ? ` +${paper.authors.length - 5} more` : ''}
                             </p>
-                            <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
+                            <div className="flex flex-wrap items-center gap-3 text-sm text-[#71717a]">
                               {paper.publishedDate && (
                                 <div className="flex items-center">
                                   <Calendar size={14} className="mr-1" />
@@ -319,7 +314,7 @@ export default function PaperPage() {
                               )}
                             </div>
                           </div>
-                          <div className="flex flex-col space-y-2">
+                          <div className="flex flex-col gap-2">
                             <Button
                               size="sm"
                               variant="outline"
@@ -333,19 +328,16 @@ export default function PaperPage() {
                               variant="primary"
                               onClick={() => handleImportPaper(paper)}
                               disabled={importingPaperId === paper.id}
+                              isLoading={importingPaperId === paper.id}
                             >
-                              {importingPaperId === paper.id ? (
-                                <Loader2 size={14} className="mr-1 animate-spin" />
-                              ) : (
-                                <Download size={14} className="mr-1" />
-                              )}
+                              {importingPaperId !== paper.id && <Download size={14} className="mr-1" />}
                               Import
                             </Button>
                           </div>
                         </div>
                       </CardHeader>
                       <CardBody>
-                        <p className="text-gray-400 text-sm line-clamp-3">{paper.abstract}</p>
+                        <p className="text-[#a1a1aa] text-sm line-clamp-3">{paper.abstract}</p>
                       </CardBody>
                     </Card>
                   ))}
@@ -357,12 +349,12 @@ export default function PaperPage() {
             {searchSource === 'local' && (
               <>
                 {filteredPapers.length === 0 ? (
-                  <div className="text-center py-16">
-                    <div className="w-24 h-24 bg-[#323232] rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Search size={40} className="text-gray-500" />
+                  <div className="text-center py-20">
+                    <div className="w-24 h-24 bg-[#1a1a1a] rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <Search size={40} className="text-[#52525b]" />
                     </div>
                     <h3 className="text-xl font-semibold text-white mb-2">No papers found</h3>
-                    <p className="text-gray-400">Try adjusting your search or filters, or search external sources</p>
+                    <p className="text-[#71717a]">Try adjusting your search or filters, or search external sources</p>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -374,10 +366,10 @@ export default function PaperPage() {
                               <h3 className="text-xl font-bold text-white mb-2">
                                 {paper.title}
                               </h3>
-                              <p className="text-sm text-gray-400 mb-2">
+                              <p className="text-sm text-[#a1a1aa] mb-2">
                                 {paper.authors.join(', ')}
                               </p>
-                              <div className="flex flex-wrap items-center gap-3 text-sm text-gray-400">
+                              <div className="flex flex-wrap items-center gap-3 text-sm text-[#71717a]">
                                 {paper.publishedDate && (
                                   <div className="flex items-center">
                                     <Calendar size={16} className="mr-1" />
@@ -392,7 +384,7 @@ export default function PaperPage() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex flex-col space-y-2">
+                            <div className="flex flex-col gap-2">
                               <Button
                                 size="sm"
                                 variant="outline"
@@ -406,13 +398,14 @@ export default function PaperPage() {
                                 variant={savedPaperIds.has(paper.id) ? 'secondary' : 'primary'}
                                 onClick={() => handleSavePaper(paper.id)}
                                 disabled={savingPaperId === paper.id}
+                                isLoading={savingPaperId === paper.id}
                               >
-                                {savingPaperId === paper.id ? (
-                                  <Loader2 size={16} className="mr-2 animate-spin" />
-                                ) : savedPaperIds.has(paper.id) ? (
-                                  <BookmarkCheck size={16} className="mr-2" />
-                                ) : (
-                                  <BookMarked size={16} className="mr-2" />
+                                {savingPaperId !== paper.id && (
+                                  savedPaperIds.has(paper.id) ? (
+                                    <BookmarkCheck size={16} className="mr-2" />
+                                  ) : (
+                                    <BookMarked size={16} className="mr-2" />
+                                  )
                                 )}
                                 {savedPaperIds.has(paper.id) ? 'Saved' : 'Save'}
                               </Button>
@@ -420,7 +413,7 @@ export default function PaperPage() {
                           </div>
                         </CardHeader>
                         <CardBody>
-                          <p className="text-gray-300 mb-4">{paper.abstract}</p>
+                          <p className="text-[#a1a1aa] mb-4">{paper.abstract}</p>
                           <div className="flex flex-wrap gap-2">
                             {(paper.tags || []).map(tag => (
                               <Badge key={tag} variant="primary">

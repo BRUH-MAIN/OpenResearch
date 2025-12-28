@@ -1,5 +1,5 @@
-import { Router, Response } from 'express';
-import { db, sessions, groupMembers, messages, tasks, users } from '../db/index.js';
+import { Router } from 'express';
+import { db, sessions, groupMembers, messages, users } from '../db/index.js';
 import { eq, and, desc, count } from 'drizzle-orm';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { createError } from '../middleware/error.js';
@@ -20,7 +20,7 @@ async function checkGroupMembership(groupId: string, userId: string) {
 }
 
 // Get sessions for a group
-router.get('/group/:groupId', async (req: AuthRequest, res: Response, next) => {
+router.get('/group/:groupId', async (req: AuthRequest, res, next) => {
   try {
     const { groupId } = req.params;
     const userId = req.user!.id;
@@ -53,7 +53,7 @@ router.get('/group/:groupId', async (req: AuthRequest, res: Response, next) => {
 });
 
 // Get single session
-router.get('/:sessionId', async (req: AuthRequest, res: Response, next) => {
+router.get('/:sessionId', async (req: AuthRequest, res, next) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user!.id;
@@ -73,7 +73,6 @@ router.get('/:sessionId', async (req: AuthRequest, res: Response, next) => {
       throw createError('Access denied', 403);
     }
 
-    // Get message count
     const [{ count: messageCount }] = await db
       .select({ count: count() })
       .from(messages)
@@ -89,7 +88,7 @@ router.get('/:sessionId', async (req: AuthRequest, res: Response, next) => {
 });
 
 // Create session
-router.post('/', async (req: AuthRequest, res: Response, next) => {
+router.post('/', async (req: AuthRequest, res, next) => {
   try {
     const { groupId, title } = req.body;
     const userId = req.user!.id;
@@ -122,7 +121,7 @@ router.post('/', async (req: AuthRequest, res: Response, next) => {
 });
 
 // Update session
-router.patch('/:sessionId', async (req: AuthRequest, res: Response, next) => {
+router.patch('/:sessionId', async (req: AuthRequest, res, next) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user!.id;
@@ -162,7 +161,7 @@ router.patch('/:sessionId', async (req: AuthRequest, res: Response, next) => {
 });
 
 // Delete session
-router.delete('/:sessionId', async (req: AuthRequest, res: Response, next) => {
+router.delete('/:sessionId', async (req: AuthRequest, res, next) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user!.id;
@@ -177,21 +176,14 @@ router.delete('/:sessionId', async (req: AuthRequest, res: Response, next) => {
       throw createError('Session not found', 404);
     }
 
-    // Only group owner can delete sessions
     const [membership] = await db
       .select()
       .from(groupMembers)
-      .where(
-        and(
-          eq(groupMembers.groupId, session.groupId),
-          eq(groupMembers.userId, userId),
-          eq(groupMembers.role, 'owner')
-        )
-      )
+      .where(and(eq(groupMembers.groupId, session.groupId), eq(groupMembers.userId, userId)))
       .limit(1);
 
     if (!membership) {
-      throw createError('Only the group owner can delete sessions', 403);
+      throw createError('Access denied', 403);
     }
 
     await db.delete(sessions).where(eq(sessions.id, sessionId));
@@ -203,7 +195,7 @@ router.delete('/:sessionId', async (req: AuthRequest, res: Response, next) => {
 });
 
 // Get session messages
-router.get('/:sessionId/messages', async (req: AuthRequest, res: Response, next) => {
+router.get('/:sessionId/messages', async (req: AuthRequest, res, next) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user!.id;
@@ -250,8 +242,51 @@ router.get('/:sessionId/messages', async (req: AuthRequest, res: Response, next)
   }
 });
 
-// Get session tasks
-router.get('/:sessionId/tasks', async (req: AuthRequest, res: Response, next) => {
+// Delete a message
+router.delete('/:sessionId/messages/:messageId', async (req: AuthRequest, res, next) => {
+  try {
+    const { sessionId, messageId } = req.params;
+    const userId = req.user!.id;
+
+    const [session] = await db
+      .select()
+      .from(sessions)
+      .where(eq(sessions.id, sessionId))
+      .limit(1);
+
+    if (!session) {
+      throw createError('Session not found', 404);
+    }
+
+    const membership = await checkGroupMembership(session.groupId, userId);
+    if (!membership) {
+      throw createError('Access denied', 403);
+    }
+
+    const [message] = await db
+      .select()
+      .from(messages)
+      .where(and(eq(messages.id, messageId), eq(messages.sessionId, sessionId)))
+      .limit(1);
+
+    if (!message) {
+      throw createError('Message not found', 404);
+    }
+
+    if (message.userId !== userId && membership.role !== 'owner') {
+      throw createError('Can only delete your own messages', 403);
+    }
+
+    await db.delete(messages).where(eq(messages.id, messageId));
+
+    res.json({ message: 'Message deleted successfully' });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Clear all messages in a session
+router.delete('/:sessionId/messages', async (req: AuthRequest, res, next) => {
   try {
     const { sessionId } = req.params;
     const userId = req.user!.id;
@@ -267,117 +302,13 @@ router.get('/:sessionId/tasks', async (req: AuthRequest, res: Response, next) =>
     }
 
     const membership = await checkGroupMembership(session.groupId, userId);
-    if (!membership) {
-      throw createError('Access denied', 403);
+    if (!membership || membership.role !== 'owner') {
+      throw createError('Only group owner can clear all messages', 403);
     }
 
-    const sessionTasks = await db
-      .select({
-        id: tasks.id,
-        sessionId: tasks.sessionId,
-        title: tasks.title,
-        description: tasks.description,
-        status: tasks.status,
-        assignedTo: tasks.assignedTo,
-        createdAt: tasks.createdAt,
-        assigneeName: users.name,
-        assigneeAvatar: users.avatar,
-      })
-      .from(tasks)
-      .leftJoin(users, eq(users.id, tasks.assignedTo))
-      .where(eq(tasks.sessionId, sessionId))
-      .orderBy(desc(tasks.createdAt));
+    await db.delete(messages).where(eq(messages.sessionId, sessionId));
 
-    res.json(sessionTasks);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Create task
-router.post('/:sessionId/tasks', async (req: AuthRequest, res: Response, next) => {
-  try {
-    const { sessionId } = req.params;
-    const userId = req.user!.id;
-    const { title, description, assignedTo } = req.body;
-
-    if (!title) {
-      throw createError('Title is required', 400);
-    }
-
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, sessionId))
-      .limit(1);
-
-    if (!session) {
-      throw createError('Session not found', 404);
-    }
-
-    const membership = await checkGroupMembership(session.groupId, userId);
-    if (!membership) {
-      throw createError('Access denied', 403);
-    }
-
-    const [newTask] = await db
-      .insert(tasks)
-      .values({
-        sessionId,
-        title,
-        description,
-        assignedTo,
-        status: 'pending',
-      })
-      .returning();
-
-    res.status(201).json(newTask);
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Update task
-router.patch('/:sessionId/tasks/:taskId', async (req: AuthRequest, res: Response, next) => {
-  try {
-    const { sessionId, taskId } = req.params;
-    const userId = req.user!.id;
-    const { title, description, status, assignedTo } = req.body;
-
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, sessionId))
-      .limit(1);
-
-    if (!session) {
-      throw createError('Session not found', 404);
-    }
-
-    const membership = await checkGroupMembership(session.groupId, userId);
-    if (!membership) {
-      throw createError('Access denied', 403);
-    }
-
-    const updateData: Record<string, unknown> = {};
-    if (title) updateData.title = title;
-    if (description !== undefined) updateData.description = description;
-    if (status && ['pending', 'in-progress', 'completed'].includes(status)) {
-      updateData.status = status;
-    }
-    if (assignedTo !== undefined) updateData.assignedTo = assignedTo;
-
-    const [updatedTask] = await db
-      .update(tasks)
-      .set(updateData)
-      .where(and(eq(tasks.id, taskId), eq(tasks.sessionId, sessionId)))
-      .returning();
-
-    if (!updatedTask) {
-      throw createError('Task not found', 404);
-    }
-
-    res.json(updatedTask);
+    res.json({ message: 'All messages cleared' });
   } catch (error) {
     next(error);
   }

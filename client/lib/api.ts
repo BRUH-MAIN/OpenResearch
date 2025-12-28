@@ -180,26 +180,6 @@ class ApiClient {
     return this.request<Message[]>(`/api/sessions/${sessionId}/messages?limit=${limit}&offset=${offset}`, { token });
   }
 
-  async getSessionTasks(token: string, sessionId: string) {
-    return this.request<Task[]>(`/api/sessions/${sessionId}/tasks`, { token });
-  }
-
-  async createTask(token: string, sessionId: string, data: { title: string; description?: string; assignedTo?: string }) {
-    return this.request<Task>(`/api/sessions/${sessionId}/tasks`, {
-      method: 'POST',
-      token,
-      body: JSON.stringify(data),
-    });
-  }
-
-  async updateTask(token: string, sessionId: string, taskId: string, data: Partial<Task>) {
-    return this.request<Task>(`/api/sessions/${sessionId}/tasks/${taskId}`, {
-      method: 'PATCH',
-      token,
-      body: JSON.stringify(data),
-    });
-  }
-
   // Papers
   async getPapers(token: string, search?: string, tag?: string) {
     const params = new URLSearchParams();
@@ -250,44 +230,58 @@ class ApiClient {
     });
   }
 
-  // AI Features
-  async getAIHealth() {
-    return this.request<{ status: string; gemini_configured: boolean }>('/api/ai/health');
+  // ==================== GROUP INVITATIONS ====================
+
+  async getPendingInvitations(token: string) {
+    return this.request<GroupInvitation[]>('/api/groups/invitations/pending', { token });
   }
 
-  async summarizeSession(token: string, sessionId: string) {
-    return this.request<{
-      summary: string;
-      key_points: string[];
-      participant_count: number;
-    }>(`/api/ai/summarize/${sessionId}`, {
+  async getGroupInvitations(token: string, groupId: string) {
+    return this.request<GroupInvitation[]>(`/api/groups/${groupId}/invitations`, { token });
+  }
+
+  async inviteToGroupByEmail(token: string, groupId: string, email: string, message?: string) {
+    return this.request<GroupInvitation>(`/api/groups/${groupId}/invitations`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ email, message }),
+    });
+  }
+
+  async acceptGroupInvitation(token: string, invitationId: string) {
+    return this.request<{ message: string; group: Group }>(`/api/groups/invitations/${invitationId}/accept`, {
       method: 'POST',
       token,
     });
   }
 
-  async extractTasks(token: string, sessionId: string) {
-    return this.request<{
-      tasks: Array<{
-        title: string;
-        description?: string;
-        assignee?: string;
-        priority: 'low' | 'medium' | 'high';
-      }>;
-    }>(`/api/ai/extract-tasks/${sessionId}`, {
+  async declineGroupInvitation(token: string, invitationId: string) {
+    return this.request<{ message: string }>(`/api/groups/invitations/${invitationId}/decline`, {
       method: 'POST',
       token,
     });
   }
 
-  async askQuestion(token: string, sessionId: string, question: string) {
-    return this.request<{
-      answer: string;
-      sources: string[];
-    }>(`/api/ai/ask/${sessionId}`, {
-      method: 'POST',
+  async cancelGroupInvitation(token: string, groupId: string, invitationId: string) {
+    return this.request<{ message: string }>(`/api/groups/${groupId}/invitations/${invitationId}`, {
+      method: 'DELETE',
       token,
-      body: JSON.stringify({ question }),
+    });
+  }
+
+  // ==================== MESSAGE MANAGEMENT ====================
+
+  async deleteMessage(token: string, sessionId: string, messageId: string) {
+    return this.request<{ message: string }>(`/api/sessions/${sessionId}/messages/${messageId}`, {
+      method: 'DELETE',
+      token,
+    });
+  }
+
+  async clearSessionMessages(token: string, sessionId: string) {
+    return this.request<{ message: string }>(`/api/sessions/${sessionId}/messages`, {
+      method: 'DELETE',
+      token,
     });
   }
 }
@@ -340,10 +334,6 @@ export interface Message {
   userId: string | null;
   content: string;
   type: 'user' | 'ai';
-  metadata?: {
-    isTask?: boolean;
-    isSummary?: boolean;
-  };
   createdAt: string;
   userName?: string;
   userAvatar?: string;
@@ -364,13 +354,26 @@ export interface ExternalPaper extends Paper {
   source: 'semantic_scholar' | 'arxiv';
 }
 
-export interface Task {
+export interface SavedPaper extends Paper {
+  savedAt: string;
+  notes?: string;
+}
+
+export interface GroupInvitation {
   id: string;
-  sessionId: string;
-  title: string;
-  description?: string;
-  status: 'pending' | 'in-progress' | 'completed';
-  assignedTo?: string;
-  assigneeName?: string;
+  groupId: string;
+  groupName?: string;
+  groupDescription?: string;
+  groupAvatar?: string;
+  invitedUserId: string;
+  invitedUserName?: string;
+  invitedUserEmail?: string;
+  invitedByUserId: string;
+  invitedByUserName?: string;
+  inviterName?: string;
+  inviterAvatar?: string;
+  message?: string;
+  status: 'pending' | 'accepted' | 'declined' | 'expired';
+  expiresAt?: string;
   createdAt: string;
 }

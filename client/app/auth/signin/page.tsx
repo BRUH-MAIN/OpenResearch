@@ -59,24 +59,28 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#212121] flex items-center justify-center px-4">
-      <div className="max-w-md w-full">
+    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center px-4 relative overflow-hidden">
+      {/* Background Effects */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#0D7377]/10 rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#14FFEC]/5 rounded-full blur-3xl" />
+      
+      <div className="max-w-md w-full relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
-          <Link href="/landing" className="inline-flex items-center space-x-2">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#0D7377] to-[#14FFEC] rounded-lg flex items-center justify-center">
+          <Link href="/landing" className="inline-flex items-center gap-3">
+            <div className="w-12 h-12 bg-gradient-to-br from-[#0D7377] to-[#14FFEC] rounded-xl flex items-center justify-center shadow-lg shadow-[#0D7377]/30">
               <span className="text-white font-bold text-xl">OR</span>
             </div>
             <span className="text-2xl font-bold text-white">OpenResearch</span>
           </Link>
-          <h1 className="mt-6 text-3xl font-bold text-white">Welcome Back</h1>
-          <p className="mt-2 text-gray-400">Sign in to continue your research</p>
+          <h1 className="mt-8 text-3xl font-bold text-white">Welcome Back</h1>
+          <p className="mt-2 text-[#71717a]">Sign in to continue your research</p>
         </div>
 
         {/* Sign In Form */}
-        <div className="bg-[#323232] rounded-xl shadow-lg p-8 border border-[#0D7377]">
+        <div className="bg-[#1a1a1a] rounded-2xl shadow-xl p-8 border border-[#2a2a2a]">
           {apiError && (
-            <div className="mb-4 p-3 bg-red-900/30 border border-red-500 rounded-lg text-red-300 text-sm">
+            <div className="mb-6 p-4 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-xl text-[#f87171] text-sm">
               {apiError}
             </div>
           )}
@@ -100,11 +104,11 @@ export default function SignInPage() {
             />
             
             <div className="flex items-center justify-between">
-              <label className="flex items-center">
-                <input type="checkbox" className="rounded border-gray-600 text-[#0D7377] focus:ring-[#14FFEC] bg-[#212121]" />
-                <span className="ml-2 text-sm text-gray-300">Remember me</span>
+              <label className="flex items-center cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 rounded border-[#3a3a3a] text-[#0D7377] focus:ring-[#14FFEC] focus:ring-offset-0 bg-[#1a1a1a]" />
+                <span className="ml-2 text-sm text-[#a1a1aa]">Remember me</span>
               </label>
-              <a href="#" className="text-sm text-[#14FFEC] hover:text-[#0D7377]">
+              <a href="#" className="text-sm text-[#14FFEC] hover:text-[#0D7377] transition-colors">
                 Forgot password?
               </a>
             </div>
@@ -119,19 +123,19 @@ export default function SignInPage() {
           </form>
 
           {/* Divider */}
-          <div className="mt-6 relative">
+          <div className="mt-8 relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#0D7377]"></div>
+              <div className="w-full border-t border-[#2a2a2a]"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-[#323232] text-gray-400">Or continue with</span>
+              <span className="px-4 bg-[#1a1a1a] text-[#71717a]">Or continue with</span>
             </div>
           </div>
 
           {/* Google Sign In */}
           <Button
             type="button"
-            variant="outline"
+            variant="secondary"
             className="w-full mt-6"
             onClick={handleGoogleSignIn}
           >
@@ -157,9 +161,9 @@ export default function SignInPage() {
           </Button>
 
           {/* Sign Up Link */}
-          <p className="mt-6 text-center text-sm text-gray-400">
-            Don't have an account?{' '}
-            <Link href="/auth/signup" className="text-[#14FFEC] hover:text-[#0D7377] font-medium">
+          <p className="mt-8 text-center text-sm text-[#71717a]">
+            Don&apos;t have an account?{' '}
+            <Link href="/auth/signup" className="text-[#14FFEC] hover:text-[#0D7377] font-medium transition-colors">
               Sign up
             </Link>
           </p>

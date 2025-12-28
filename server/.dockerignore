@@ -1,9 +1,6 @@
 # Dependencies
 node_modules
 
-# Build output
-dist
-
 # Development
 .env
 .env.local
@@ -36,3 +33,5 @@ Dockerfile
 # Documentation
 README.md
 *.md
+
+# Note: dist folder is NOT ignored - we need it for production builds

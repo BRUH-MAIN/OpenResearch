@@ -87,6 +87,9 @@ export const optionalAuth = async (
 };
 
 export const generateTokens = (userId: string, email: string) => {
+  // Add a unique jti (JWT ID) to ensure tokens are unique even when generated at the same second
+  const jti = crypto.randomUUID();
+  
   const accessToken = jwt.sign(
     { userId, email },
     process.env.JWT_SECRET!,
@@ -94,7 +97,7 @@ export const generateTokens = (userId: string, email: string) => {
   );
 
   const refreshToken = jwt.sign(
-    { userId, email, type: 'refresh' },
+    { userId, email, type: 'refresh', jti },
     process.env.JWT_SECRET!,
     { expiresIn: '7d' }
   );

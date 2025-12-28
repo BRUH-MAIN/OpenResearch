@@ -4,22 +4,20 @@ import { db, users, refreshTokens } from '../db/index.js';
 import { eq, and, gt } from 'drizzle-orm';
 import { generateTokens, verifyRefreshToken, authenticate, AuthRequest } from '../middleware/auth.js';
 import { createError } from '../middleware/error.js';
+import { validate } from '../middleware/validate.js';
+import { registerSchema, loginSchema, refreshTokenSchema, updateProfileSchema } from '../validation/schemas.js';
+import { authLimiter } from '../middleware/rateLimiter.js';
+import { authLogger } from '../utils/logger.js';
 
 const router = Router();
 
+// Apply rate limiting to all auth routes
+router.use(authLimiter);
+
 // Register
-router.post('/register', async (req, res, next) => {
+router.post('/register', validate(registerSchema), async (req, res, next) => {
   try {
     const { name, email, password, interests } = req.body;
-
-    // Validation
-    if (!name || !email || !password) {
-      throw createError('Name, email, and password are required', 400);
-    }
-
-    if (password.length < 6) {
-      throw createError('Password must be at least 6 characters', 400);
-    }
 
     // Check if user exists
     const [existingUser] = await db
@@ -65,6 +63,8 @@ router.post('/register', async (req, res, next) => {
       expiresAt,
     });
 
+    authLogger.info({ userId: newUser.id, email: newUser.email }, 'User registered successfully');
+
     res.status(201).json({
       user: newUser,
       accessToken,
@@ -76,13 +76,9 @@ router.post('/register', async (req, res, next) => {
 });
 
 // Login
-router.post('/login', async (req, res, next) => {
+router.post('/login', validate(loginSchema), async (req, res, next) => {
   try {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-      throw createError('Email and password are required', 400);
-    }
 
     // Find user
     const [user] = await db
@@ -115,6 +111,8 @@ router.post('/login', async (req, res, next) => {
     // Return user without password
     const { password: _, ...userWithoutPassword } = user;
 
+    authLogger.info({ userId: user.id, email: user.email }, 'User logged in successfully');
+
     res.json({
       user: userWithoutPassword,
       accessToken,
@@ -126,13 +124,9 @@ router.post('/login', async (req, res, next) => {
 });
 
 // Refresh token
-router.post('/refresh', async (req, res, next) => {
+router.post('/refresh', validate(refreshTokenSchema), async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
-
-    if (!refreshToken) {
-      throw createError('Refresh token is required', 400);
-    }
 
     // Verify token
     const decoded = verifyRefreshToken(refreshToken);
@@ -186,6 +180,8 @@ router.post('/logout', authenticate, async (req: AuthRequest, res: Response, nex
       await db.delete(refreshTokens).where(eq(refreshTokens.token, refreshToken));
     }
 
+    authLogger.info({ userId: req.user!.id }, 'User logged out');
+
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     next(error);
@@ -219,7 +215,7 @@ router.get('/me', authenticate, async (req: AuthRequest, res: Response, next) =>
 });
 
 // Update current user
-router.patch('/me', authenticate, async (req: AuthRequest, res: Response, next) => {
+router.patch('/me', authenticate, validate(updateProfileSchema), async (req: AuthRequest, res: Response, next) => {
   try {
     const { name, interests, avatar } = req.body;
 

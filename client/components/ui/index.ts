@@ -1,6 +1,6 @@
 export { Button } from './Button';
-export { Card, CardHeader, CardBody, CardFooter } from './Card';
-export { Input, Textarea } from './Input';
-export { Avatar } from './Avatar';
-export { Badge } from './Badge';
+export { Card, CardHeader, CardBody, CardFooter, CardTitle, CardDescription } from './Card';
+export { Input, Textarea, SearchInput } from './Input';
+export { Avatar, AvatarGroup } from './Avatar';
+export { Badge, StatusBadge } from './Badge';
 export { ToastContainer } from './Toast';
