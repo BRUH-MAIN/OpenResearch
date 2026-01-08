@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState } from 'react';
 import Image from 'next/image';
 
 interface AvatarProps {
@@ -16,6 +18,8 @@ export function Avatar({
   status,
   className = '' 
 }: AvatarProps) {
+  const [imageError, setImageError] = useState(false);
+
   const sizes = {
     xs: 'w-6 h-6',
     sm: 'w-8 h-8',
@@ -88,13 +92,15 @@ export function Avatar({
           transition-all duration-200
         `}
       >
-        {src ? (
+        {src && !imageError ? (
           <Image
             src={src}
             alt={alt}
             width={imageSizes[size]}
             height={imageSizes[size]}
             className="object-cover w-full h-full"
+            onError={() => setImageError(true)}
+            unoptimized
           />
         ) : (
           <span className={fontSizes[size]}>

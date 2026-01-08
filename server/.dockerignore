@@ -1,37 +1,38 @@
-# Dependencies
-node_modules
-
-# Development
+# Environment files
 .env
 .env.local
 .env.*.local
 
-# Logs
-npm-debug.log*
+# Dependencies (will be installed fresh in container)
+node_modules/
 
-# Testing
-coverage
-.nyc_output
-tests
+# Build artifacts (will be built fresh in container)
+dist/
 
 # IDE
-.vscode
-.idea
+.vscode/
+.idea/
 
-# OS
+# Git
+.git/
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+
+# Tests
+tests/
+*.test.ts
+vitest.config.ts
+coverage/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# OS files
 .DS_Store
 Thumbs.db
 
-# Git
-.git
-.gitignore
-
-# Docker
-Dockerfile
-.dockerignore
-
-# Documentation
+# README
 README.md
-*.md
-
-# Note: dist folder is NOT ignored - we need it for production builds

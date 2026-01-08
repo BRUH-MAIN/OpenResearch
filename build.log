@@ -1,37 +1,41 @@
-time="2025-12-28T16:47:56+05:30" level=warning msg="Docker Compose is configured to build using Bake, but buildx isn't installed"
-#0 building with "default" instance using docker driver
+time="2026-01-08T13:08:01+05:30" level=warning msg="Docker Compose requires buildx plugin to be installed"
+ Image openresearch-ai-service Building 
+ Image openresearch-server Building 
+ Image openresearch-ai-service Building 
+ Image openresearch-server Building 
+Sending build context to Docker daemon  86.52kB
+Sending build context to Docker daemon  108.4kB
+Step 1/12 : FROM node:20-alpine
+ ---> e80b0510ba94
+Step 2/12 : WORKDIR /app
+Step 1/12 : FROM python:3.12-slim
+ ---> 7c5aeff4dbf9
+Step 2/12 : WORKDIR /app
+ ---> Using cache
+ ---> f79e9db036db
+Step 3/12 : COPY package.json package-lock.json* ./
+ ---> Using cache
+ ---> 56f9f9c9aa70
+Step 3/12 : RUN apt-get update && apt-get install -y --no-install-recommends     gcc     && rm -rf /var/lib/apt/lists/*
+ ---> Using cache
+ ---> b2214c7eb18e
+Step 4/12 : RUN npm install --legacy-peer-deps
+ ---> Running in 867bc110fae9
+ ---> Running in 5631b3bae233
+Ign:1 http://deb.debian.org/debian trixie InRelease
+[91mnpm error Exit handler never called!
+[0m[91mnpm error This is an error with npm itself. Please report this error at:
+[0m[91mnpm error   <https://github.com/npm/cli/issues>
+[0m[91mnpm error A complete log of this run can be found in: /root/.npm/_logs/2026-01-08T07_38_01_342Z-debug-0.log
+[0m ---> Removed intermediate container 867bc110fae9
+ ---> 5c0de021fa13
+Step 5/12 : COPY . .
+ ---> 6f8386b9d6ab
+Step 6/12 : RUN npm run build
+ ---> Running in 190ec2abd62d
 
-#1 [server internal] load build definition from Dockerfile
-#1 transferring dockerfile: 712B done
-#1 DONE 0.0s
+> openresearch-server@1.0.0 build
+> tsc
 
-#2 [server internal] load metadata for docker.io/library/node:20-alpine
-#2 ...
-
-#3 [server auth] library/node:pull token for registry-1.docker.io
-#3 DONE 0.0s
-
-#2 [server internal] load metadata for docker.io/library/node:20-alpine
-#2 DONE 2.5s
-
-#4 [server internal] load .dockerignore
-#4 transferring context: 312B done
-#4 DONE 0.0s
-
-#5 [server builder 1/8] FROM docker.io/library/node:20-alpine@sha256:658d0f63e501824d6c23e06d4bb95c71e7d704537c9d9272f488ac03a370d448
-#5 DONE 0.0s
-
-#6 [server builder 2/8] WORKDIR /app
-#6 CACHED
-
-#7 [server internal] load build context
-#7 transferring context: 992B done
-#7 DONE 0.0s
-
-#8 [server builder 3/8] COPY package.json package-lock.json* ./
-#8 DONE 0.1s
-
-#9 [server builder 4/8] RUN npm ci
-#9 ...
-
-#10 [server stage-1 4/7] RUN npm ci --omit=dev
+[91msh: tsc: not found
+[0mThe command '/bin/sh -c npm run build' returned a non-zero code: 127

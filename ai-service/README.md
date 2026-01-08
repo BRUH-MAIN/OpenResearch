@@ -1,21 +1,42 @@
 # OpenResearch AI Service
 
-A minimal async FastAPI service providing AI-powered features for the OpenResearch platform.
+FastAPI service providing AI-powered features for the OpenResearch platform using Google Gemini 2.0 Flash.
 
-## Features
+## 🎯 Features
 
-- **Chat Q&A** - Ask questions with session context (messages + linked papers)
-- **Session Summarization** - Generate summaries with key points
+- **Chat Q&A** - Answer questions with session context (messages + linked papers)
+- **Session Summarization** - Generate discussion summaries with key points
+- **Contextual AI** - Fetch session messages and papers from PostgreSQL
 - **Health Checks** - Monitor service and dependency status
+- **Async Operations** - Non-blocking I/O with asyncio and SQLAlchemy
 
-## Quick Start
+## 🏗️ Architecture
+
+```
+┌─────────────┐
+│  FastAPI    │ ← HTTP requests from Node.js server
+│  (Port 8000)│
+└──────┬──────┘
+       │
+       ├─────▶ Google Gemini 2.0 Flash SDK
+       │
+       └─────▶ PostgreSQL (async SQLAlchemy)
+               - Fetch session messages
+               - Fetch linked papers
+```
+
+## 🚀 Quick Start
 
 ### 1. Install Dependencies
 
 ```bash
 cd ai-service
+
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -23,7 +44,21 @@ pip install -r requirements.txt
 
 ```bash
 cp .env.example .env
-# Edit .env with your GEMINI_API_KEY and DATABASE_URL
+nano .env
+```
+
+Required variables:
+- `GEMINI_API_KEY` - Get from [Google AI Studio](https://aistudio.google.com/apikey)
+- `DATABASE_URL` - PostgreSQL connection string (same as server)
+- `GEMINI_MODEL` - Default: `gemini-2.0-flash-exp`
+- `DEBUG` - Set to `true` for verbose logging
+
+Example `.env`:
+```env
+GEMINI_API_KEY=your-gemini-api-key-here
+DATABASE_URL=postgresql://postgres:password@localhost:5432/openresearch
+GEMINI_MODEL=gemini-2.0-flash-exp
+DEBUG=false
 ```
 
 ### 3. Run the Service
@@ -42,71 +77,198 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 # Health check
 curl http://localhost:8000/health
 
-# Test AI generation (no context needed)
-curl -X POST "http://localhost:8000/test?question=What%20is%20AI"
+# Test AI generation (no database context)
+curl -X POST "http://localhost:8000/test" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is AI?"}'
 
 # Chat Q&A with session context
-curl -X POST http://localhost:8000/chat \
+curl -X POST "http://localhost:8000/chat" \
   -H "Content-Type: application/json" \
-  -d '{"question": "What have we discussed?", "session_id": "your-session-id"}'
+  -d '{
+    "question": "What have we discussed about neural networks?",
+    "session_id": "your-session-uuid"
+  }'
 
-# Session summary
-curl -X POST http://localhost:8000/summarize \
+# Generate session summary
+curl -X POST "http://localhost:8000/summarize" \
   -H "Content-Type: application/json" \
-  -d '{"session_id": "your-session-id"}'
+  -d '{"session_id": "your-session-uuid"}'
 ```
 
-## API Documentation
+## 📚 API Documentation
 
 Once running, visit:
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+- **Swagger UI**: http://localhost:8000/docs (Interactive API docs)
+- **ReDoc**: http://localhost:8000/redoc (Alternative documentation)
+- **OpenAPI JSON**: http://localhost:8000/openapi.json
 
-## Endpoints
+## 📡 Endpoints
 
-| Method | Endpoint | Description |
-|--------|----------|-------------|
-| GET | `/health` | Service health check |
-| POST | `/chat` | Chat Q&A with session context |
-| POST | `/summarize` | Generate session summary |
-| POST | `/test` | Test AI without context |
+| Method | Endpoint | Description | Request Body |
+|--------|----------|-------------|--------------|
+| GET | `/health` | Service health check | None |
+| POST | `/test` | Test AI without context | `{"question": "..."}` |
+| POST | `/chat` | Chat with session context | `{"question": "...", "session_id": "uuid"}` |
+| POST | `/summarize` | Generate session summary | `{"session_id": "uuid"}` |
 
-## Docker
+### Request/Response Examples
 
-```bash
-# Build image
-docker build -t openresearch-ai-service .
+#### Chat Endpoint
+```json
+// Request
+POST /chat
+{
+  "question": "What did we discuss about transformers?",
+  "session_id": "123e4567-e89b-12d3-a456-426614174000"
+}
 
-# Run container
-docker run -p 8000:8000 \
-  -e GEMINI_API_KEY=your-key \
-  -e DATABASE_URL=postgresql://... \
-  openresearch-ai-service
+// Response
+{
+  "answer": "Based on your discussion, you covered...",
+  "session_id": "123e4567-e89b-12d3-a456-426614174000",
+  "context_used": {
+    "messages": 15,
+    "papers": 2
+  }
+}
 ```
 
-## Integration with Node.js Server
+#### Summarize Endpoint
+```json
+// Request
+POST /summarize
+{
+  "session_id": "123e4567-e89b-12d3-a456-426614174000"
+}
 
-The Node.js server can call this service:
+// Response
+{
+  "summary": "## Session Summary\n\n**Key Topics Discussed:**\n- ...",
+  "session_id": "123e4567-e89b-12d3-a456-426614174000",
+  "message_count": 15,
+  "paper_count": 2
+}
+```
+
+## 🔗 Integration with Node.js Server
+
+The Node.js server (`server/`) proxies AI requests through `/api/ai/*` endpoints:
 
 ```typescript
-// In your Node.js server
-const response = await fetch('http://ai-service:8000/chat', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    question: userQuestion,
-    session_id: sessionId,
-  }),
+// In server/src/routes/ai.ts
+router.post('/chat', async (req, res) => {
+  const response = await fetch('http://localhost:8000/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      question: req.body.question,
+      session_id: req.body.sessionId,
+    }),
+  });
+  const data = await response.json();
+  res.json(data);
 });
-
-const { answer, sources, latency_ms } = await response.json();
 ```
 
-## Environment Variables
+Clients call proxied endpoints:
+- `POST /api/ai/chat` - Proxied to AI service `/chat`
+- `POST /api/ai/summarize` - Proxied to AI service `/summarize`  
+- `POST /api/ai/test` - Proxied to AI service `/test`
+
+## 📁 Project Structure
+
+```
+ai-service/
+├── app/
+│   ├── main.py           # FastAPI app & endpoints
+│   ├── config.py         # Settings & environment vars
+│   ├── database.py       # Async SQLAlchemy connection
+│   ├── gemini_client.py  # Google Gemini SDK wrapper
+│   └── models.py         # Pydantic request/response models
+├── requirements.txt      # Python dependencies
+├── .env.example         # Environment template
+└── README.md            # This file
+```
+
+## 📚 Dependencies
+
+- `fastapi` - Modern async web framework
+- `uvicorn[standard]` - ASGI server
+- `google-genai` - Google Gemini SDK
+- `sqlalchemy[asyncio]` - Async ORM
+- `asyncpg` - PostgreSQL async driver
+- `pydantic` - Data validation & settings
+- `tenacity` - Retry logic for API calls
+- `httpx` - Async HTTP client
+
+## 🔧 Environment Variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `GEMINI_API_KEY` | Yes | - | Google Gemini API key |
-| `GEMINI_MODEL` | No | `gemini-2.0-flash` | Model to use |
-| `DATABASE_URL` | No | - | PostgreSQL connection string |
+| `GEMINI_MODEL` | No | `gemini-2.0-flash-exp` | Model to use |
+| `DATABASE_URL` | Yes | - | PostgreSQL connection string |
 | `DEBUG` | No | `false` | Enable debug logging |
+| `MAX_CONTEXT_MESSAGES` | No | `50` | Max messages to include |
+| `MAX_CONTEXT_TOKENS` | No | `8000` | Max tokens for context |
+| `REQUEST_TIMEOUT` | No | `30` | API request timeout (seconds) |
+
+## 🚀 Production Deployment
+
+### Run with Uvicorn
+
+```bash
+# Activate virtual environment
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start production server
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+### Environment Setup
+
+Set production environment variables:
+```bash
+export GEMINI_API_KEY=your-production-key
+export DATABASE_URL=postgresql://user:pass@host:5432/db
+export GEMINI_MODEL=gemini-2.0-flash-exp
+export DEBUG=false
+```
+
+### Recommended Hosting
+- **Platform**: Railway, Render, Google Cloud Run, AWS ECS
+- **Python**: 3.12+
+- **Memory**: 512MB minimum, 1GB recommended
+- **Reverse Proxy**: Not required (FastAPI handles HTTPS)
+
+### Health Checks
+
+Configure health check endpoint: `GET /health`
+
+Expected response:
+```json
+{
+  "status": "healthy",
+  "service": "openresearch-ai",
+  "gemini_configured": true,
+  "database_connected": true
+}
+```
+
+## 🧪 Testing
+
+```bash
+# Run tests (when added)
+python -m pytest
+
+# With coverage
+python -m pytest --cov=app
+```
+
+## 📄 License
+
+MIT License - See root LICENSE file for details.

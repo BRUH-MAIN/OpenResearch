@@ -1,0 +1,36 @@
+# Git
+.git/
+.gitignore
+
+# Node modules (handled per service)
+**/node_modules/
+
+# Python virtual envs
+**/.venv/
+**/venv/
+
+# Build artifacts
+**/.next/
+**/dist/
+**/__pycache__/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+**/npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage and tests
+**/coverage/
+**/.pytest_cache/

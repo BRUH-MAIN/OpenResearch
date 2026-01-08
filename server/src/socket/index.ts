@@ -3,7 +3,7 @@ import { Server as HttpServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { db, messages, sessions, groupMembers, users } from '../db/index.js';
 import { eq, and, desc } from 'drizzle-orm';
-import { aiClient } from '../services/aiClient.js';
+import { aiClient, validateAiTrigger } from '../services/aiClient.js';
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -13,6 +13,21 @@ interface AuthenticatedSocket extends Socket {
 interface JWTPayload {
   userId: string;
   email: string;
+}
+
+interface PaperQuestionPayload {
+  paperId: string;
+  question: string;
+  groupId: string;
+  sessionId: string;
+  userId?: string;
+}
+
+interface PaperSummarizePayload {
+  paperId: string;
+  groupId: string;
+  sessionId: string;
+  userId?: string;
 }
 
 export function initializeSocket(httpServer: HttpServer) {
@@ -182,30 +197,50 @@ export function initializeSocket(httpServer: HttpServer) {
         io.to(`session:${sessionId}`).emit('message:new', messageWithUser);
 
         // Check for @ai mention and trigger AI response
-        if (content.trim().toLowerCase().startsWith('@ai')) {
+        if (content.toLowerCase().includes('@ai')) {
           try {
-            // Process @ai message
+            // Pre-check AI service health before making request
+            const isAvailable = await aiClient.isAvailable();
+            if (!isAvailable) {
+              // Emit a user-friendly error without crashing
+              socket.emit('ai:error', { 
+                message: 'AI service is not available. Please ensure GEMINI_API_KEY is configured.',
+                code: 'AI_NOT_CONFIGURED',
+                recoverable: true
+              });
+              return;
+            }
+
+            // Get group ID from session for group-isolated RAG
             const aiResponse = await aiClient.processAtAiMessage(
               content,
               sessionId,
-              socket.userId!
+              socket.userId!,
+              session.groupId // Pass groupId for group-isolated RAG
             );
 
             if (aiResponse) {
+              // Determine answer field based on response type
+              const answerText = 'text' in aiResponse ? aiResponse.text : aiResponse.answer;
+              
+              // Extract metadata safely - GroupAIChatResponse has metadata, ChatResponse doesn't
+              const hasMetadata = 'metadata' in aiResponse && aiResponse.metadata;
+              const metadataObj = hasMetadata ? aiResponse.metadata as Record<string, unknown> : {};
+              
               // Save AI response to database
               const [aiMessage] = await db
                 .insert(messages)
                 .values({
                   sessionId,
                   userId: null, // AI messages have no user
-                  content: aiResponse.answer,
+                  content: answerText,
                   type: 'ai',
                   metadata: {
-                    sources: aiResponse.sources,
-                    model: aiResponse.model,
+                    sources: 'sources' in aiResponse ? aiResponse.sources : [],
+                    model: (metadataObj.model as string) || ('model' in aiResponse ? aiResponse.model : 'gemini'),
                     latency_ms: aiResponse.latency_ms,
-                    context_messages_used: aiResponse.context_messages_used,
-                    papers_used: aiResponse.papers_used,
+                    context_items_used: (metadataObj.context_items_used as number) || 0,
+                    vector_ids_used: (metadataObj.vector_ids_used as string[]) || [],
                   },
                 })
                 .returning();
@@ -221,14 +256,205 @@ export function initializeSocket(httpServer: HttpServer) {
             }
           } catch (aiError) {
             console.error('AI response error:', aiError);
-            // Send error as AI message so user sees feedback
+            // Send structured error so client can handle gracefully
             const errorMessage = aiError instanceof Error ? aiError.message : 'AI service unavailable';
-            socket.emit('error', { message: `AI: ${errorMessage}` });
+            const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
+            socket.emit('ai:error', { 
+              message: isTimeout ? 'AI request timed out. Please try again.' : `AI Error: ${errorMessage}`,
+              code: isTimeout ? 'AI_TIMEOUT' : 'AI_ERROR',
+              recoverable: true
+            });
           }
         }
       } catch (error) {
         console.error('Error sending message:', error);
         socket.emit('error', { message: 'Failed to send message' });
+      }
+    });
+
+    // Paper Question - requires @ai trigger
+    socket.on('paper:question', async (data: PaperQuestionPayload) => {
+      try {
+        const { paperId, question, groupId, sessionId } = data;
+
+        // Validate @ai trigger - CRITICAL
+        if (!question.toLowerCase().includes('@ai')) {
+          socket.emit('ai:error', { 
+            message: 'Question must contain @ai trigger. AI only responds when triggered by @ai.',
+            code: 'MISSING_AI_TRIGGER',
+            recoverable: true
+          });
+          return;
+        }
+
+        // Pre-check AI service availability
+        const isAvailable = await aiClient.isAvailable();
+        if (!isAvailable) {
+          socket.emit('ai:error', { 
+            message: 'AI service is not available. Please ensure GEMINI_API_KEY is configured.',
+            code: 'AI_NOT_CONFIGURED',
+            recoverable: true
+          });
+          return;
+        }
+
+        // Verify access to group
+        const [membership] = await db
+          .select()
+          .from(groupMembers)
+          .where(
+            and(
+              eq(groupMembers.groupId, groupId),
+              eq(groupMembers.userId, socket.userId!)
+            )
+          )
+          .limit(1);
+
+        if (!membership) {
+          socket.emit('error', { message: 'Access denied to group' });
+          return;
+        }
+
+        // Call AI service
+        const response = await aiClient.paperQuestion({
+          paper_id: paperId,
+          question,
+          group_id: groupId,
+          session_id: sessionId,
+          user_id: socket.userId!,
+        });
+
+        // Emit answer
+        socket.emit('paper:answer', {
+          paperId,
+          question,
+          answer: response.answer,
+          sources: response.sources,
+          metadata: response.metadata,
+          latency_ms: response.latency_ms,
+        });
+
+        // Also broadcast to session room if in a session
+        if (sessionId) {
+          // Save as message
+          const [aiMessage] = await db
+            .insert(messages)
+            .values({
+              sessionId,
+              userId: null,
+              content: `**Paper Q&A**\n\n**Q:** ${question.replace(/@ai/gi, '').trim()}\n\n**A:** ${response.answer}`,
+              type: 'ai',
+              metadata: {
+                paper_id: paperId,
+                sources: response.sources,
+                artifact_type: 'paper_qa',
+              },
+            })
+            .returning();
+
+          io.to(`session:${sessionId}`).emit('message:new', {
+            ...aiMessage,
+            userName: 'AI Assistant',
+            userAvatar: null,
+          });
+        }
+      } catch (error) {
+        console.error('Paper question error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to process question';
+        const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
+        socket.emit('ai:error', { 
+          message: isTimeout ? 'AI request timed out. Please try again.' : errorMessage,
+          code: isTimeout ? 'AI_TIMEOUT' : 'AI_ERROR',
+          recoverable: true
+        });
+      }
+    });
+
+    // Paper Summarize - requires @ai trigger
+    socket.on('paper:summarize', async (data: PaperSummarizePayload) => {
+      try {
+        const { paperId, groupId, sessionId } = data;
+
+        // Pre-check AI service availability
+        const isAvailable = await aiClient.isAvailable();
+        if (!isAvailable) {
+          socket.emit('ai:error', { 
+            message: 'AI service is not available. Please ensure GEMINI_API_KEY is configured.',
+            code: 'AI_NOT_CONFIGURED',
+            recoverable: true
+          });
+          return;
+        }
+
+        // Verify access to group
+        const [membership] = await db
+          .select()
+          .from(groupMembers)
+          .where(
+            and(
+              eq(groupMembers.groupId, groupId),
+              eq(groupMembers.userId, socket.userId!)
+            )
+          )
+          .limit(1);
+
+        if (!membership) {
+          socket.emit('error', { message: 'Access denied to group' });
+          return;
+        }
+
+        // Call AI service (trigger is always set to @ai summarize)
+        const response = await aiClient.paperSummarize({
+          paper_id: paperId,
+          group_id: groupId,
+          session_id: sessionId,
+          user_id: socket.userId!,
+          trigger: '@ai summarize',
+        });
+
+        // Emit summary
+        socket.emit('paper:summary', {
+          paperId,
+          summary: response.summary,
+          keyPoints: response.key_points,
+          metadata: response.metadata,
+          latency_ms: response.latency_ms,
+        });
+
+        // Also broadcast to session room if in a session
+        if (sessionId) {
+          const summaryContent = `**Paper Summary**\n\n${response.summary}\n\n**Key Points:**\n${response.key_points.map(p => `- ${p}`).join('\n')}`;
+          
+          const [aiMessage] = await db
+            .insert(messages)
+            .values({
+              sessionId,
+              userId: null,
+              content: summaryContent,
+              type: 'ai',
+              metadata: {
+                paper_id: paperId,
+                key_points: response.key_points,
+                artifact_type: 'paper_summary',
+              },
+            })
+            .returning();
+
+          io.to(`session:${sessionId}`).emit('message:new', {
+            ...aiMessage,
+            userName: 'AI Assistant',
+            userAvatar: null,
+          });
+        }
+      } catch (error) {
+        console.error('Paper summarize error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to summarize paper';
+        const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
+        socket.emit('ai:error', { 
+          message: isTimeout ? 'AI request timed out. Please try again.' : errorMessage,
+          code: isTimeout ? 'AI_TIMEOUT' : 'AI_ERROR',
+          recoverable: true
+        });
       }
     });
 
