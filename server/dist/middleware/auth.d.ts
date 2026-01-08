@@ -11,7 +11,6 @@ export interface AuthRequest extends Request {
     };
 }
 export declare const authenticate: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
-export declare const optionalAuth: (req: AuthRequest, res: Response, next: NextFunction) => Promise<void>;
 export declare const generateTokens: (userId: string, email: string) => {
     accessToken: string;
     refreshToken: string;

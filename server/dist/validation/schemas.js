@@ -81,10 +81,13 @@ export const sendMessageSchema = z.object({
 });
 // Paper validation schemas
 export const searchPapersSchema = z.object({
-    q: z.string().min(1, 'Search query is required').max(500),
+    query: z.string().min(1, 'Search query is required').max(500).optional(),
+    q: z.string().min(1, 'Search query is required').max(500).optional(),
     limit: z.string().regex(/^\d+$/).transform(Number).optional(),
     offset: z.string().regex(/^\d+$/).transform(Number).optional(),
-    source: z.enum(['local', 'semantic_scholar', 'arxiv', 'all']).optional(),
+    source: z.enum(['local', 'arxiv']).optional(), // Keep for backward compatibility
+}).refine(data => data.query || data.q, {
+    message: 'Search query is required (use query or q parameter)',
 });
 export const savePaperSchema = z.object({
     paperId: z.string().uuid('Invalid paper ID').optional(),

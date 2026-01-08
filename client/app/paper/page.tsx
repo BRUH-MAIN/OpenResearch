@@ -8,7 +8,7 @@ import { useAuthStore } from '@/lib/auth';
 import { api, Paper, ExternalPaper, SavedPaper } from '@/lib/api';
 import { toast } from '@/lib/toast';
 
-type SearchSource = 'local' | 'semantic_scholar' | 'arxiv' | 'all';
+type SearchSource = 'local' | 'arxiv';
 
 export default function PaperPage() {
   const { accessToken } = useAuthStore();
@@ -112,8 +112,7 @@ export default function PaperPage() {
     try {
       setIsSearching(true);
       setError(null);
-      const source = searchSource === 'all' ? 'all' : searchSource;
-      const results = await api.searchExternalPapers(accessToken, searchQuery, source as 'all' | 'semantic_scholar' | 'arxiv');
+      const results = await api.searchExternalPapers(accessToken, searchQuery, 'arxiv');
       setExternalResults(results);
       if (results.length === 0) {
         toast.info('No papers found for this query');
@@ -217,21 +216,6 @@ export default function PaperPage() {
           </Button>
           <Button
             size="sm"
-            variant={searchSource === 'all' ? 'primary' : 'ghost'}
-            onClick={() => setSearchSource('all')}
-          >
-            <Globe size={14} className="mr-1" />
-            All External
-          </Button>
-          <Button
-            size="sm"
-            variant={searchSource === 'semantic_scholar' ? 'primary' : 'ghost'}
-            onClick={() => setSearchSource('semantic_scholar')}
-          >
-            Semantic Scholar
-          </Button>
-          <Button
-            size="sm"
             variant={searchSource === 'arxiv' ? 'primary' : 'ghost'}
             onClick={() => setSearchSource('arxiv')}
           >
@@ -289,8 +273,8 @@ export default function PaperPage() {
                         <div className="flex justify-between items-start">
                           <div className="flex-1 pr-4">
                             <div className="flex items-center gap-2 mb-2">
-                              <Badge variant={paper.source === 'arxiv' ? 'warning' : 'primary'}>
-                                {paper.source === 'arxiv' ? 'arXiv' : 'Semantic Scholar'}
+                              <Badge variant="warning">
+                                arXiv
                               </Badge>
                             </div>
                             <h3 className="text-lg font-bold text-white mb-2">

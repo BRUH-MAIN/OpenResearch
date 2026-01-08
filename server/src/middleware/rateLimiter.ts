@@ -25,18 +25,6 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Rate limiter for AI endpoints (more restrictive due to cost)
-export const aiLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 30, // 30 AI requests per minute
-  message: {
-    error: 'AI request limit exceeded, please wait before trying again',
-    retryAfter: '1 minute',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // Rate limiter for search endpoints
 export const searchLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
@@ -44,18 +32,6 @@ export const searchLimiter = rateLimit({
   message: {
     error: 'Search rate limit exceeded, please slow down',
     retryAfter: '1 minute',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-// Strict limiter for password reset
-export const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 3, // 3 password reset attempts per hour
-  message: {
-    error: 'Too many password reset attempts, please try again later',
-    retryAfter: '1 hour',
   },
   standardHeaders: true,
   legacyHeaders: false,

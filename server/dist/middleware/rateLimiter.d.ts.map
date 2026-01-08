@@ -1,1 +1,1 @@
-{"version":3,"file":"rateLimiter.d.ts","sourceRoot":"","sources":["../../src/middleware/rateLimiter.ts"],"names":[],"mappings":"AAGA,eAAO,MAAM,WAAW,sDAUtB,CAAC;AAGH,eAAO,MAAM,UAAU,sDASrB,CAAC;AAGH,eAAO,MAAM,SAAS,sDASpB,CAAC;AAGH,eAAO,MAAM,aAAa,sDASxB,CAAC;AAGH,eAAO,MAAM,oBAAoB,sDAS/B,CAAC"}
+{"version":3,"file":"rateLimiter.d.ts","sourceRoot":"","sources":["../../src/middleware/rateLimiter.ts"],"names":[],"mappings":"AAGA,eAAO,MAAM,WAAW,sDAUtB,CAAC;AAGH,eAAO,MAAM,UAAU,sDASrB,CAAC;AAGH,eAAO,MAAM,aAAa,sDASxB,CAAC"}

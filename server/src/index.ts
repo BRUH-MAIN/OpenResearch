@@ -20,6 +20,9 @@ import sessionRoutes from './routes/sessions.js';
 import paperRoutes from './routes/papers.js';
 import healthRoutes from './routes/health.js';
 import aiRoutes from './routes/ai.js';
+import groupPapersRoutes from './routes/groupPapers.js';
+import reportsRoutes from './routes/reports.js';
+import recommendationsRoutes from './routes/recommendations.js';
 
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/error.js';
@@ -78,17 +81,15 @@ app.use('/api', apiLimiter);
 // Health check routes (no rate limiting)
 app.use('/health', healthRoutes);
 
-// Legacy health check endpoint
-app.get('/health-legacy', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);
+app.use('/api/groups', groupPapersRoutes); // Group papers and AI features
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/papers', paperRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/reports', reportsRoutes);
+app.use('/api/recommendations', recommendationsRoutes);
 
 // Error handlers
 app.use(notFoundHandler);

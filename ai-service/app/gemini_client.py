@@ -1,5 +1,6 @@
 """Gemini AI client wrapper with error handling and retries."""
 
+import asyncio
 import time
 from typing import Optional
 from google import genai
@@ -22,13 +23,16 @@ class GeminiClient:
     def initialize(self) -> bool:
         """Initialize the Gemini client. Returns True if successful."""
         if not self.api_key:
+            print("⚠️  GEMINI_API_KEY not set - AI features will be unavailable")
             return False
         try:
+            # Initialize client with API key using new Google GenAI SDK
             self.client = genai.Client(api_key=self.api_key)
             self._initialized = True
+            print(f"✅ Gemini client initialized with model: {self.model_name}")
             return True
         except Exception as e:
-            print(f"Failed to initialize Gemini client: {e}")
+            print(f"❌ Failed to initialize Gemini client: {e}")
             return False
     
     @property
@@ -36,6 +40,46 @@ class GeminiClient:
         """Check if the client is properly configured."""
         return self._initialized and self.client is not None
     
+    def _sync_generate(
+        self,
+        prompt: str,
+        system_instruction: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 2048,
+    ) -> str:
+        """
+        Synchronous generate call using new Google GenAI SDK.
+        Reference pattern:
+            client = genai.Client()
+            response = client.models.generate_content(
+                model="gemini-3-flash-preview",
+                contents="...",
+            )
+        """
+        if not self.is_configured:
+            raise RuntimeError("Gemini client not initialized. Please set GEMINI_API_KEY.")
+        
+        # Build generation config
+        config = types.GenerateContentConfig(
+            temperature=temperature,
+            max_output_tokens=max_tokens,
+        )
+        
+        if system_instruction:
+            config.system_instruction = system_instruction
+        
+        # Use new SDK pattern - synchronous call
+        response = self.client.models.generate_content(
+            model=self.model_name,
+            contents=prompt,
+            config=config,
+        )
+        
+        if response.text:
+            return response.text
+        else:
+            raise RuntimeError("Empty response from Gemini API")
+
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
@@ -49,36 +93,26 @@ class GeminiClient:
         max_tokens: int = 2048,
     ) -> tuple[str, int]:
         """
-        Generate a response from Gemini.
+        Generate a response from Gemini (async wrapper).
+        
+        Uses asyncio.to_thread to run sync SDK call without blocking.
         
         Returns:
             Tuple of (response_text, latency_ms)
         """
-        if not self.is_configured:
-            raise RuntimeError("Gemini client not initialized")
-        
         start_time = time.time()
         
-        config = types.GenerateContentConfig(
-            temperature=temperature,
-            max_output_tokens=max_tokens,
-        )
-        
-        if system_instruction:
-            config.system_instruction = system_instruction
-        
-        response = self.client.models.generate_content(
-            model=self.model_name,
-            contents=prompt,
-            config=config,
+        # Run sync call in thread pool to avoid blocking
+        response_text = await asyncio.to_thread(
+            self._sync_generate,
+            prompt,
+            system_instruction,
+            temperature,
+            max_tokens,
         )
         
         latency_ms = int((time.time() - start_time) * 1000)
-        
-        if response.text:
-            return response.text, latency_ms
-        else:
-            raise RuntimeError("Empty response from Gemini")
+        return response_text, latency_ms
     
     async def chat_qa(
         self,

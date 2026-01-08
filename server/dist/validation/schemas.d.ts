@@ -42,14 +42,13 @@ export declare const sendMessageSchema: z.ZodObject<{
     content: z.ZodString;
 }, z.core.$strip>;
 export declare const searchPapersSchema: z.ZodObject<{
-    q: z.ZodString;
+    query: z.ZodOptional<z.ZodString>;
+    q: z.ZodOptional<z.ZodString>;
     limit: z.ZodOptional<z.ZodPipe<z.ZodString, z.ZodTransform<number, string>>>;
     offset: z.ZodOptional<z.ZodPipe<z.ZodString, z.ZodTransform<number, string>>>;
     source: z.ZodOptional<z.ZodEnum<{
         local: "local";
-        semantic_scholar: "semantic_scholar";
         arxiv: "arxiv";
-        all: "all";
     }>>;
 }, z.core.$strip>;
 export declare const savePaperSchema: z.ZodObject<{

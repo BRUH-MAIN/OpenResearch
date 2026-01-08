@@ -216,9 +216,9 @@ class ApiClient {
     return this.request<string[]>('/api/papers/meta/tags', { token });
   }
 
-  // External Paper Search (Semantic Scholar + arXiv)
-  async searchExternalPapers(token: string, query: string, source: 'all' | 'semantic_scholar' | 'arxiv' = 'all', limit: number = 10) {
-    const params = new URLSearchParams({ query, source, limit: limit.toString() });
+  // External Paper Search (arXiv)
+  async searchExternalPapers(token: string, query: string, source: 'arxiv' = 'arxiv', limit: number = 10) {
+    const params = new URLSearchParams({ query, limit: limit.toString() });
     return this.request<ExternalPaper[]>(`/api/papers/search/external?${params.toString()}`, { token });
   }
 
@@ -283,6 +283,102 @@ class ApiClient {
       method: 'DELETE',
       token,
     });
+  }
+
+  // ==================== GROUP PAPERS (with RAG) ====================
+
+  async getGroupPapers(token: string, groupId: string) {
+    return this.request<GroupPaper[]>(`/api/groups/${groupId}/papers`, { token });
+  }
+
+  async addPaperToGroup(token: string, groupId: string, paperId: string, notes?: string) {
+    return this.request<GroupPaper & { message: string }>(`/api/groups/${groupId}/papers`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ paperId, notes }),
+    });
+  }
+
+  async removePaperFromGroup(token: string, groupId: string, paperId: string) {
+    return this.request<{ message: string }>(`/api/groups/${groupId}/papers/${paperId}`, {
+      method: 'DELETE',
+      token,
+    });
+  }
+
+  async askPaperQuestion(token: string, groupId: string, paperId: string, question: string, sessionId?: string) {
+    return this.request<PaperQAResponse>(`/api/groups/${groupId}/papers/${paperId}/question`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ question, sessionId }),
+    });
+  }
+
+  async summarizePaper(token: string, groupId: string, paperId: string, sessionId?: string) {
+    return this.request<PaperSummaryResponse>(`/api/groups/${groupId}/papers/${paperId}/summarize`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ sessionId }),
+    });
+  }
+
+  async searchGroupVectors(token: string, groupId: string, query: string, options?: { limit?: number; contentTypes?: string[] }) {
+    return this.request<VectorSearchResponse>(`/api/groups/${groupId}/search`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ query, ...options }),
+    });
+  }
+
+  // ==================== RECOMMENDATIONS ====================
+
+  async getRecommendationsForUser(token: string, limit = 10) {
+    return this.request<RecommendationsResponse>(`/api/recommendations/user?limit=${limit}`, { token });
+  }
+
+  async getRecommendationsForGroup(token: string, groupId: string, limit = 10) {
+    return this.request<RecommendationsResponse>(`/api/recommendations/group/${groupId}?limit=${limit}`, { token });
+  }
+
+  async getSimilarPapers(token: string, paperId: string, options?: { groupId?: string; limit?: number }) {
+    const params = new URLSearchParams();
+    if (options?.groupId) params.set('groupId', options.groupId);
+    if (options?.limit) params.set('limit', options.limit.toString());
+    const queryString = params.toString() ? `?${params.toString()}` : '';
+    return this.request<SimilarPapersResponse>(`/api/recommendations/similar/${paperId}${queryString}`, { token });
+  }
+
+  async getTrendingPapers(token: string) {
+    return this.request<TrendingPapersResponse>('/api/recommendations/trending', { token });
+  }
+
+  // ==================== REPORTS ====================
+
+  async generateGroupReport(token: string, groupId: string, options?: ReportOptions) {
+    return this.request<ReportGenerateResponse>(`/api/reports/group/${groupId}/generate`, {
+      method: 'POST',
+      token,
+      body: JSON.stringify(options || {}),
+    });
+  }
+
+  async getGroupReports(token: string, groupId: string) {
+    return this.request<Report[]>(`/api/reports/group/${groupId}`, { token });
+  }
+
+  async getReport(token: string, reportId: string) {
+    return this.request<Report>(`/api/reports/${reportId}`, { token });
+  }
+
+  async deleteReport(token: string, reportId: string) {
+    return this.request<{ message: string }>(`/api/reports/${reportId}`, {
+      method: 'DELETE',
+      token,
+    });
+  }
+
+  getReportDownloadUrl(reportId: string): string {
+    return `${this.baseUrl}/api/reports/${reportId}/download`;
   }
 }
 
@@ -351,7 +447,7 @@ export interface Paper {
 }
 
 export interface ExternalPaper extends Paper {
-  source: 'semantic_scholar' | 'arxiv';
+  source: 'arxiv';
 }
 
 export interface SavedPaper extends Paper {
@@ -376,4 +472,109 @@ export interface GroupInvitation {
   status: 'pending' | 'accepted' | 'declined' | 'expired';
   expiresAt?: string;
   createdAt: string;
+}
+
+// ==================== GROUP PAPERS & AI TYPES ====================
+
+export interface GroupPaper {
+  id: string;
+  paperId: string;
+  notes?: string;
+  addedAt: string;
+  title: string;
+  authors: string[];
+  abstract: string;
+  tags: string[];
+  url?: string;
+  publishedDate?: string;
+}
+
+export interface PaperQAResponse {
+  answer: string;
+  paper_id: string;
+  group_id: string;
+  question: string;
+  context_sources: string[];
+  latency_ms: number;
+}
+
+export interface PaperSummaryResponse {
+  summary: string;
+  paper_id: string;
+  group_id: string;
+  key_points: string[];
+  latency_ms: number;
+}
+
+export interface VectorSearchResponse {
+  results: Array<{
+    id: string;
+    paper_id: string;
+    content_type: string;
+    content: string;
+    similarity: number;
+  }>;
+  total: number;
+  group_id: string;
+  latency_ms: number;
+}
+
+// ==================== RECOMMENDATIONS TYPES ====================
+
+export interface PaperRecommendation extends Paper {
+  score: number;
+  reason: string;
+}
+
+export interface RecommendationsResponse {
+  recommendations: PaperRecommendation[];
+  total: number;
+  source?: string;
+}
+
+export interface SimilarPapersResponse {
+  similar: Array<Paper & { similarityScore: number; reason: string }>;
+  total: number;
+  source: 'vector' | 'tags';
+}
+
+export interface TrendingPapersResponse {
+  trending: Array<Paper & { trendScore: number; groupCount?: number; reason: string }>;
+  total: number;
+}
+
+// ==================== REPORTS TYPES ====================
+
+export interface ReportOptions {
+  reportType?: 'weekly' | 'monthly' | 'custom';
+  dateRange?: {
+    start?: string;
+    end?: string;
+  };
+  sections?: string[];
+  customTitle?: string;
+  paperIds?: string[];
+}
+
+export interface ReportGenerateResponse {
+  reportId: string;
+  title: string;
+  status: 'completed' | 'generating' | 'failed';
+  downloadUrl: string | null;
+  reportPath?: string;
+  summary?: string;
+  createdAt: string;
+}
+
+export interface Report {
+  id: string;
+  groupId: string;
+  title: string;
+  reportType: 'weekly' | 'monthly' | 'custom';
+  status: 'completed' | 'generating' | 'failed';
+  filePath?: string;
+  metadata?: Record<string, unknown>;
+  createdBy: string;
+  createdAt: string;
+  downloadUrl?: string | null;
 }

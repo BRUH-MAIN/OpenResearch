@@ -1,5 +1,21 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey, boolean, customType } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
+// Custom vector type for pgvector
+const vector = customType({
+    dataType() {
+        return 'vector(1536)';
+    },
+    toDriver(value) {
+        return `[${value.join(',')}]`;
+    },
+    fromDriver(value) {
+        return value
+            .replace('[', '')
+            .replace(']', '')
+            .split(',')
+            .map((v) => parseFloat(v));
+    },
+});
 // Users table
 export const users = pgTable('users', {
     id: uuid('id').defaultRandom().primaryKey(),
@@ -242,6 +258,123 @@ export const groupInvitationsRelations = relations(groupInvitations, ({ one }) =
         fields: [groupInvitations.invitedUserId],
         references: [users.id],
         relationName: 'invitedUser',
+    }),
+}));
+// ============ Group Context Isolation Tables ============
+// Group Papers - papers assigned to specific groups
+export const groupPapers = pgTable('group_papers', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+    paperId: uuid('paper_id').notNull().references(() => papers.id, { onDelete: 'cascade' }),
+    addedBy: uuid('added_by').notNull().references(() => users.id, { onDelete: 'set null' }),
+    fullText: text('full_text'),
+    notes: text('notes'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+// Group Paper Vectors - vector embeddings for group-isolated RAG
+export const groupPaperVectors = pgTable('group_paper_vectors', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id').notNull(),
+    paperId: text('paper_id').notNull(),
+    contentType: varchar('content_type', { length: 50 }).notNull().default('paper'), // paper, qa, summary, memory, report
+    contentId: text('content_id'),
+    chunkIndex: integer('chunk_index').default(0),
+    content: text('content'),
+    embedding: vector('embedding'),
+    metadata: jsonb('metadata').$type(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+// Group Memory Notes - decisions, facts, internal guidelines
+export const groupMemoryNotes = pgTable('group_memory_notes', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    content: text('content').notNull(),
+    noteType: varchar('note_type', { length: 50 }).notNull().default('note'), // note, decision, guideline, fact
+    metadata: jsonb('metadata').$type(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+// AI Artifacts - stores AI-generated content
+export const aiArtifacts = pgTable('ai_artifacts', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+    sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+    paperId: uuid('paper_id').references(() => papers.id, { onDelete: 'set null' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    artifactType: varchar('artifact_type', { length: 50 }).notNull(), // qa, summary, session_summary, chat_response, report
+    prompt: text('prompt'),
+    content: text('content').notNull(),
+    metadata: jsonb('metadata').$type(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+// Group Reports - generated report metadata
+export const groupReports = pgTable('group_reports', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+    createdBy: uuid('created_by').notNull().references(() => users.id, { onDelete: 'set null' }),
+    title: varchar('title', { length: 500 }).notNull(),
+    reportType: varchar('report_type', { length: 50 }).notNull().default('weekly'), // 'weekly' | 'monthly' | 'custom'
+    status: varchar('status', { length: 50 }).notNull().default('generating'), // 'generating' | 'completed' | 'failed'
+    filePath: text('file_path'),
+    fileSize: integer('file_size'),
+    includeSessions: boolean('include_sessions').default(true),
+    includePapers: boolean('include_papers').default(true),
+    includeSummaries: boolean('include_summaries').default(true),
+    metadata: jsonb('metadata').$type(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+// Relations for new tables
+export const groupPapersRelations = relations(groupPapers, ({ one }) => ({
+    group: one(groups, {
+        fields: [groupPapers.groupId],
+        references: [groups.id],
+    }),
+    paper: one(papers, {
+        fields: [groupPapers.paperId],
+        references: [papers.id],
+    }),
+    addedByUser: one(users, {
+        fields: [groupPapers.addedBy],
+        references: [users.id],
+    }),
+}));
+export const groupMemoryNotesRelations = relations(groupMemoryNotes, ({ one }) => ({
+    group: one(groups, {
+        fields: [groupMemoryNotes.groupId],
+        references: [groups.id],
+    }),
+    user: one(users, {
+        fields: [groupMemoryNotes.userId],
+        references: [users.id],
+    }),
+}));
+export const aiArtifactsRelations = relations(aiArtifacts, ({ one }) => ({
+    group: one(groups, {
+        fields: [aiArtifacts.groupId],
+        references: [groups.id],
+    }),
+    session: one(sessions, {
+        fields: [aiArtifacts.sessionId],
+        references: [sessions.id],
+    }),
+    paper: one(papers, {
+        fields: [aiArtifacts.paperId],
+        references: [papers.id],
+    }),
+    user: one(users, {
+        fields: [aiArtifacts.userId],
+        references: [users.id],
+    }),
+}));
+export const groupReportsRelations = relations(groupReports, ({ one }) => ({
+    group: one(groups, {
+        fields: [groupReports.groupId],
+        references: [groups.id],
+    }),
+    createdByUser: one(users, {
+        fields: [groupReports.createdBy],
+        references: [users.id],
     }),
 }));
 //# sourceMappingURL=schema.js.map

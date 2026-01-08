@@ -18,30 +18,7 @@ export const logger = pino({
     },
     base: isProduction ? { pid: process.pid } : undefined,
 });
-// Create child loggers for different contexts
-export const dbLogger = logger.child({ context: 'database' });
+// Create child logger for auth context
 export const authLogger = logger.child({ context: 'auth' });
-export const socketLogger = logger.child({ context: 'socket' });
-export const aiLogger = logger.child({ context: 'ai' });
-// Request logging helper
-export const logRequest = (req, userId) => {
-    logger.info({
-        method: req.method,
-        url: req.url,
-        ip: req.ip,
-        userId,
-    }, 'Request received');
-};
-// Error logging helper
-export const logError = (error, context) => {
-    logger.error({
-        error: {
-            name: error.name,
-            message: error.message,
-            stack: error.stack,
-        },
-        ...context,
-    }, 'Error occurred');
-};
 export default logger;
 //# sourceMappingURL=logger.js.map

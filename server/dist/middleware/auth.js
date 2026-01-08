@@ -34,28 +34,6 @@ export const authenticate = async (req, res, next) => {
         next(error);
     }
 };
-export const optionalAuth = async (req, res, next) => {
-    try {
-        const authHeader = req.headers.authorization;
-        const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
-        if (token) {
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            const [user] = await db
-                .select({ id: users.id, email: users.email, name: users.name })
-                .from(users)
-                .where(eq(users.id, decoded.userId))
-                .limit(1);
-            if (user) {
-                req.user = user;
-            }
-        }
-        next();
-    }
-    catch {
-        // Token invalid, proceed without auth
-        next();
-    }
-};
 export const generateTokens = (userId, email) => {
     // Add a unique jti (JWT ID) to ensure tokens are unique even when generated at the same second
     const jti = crypto.randomUUID();

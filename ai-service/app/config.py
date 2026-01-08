@@ -1,7 +1,13 @@
 """Configuration for the AI service."""
 
-from pydantic_settings import BaseSettings
+import os
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
+
+# Get the directory where this config file is located
+CONFIG_DIR = Path(__file__).parent.parent
+ENV_FILE = CONFIG_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -11,9 +17,9 @@ class Settings(BaseSettings):
     app_name: str = "OpenResearch AI Service"
     debug: bool = False
     
-    # Gemini API
+    # Gemini API - using new Google GenAI SDK
     gemini_api_key: str = ""
-    gemini_model: str = "gemini-2.5-flash"
+    gemini_model: str = "gemini-3-flash-preview"
     
     # Database (read-only access to main DB for context)
     database_url: str = ""
@@ -26,9 +32,11 @@ class Settings(BaseSettings):
     max_context_tokens: int = 8000
     request_timeout: int = 30
     
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
+    model_config = SettingsConfigDict(
+        env_file=str(ENV_FILE),
+        env_file_encoding="utf-8",
+        extra="ignore",  # Ignore extra environment variables
+    )
 
 
 @lru_cache

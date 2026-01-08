@@ -9,5 +9,4 @@ export declare class AppError extends Error {
 export declare const errorHandler: (err: Error | AppError, req: Request, res: Response, next: NextFunction) => void;
 export declare const notFoundHandler: (req: Request, res: Response) => void;
 export declare const createError: (message: string, statusCode: number, code?: string, details?: unknown) => AppError;
-export declare const asyncHandler: (fn: Function) => (req: Request, res: Response, next: NextFunction) => void;
 //# sourceMappingURL=error.d.ts.map

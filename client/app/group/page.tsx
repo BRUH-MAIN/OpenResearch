@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
 import { Button, Card, CardBody, CardHeader, Avatar, Badge, Input } from '@/components/ui';
-import { Plus, MessageSquare, Calendar, Archive, ArrowLeft, Search, Loader2, Trash2, UserPlus, Users, Mail } from 'lucide-react';
+import { Plus, MessageSquare, Calendar, Archive, ArrowLeft, Search, Loader2, Trash2, UserPlus, Users, Mail, BookOpen, FileText, Sparkles } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { api, Group, Session, GroupMember } from '@/lib/api';
 import { toast } from '@/lib/toast';
@@ -195,6 +195,18 @@ function GroupPageContent() {
               </div>
             </div>
             <div className="flex gap-2">
+              <Link href={`/group-papers?groupId=${groupId}`}>
+                <Button variant="outline">
+                  <BookOpen size={18} className="mr-2" />
+                  Papers
+                </Button>
+              </Link>
+              <Link href={`/reports?groupId=${groupId}`}>
+                <Button variant="outline">
+                  <FileText size={18} className="mr-2" />
+                  Reports
+                </Button>
+              </Link>
               <Button variant="outline" onClick={() => setShowInviteModal(true)}>
                 <UserPlus size={18} className="mr-2" />
                 Invite

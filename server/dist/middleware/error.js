@@ -77,10 +77,4 @@ export const notFoundHandler = (req, res) => {
 export const createError = (message, statusCode, code, details) => {
     return new AppError(message, statusCode, code, details);
 };
-// Async error wrapper for route handlers
-export const asyncHandler = (fn) => {
-    return (req, res, next) => {
-        Promise.resolve(fn(req, res, next)).catch(next);
-    };
-};
 //# sourceMappingURL=error.js.map

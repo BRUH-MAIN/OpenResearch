@@ -10,12 +10,19 @@ interface TypingUser {
   userName: string;
 }
 
+interface AIError {
+  message: string;
+  code?: string;
+  recoverable?: boolean;
+}
+
 export function useSocket(sessionId: string | null) {
   const socketRef = useRef<Socket | null>(null);
   const { accessToken, isAuthenticated } = useAuthStore();
   const [isConnected, setIsConnected] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
+  const [aiError, setAIError] = useState<AIError | null>(null);
 
   // Connect socket
   useEffect(() => {
@@ -24,11 +31,16 @@ export function useSocket(sessionId: string | null) {
     const socket = io(SOCKET_URL, {
       auth: { token: accessToken },
       autoConnect: true,
+      reconnection: true,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
     });
 
     socket.on('connect', () => {
       console.log('Socket connected');
       setIsConnected(true);
+      setAIError(null); // Clear any previous AI errors on reconnect
     });
 
     socket.on('disconnect', () => {
@@ -38,6 +50,16 @@ export function useSocket(sessionId: string | null) {
 
     socket.on('error', (error: { message: string }) => {
       console.error('Socket error:', error.message);
+    });
+
+    // Handle AI-specific errors
+    socket.on('ai:error', (error: AIError) => {
+      console.warn('AI error:', error.message, error.code);
+      setAIError(error);
+      // Auto-clear recoverable errors after 10 seconds
+      if (error.recoverable) {
+        setTimeout(() => setAIError(null), 10000);
+      }
     });
 
     socket.on('message:new', (message: Message) => {
@@ -111,14 +133,21 @@ export function useSocket(sessionId: string | null) {
     setTypingUsers([]);
   }, []);
 
+  // Clear AI error
+  const clearAIError = useCallback(() => {
+    setAIError(null);
+  }, []);
+
   return {
     isConnected,
     messages,
     typingUsers,
+    aiError,
     sendMessage,
     startTyping,
     stopTyping,
     initMessages,
     clearMessages,
+    clearAIError,
   };
 }
