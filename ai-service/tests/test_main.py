@@ -40,8 +40,8 @@ class TestHealthEndpoint:
         response = client.get("/health")
         assert response.status_code == 200
         data = response.json()
-        # Should have database and gemini status
-        assert "gemini_configured" in data or "database_connected" in data
+        # Should have database and groq status
+        assert "groq_configured" in data or "database_connected" in data
 
 
 class TestGroupChatEndpoint:
@@ -72,12 +72,12 @@ class TestGroupChatEndpoint:
 
     def test_group_chat_accepts_ai_trigger(self):
         """Test that @ai trigger is accepted - route matches and validation passes"""
-        with patch("app.main.gemini_client") as mock_gemini, \
+        with patch("app.main.groq_client") as mock_groq, \
              patch("app.main.vector_store") as mock_vs, \
              patch("app.main.database") as mock_db:
-            mock_gemini.is_configured = True
-            mock_gemini.model_name = "gemini-pro"
-            mock_gemini.generate_with_context = AsyncMock(return_value=("Test response", 100))
+            mock_groq.is_configured = True
+            mock_groq.model_name = "llama-3.3-70b-versatile"
+            mock_groq.generate_with_context = AsyncMock(return_value=("Test response", 100))
             mock_vs.is_connected = False  # Skip vector store calls
             mock_db.is_connected = False  # Skip database calls
 
@@ -95,12 +95,12 @@ class TestGroupChatEndpoint:
 
     def test_group_chat_case_insensitive_trigger(self):
         """Test @ai trigger is case insensitive"""
-        with patch("app.main.gemini_client") as mock_gemini, \
+        with patch("app.main.groq_client") as mock_groq, \
              patch("app.main.vector_store") as mock_vs, \
              patch("app.main.database") as mock_db:
-            mock_gemini.is_configured = True
-            mock_gemini.model_name = "gemini-pro"
-            mock_gemini.generate_with_context = AsyncMock(return_value=("Test response", 100))
+            mock_groq.is_configured = True
+            mock_groq.model_name = "llama-3.3-70b-versatile"
+            mock_groq.generate_with_context = AsyncMock(return_value=("Test response", 100))
             mock_vs.is_connected = False
             mock_db.is_connected = False
 
@@ -119,12 +119,12 @@ class TestGroupChatEndpoint:
 
     def test_group_chat_isolates_context_by_group(self):
         """Test that group context is properly isolated - route and validation work"""
-        with patch("app.main.gemini_client") as mock_gemini, \
+        with patch("app.main.groq_client") as mock_groq, \
              patch("app.main.vector_store") as mock_vs, \
              patch("app.main.database") as mock_db:
-            mock_gemini.is_configured = True
-            mock_gemini.model_name = "gemini-pro"
-            mock_gemini.generate_with_context = AsyncMock(return_value=("Test response", 100))
+            mock_groq.is_configured = True
+            mock_groq.model_name = "llama-3.3-70b-versatile"
+            mock_groq.generate_with_context = AsyncMock(return_value=("Test response", 100))
             mock_vs.is_connected = False
             mock_db.is_connected = False
 
@@ -161,12 +161,12 @@ class TestPaperQAEndpoint:
 
     def test_paper_qa_accepts_valid_request(self):
         """Test paper Q&A accepts valid request with @ai"""
-        with patch("app.main.gemini_client") as mock_gemini, \
+        with patch("app.main.groq_client") as mock_groq, \
              patch("app.main.vector_store") as mock_vs, \
              patch("app.main.database") as mock_db:
-            mock_gemini.is_configured = True
-            mock_gemini.model_name = "gemini-pro"
-            mock_gemini.generate_with_context = AsyncMock(return_value=("Answer here", 100))
+            mock_groq.is_configured = True
+            mock_groq.model_name = "llama-3.3-70b-versatile"
+            mock_groq.generate_with_context = AsyncMock(return_value=("Answer here", 100))
             mock_vs.is_connected = False
             mock_db.is_connected = False
 
@@ -188,12 +188,12 @@ class TestPaperSummarizeEndpoint:
 
     def test_paper_summarize_works(self):
         """Test paper summarization route matches and validates @ai trigger"""
-        with patch("app.main.gemini_client") as mock_gemini, \
+        with patch("app.main.groq_client") as mock_groq, \
              patch("app.main.vector_store") as mock_vs, \
              patch("app.main.database") as mock_db:
-            mock_gemini.is_configured = True
-            mock_gemini.model_name = "gemini-pro"
-            mock_gemini.generate_summary = AsyncMock(
+            mock_groq.is_configured = True
+            mock_groq.model_name = "llama-3.3-70b-versatile"
+            mock_groq.generate_summary = AsyncMock(
                 return_value=({
                     "summary": "This paper explores...",
                     "key_points": ["Point 1", "Point 2"],
@@ -431,11 +431,11 @@ class TestErrorHandling:
 
     def test_server_errors_return_500(self):
         """Test server errors return 500 or 503 for uninitialized deps"""
-        with patch("app.main.gemini_client") as mock_gemini:
-            mock_gemini.generate_with_context = AsyncMock(
+        with patch("app.main.groq_client") as mock_groq:
+            mock_groq.generate_with_context = AsyncMock(
                 side_effect=Exception("Simulated error")
             )
-            mock_gemini.is_configured = True
+            mock_groq.is_configured = True
 
             response = client.post(
                 "/groups/test-group/ai-chat",

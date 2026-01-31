@@ -17,9 +17,9 @@ class Settings(BaseSettings):
     app_name: str = "OpenResearch AI Service"
     debug: bool = False
     
-    # Gemini API - using new Google GenAI SDK
-    gemini_api_key: str = ""
-    gemini_model: str = "gemini-3-flash-preview"
+    # Groq API
+    groq_api_key: str = ""
+    groq_model: str = "llama-3.3-70b-versatile"
     
     # Database (read-only access to main DB for context)
     database_url: str = ""

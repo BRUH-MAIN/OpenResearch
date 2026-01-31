@@ -210,15 +210,31 @@ class VectorStore:
             query, task_type="RETRIEVAL_QUERY"
         )
         
-        # Build query with filters
-        type_filter = ""
-        if content_types:
-            types_str = ",".join([f"'{t}'" for t in content_types])
-            type_filter = f"AND content_type IN ({types_str})"
+        # Build base query parameters
+        params = {
+            "group_id": group_id,
+            "query_embedding": f"[{','.join(map(str, query_embedding))}]",
+            "limit": limit,
+        }
         
-        paper_filter = ""
+        # Build WHERE clauses with proper parameterization
+        where_clauses = ["group_id = :group_id"]
+        
+        # Handle content_types filter - validate allowed values to prevent SQL injection
+        ALLOWED_CONTENT_TYPES = {"paper", "qa", "summary", "memory", "report", "chat_response"}
+        if content_types:
+            # Filter to only allowed content types
+            valid_types = [t for t in content_types if t in ALLOWED_CONTENT_TYPES]
+            if valid_types:
+                # Use ANY with array for safe parameterization
+                params["content_types"] = valid_types
+                where_clauses.append("content_type = ANY(:content_types)")
+        
         if paper_id:
-            paper_filter = "AND paper_id = :paper_id"
+            params["paper_id"] = paper_id
+            where_clauses.append("paper_id = :paper_id")
+        
+        where_sql = " AND ".join(where_clauses)
         
         async with self.session_factory() as session:
             result = await session.execute(
@@ -234,18 +250,11 @@ class VectorStore:
                         metadata,
                         embedding <=> :query_embedding AS distance
                     FROM group_paper_vectors
-                    WHERE group_id = :group_id
-                    {type_filter}
-                    {paper_filter}
+                    WHERE {where_sql}
                     ORDER BY embedding <=> :query_embedding
                     LIMIT :limit
                 """),
-                {
-                    "group_id": group_id,
-                    "query_embedding": f"[{','.join(map(str, query_embedding))}]",
-                    "limit": limit,
-                    "paper_id": paper_id
-                }
+                params
             )
             
             rows = result.fetchall()

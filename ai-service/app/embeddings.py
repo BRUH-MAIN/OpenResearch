@@ -1,35 +1,35 @@
-"""Embedding service using Gemini for text embeddings."""
+"""Embedding service using OpenAI for text embeddings."""
 
 import asyncio
 import time
 from typing import Optional
 import numpy as np
-from google import genai
+from openai import OpenAI
 
 from .config import get_settings
 
 
 class EmbeddingService:
-    """Service for generating text embeddings using Gemini."""
+    """Service for generating text embeddings using OpenAI."""
     
-    # text-embedding-004 produces 768-dimensional vectors
-    EMBEDDING_DIMENSION = 768
+    # text-embedding-3-small produces 1536-dimensional vectors
+    EMBEDDING_DIMENSION = 1536
     
     def __init__(self):
         settings = get_settings()
-        self.api_key = settings.gemini_api_key
-        self.client: Optional[genai.Client] = None
+        self.api_key = settings.groq_api_key  # You may want to add separate openai_api_key
+        self.client: Optional[OpenAI] = None
         self._initialized = False
         
     def initialize(self) -> bool:
         """Initialize the embedding client. Returns True if successful."""
         if not self.api_key:
-            print("⚠️  GEMINI_API_KEY not set - embedding service unavailable")
+            print("⚠️  API_KEY not set - embedding service unavailable")
             return False
         try:
-            self.client = genai.Client(api_key=self.api_key)
+            self.client = OpenAI(api_key=self.api_key)
             self._initialized = True
-            print("✅ Embedding service initialized")
+            print("✅ Embedding service initialized (OpenAI)")
             return True
         except Exception as e:
             print(f"❌ Failed to initialize embedding service: {e}")
@@ -46,20 +46,19 @@ class EmbeddingService:
         task_type: str = "RETRIEVAL_DOCUMENT"
     ) -> list[float]:
         """
-        Synchronous embedding call using new Google GenAI SDK.
+        Synchronous embedding call using OpenAI SDK.
         """
         if not self.is_configured:
             raise RuntimeError("Embedding service not initialized")
         
-        response = self.client.models.embed_content(
-            model="models/text-embedding-004",
-            contents=text[:8000],  # Limit text length
-            config={"task_type": task_type}
+        response = self.client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text[:8000],  # Limit text length
         )
         
         # Get the embedding from response
-        if hasattr(response, 'embeddings') and response.embeddings:
-            embedding = list(response.embeddings[0].values)
+        if response.data and len(response.data) > 0:
+            embedding = response.data[0].embedding
             return embedding
         else:
             raise RuntimeError("No embedding in response")
@@ -70,7 +69,7 @@ class EmbeddingService:
         task_type: str = "RETRIEVAL_DOCUMENT"
     ) -> tuple[list[float], int]:
         """
-        Generate embedding for text using Gemini (async wrapper).
+        Generate embedding for text (async wrapper).
         
         Args:
             text: Text to embed
