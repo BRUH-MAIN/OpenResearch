@@ -1,6 +1,6 @@
 # OpenResearch AI Service
 
-FastAPI service providing AI-powered features for the OpenResearch platform using Google Gemini 2.0 Flash.
+FastAPI service providing AI-powered features for the OpenResearch platform using Groq (Llama 3.3) for chat and OpenAI for embeddings.
 
 ## 🎯 Features
 
@@ -18,7 +18,9 @@ FastAPI service providing AI-powered features for the OpenResearch platform usin
 │  (Port 8000)│
 └──────┬──────┘
        │
-       ├─────▶ Google Gemini 2.0 Flash SDK
+       ├─────▶ Groq API (Llama 3.3 70B)
+       │
+       ├─────▶ OpenAI API (Embeddings)
        │
        └─────▶ PostgreSQL (async SQLAlchemy)
                - Fetch session messages
@@ -48,16 +50,16 @@ nano .env
 ```
 
 Required variables:
-- `GEMINI_API_KEY` - Get from [Google AI Studio](https://aistudio.google.com/apikey)
+- `GROQ_API_KEY` - Get from [Groq Console](https://console.groq.com/keys)
 - `DATABASE_URL` - PostgreSQL connection string (same as server)
-- `GEMINI_MODEL` - Default: `gemini-2.0-flash-exp`
+- `GROQ_MODEL` - Default: `llama-3.3-70b-versatile`
 - `DEBUG` - Set to `true` for verbose logging
 
 Example `.env`:
 ```env
-GEMINI_API_KEY=your-gemini-api-key-here
+GROQ_API_KEY=your-groq-api-key-here
 DATABASE_URL=postgresql://postgres:password@localhost:5432/openresearch
-GEMINI_MODEL=gemini-2.0-flash-exp
+GROQ_MODEL=llama-3.3-70b-versatile
 DEBUG=false
 ```
 
@@ -184,7 +186,8 @@ ai-service/
 │   ├── main.py           # FastAPI app & endpoints
 │   ├── config.py         # Settings & environment vars
 │   ├── database.py       # Async SQLAlchemy connection
-│   ├── gemini_client.py  # Google Gemini SDK wrapper
+│   ├── groq_client.py    # Groq SDK wrapper
+│   ├── embeddings.py     # OpenAI embeddings service
 │   └── models.py         # Pydantic request/response models
 ├── requirements.txt      # Python dependencies
 ├── .env.example         # Environment template
@@ -195,7 +198,8 @@ ai-service/
 
 - `fastapi` - Modern async web framework
 - `uvicorn[standard]` - ASGI server
-- `google-genai` - Google Gemini SDK
+- `groq` - Groq SDK for LLM inference
+- `openai` - OpenAI SDK for embeddings
 - `sqlalchemy[asyncio]` - Async ORM
 - `asyncpg` - PostgreSQL async driver
 - `pydantic` - Data validation & settings
@@ -206,8 +210,8 @@ ai-service/
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `GEMINI_API_KEY` | Yes | - | Google Gemini API key |
-| `GEMINI_MODEL` | No | `gemini-2.0-flash-exp` | Model to use |
+| `GROQ_API_KEY` | Yes | - | Groq API key |
+| `GROQ_MODEL` | No | `llama-3.3-70b-versatile` | Model to use |
 | `DATABASE_URL` | Yes | - | PostgreSQL connection string |
 | `DEBUG` | No | `false` | Enable debug logging |
 | `MAX_CONTEXT_MESSAGES` | No | `50` | Max messages to include |
@@ -233,9 +237,9 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 
 Set production environment variables:
 ```bash
-export GEMINI_API_KEY=your-production-key
+export GROQ_API_KEY=your-production-key
 export DATABASE_URL=postgresql://user:pass@host:5432/db
-export GEMINI_MODEL=gemini-2.0-flash-exp
+export GROQ_MODEL=llama-3.3-70b-versatile
 export DEBUG=false
 ```
 
@@ -254,7 +258,7 @@ Expected response:
 {
   "status": "healthy",
   "service": "openresearch-ai",
-  "gemini_configured": true,
+  "groq_configured": true,
   "database_connected": true
 }
 ```

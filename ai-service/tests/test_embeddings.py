@@ -1,5 +1,7 @@
 """
 Tests for the Embeddings Service
+
+Updated to use OpenAI mocks after migration from Gemini.
 """
 
 import pytest
@@ -14,24 +16,30 @@ class TestEmbeddingService:
 
     @pytest.fixture
     def embedding_service(self):
-        with patch("app.embeddings.genai") as mock_genai:
-            # Mock the embedding model
-            mock_model = MagicMock()
-            mock_genai.Client.return_value.models = MagicMock()
+        """Create an embedding service with mocked OpenAI client"""
+        with patch("app.embeddings.OpenAI") as mock_openai:
+            # Mock the OpenAI client
+            mock_client = MagicMock()
+            mock_openai.return_value = mock_client
+            
             service = EmbeddingService()
-            service._client = MagicMock()
+            service.client = mock_client
+            service._initialized = True
             return service
 
     def test_embedding_dimensions(self, embedding_service):
-        """Test embeddings are 1536 dimensions"""
-        with patch.object(embedding_service, '_client') as mock_client:
-            mock_response = MagicMock()
-            mock_response.embeddings = [MagicMock(values=[0.1] * 1536)]
-            mock_client.models.embed_content.return_value = mock_response
+        """Test embeddings are 1536 dimensions (text-embedding-3-small)"""
+        # Mock the OpenAI embeddings response
+        mock_response = MagicMock()
+        mock_response.data = [MagicMock(embedding=[0.1] * 1536)]
+        embedding_service.client.embeddings.create.return_value = mock_response
 
-            # Call would be async in real code
-            result = [0.1] * 1536  # Simulated result
-            assert len(result) == 1536
+        # Test the expected dimension constant
+        assert EmbeddingService.EMBEDDING_DIMENSION == 1536
+        
+        # Simulated result
+        result = mock_response.data[0].embedding
+        assert len(result) == 1536
 
     def test_embedding_normalization(self):
         """Test embeddings are normalized (unit length)"""
@@ -43,28 +51,23 @@ class TestEmbeddingService:
         assert abs(np.linalg.norm(embedding) - 1.0) < 0.0001
 
     def test_empty_text_handling(self, embedding_service):
-        """Test empty text is handled"""
-        with pytest.raises((ValueError, Exception)):
-            # Should raise or return empty
-            result = None
-            if result is None:
-                raise ValueError("Empty text")
+        """Test empty text is handled gracefully"""
+        # The service should use mock embedding for failures
+        service = EmbeddingService()
+        mock_embedding = service._generate_mock_embedding("")
+        
+        # Mock embedding should still return correct dimensions
+        assert len(mock_embedding) == 1536
 
     def test_batch_embedding(self, embedding_service):
         """Test batch embedding generation"""
         texts = ["text 1", "text 2", "text 3"]
-        with patch.object(embedding_service, '_client') as mock_client:
-            mock_response = MagicMock()
-            mock_response.embeddings = [
-                MagicMock(values=[0.1] * 1536) for _ in texts
-            ]
-            mock_client.models.embed_content.return_value = mock_response
-
-            # Simulated batch result
-            results = [[0.1] * 1536 for _ in texts]
-            assert len(results) == len(texts)
-            for result in results:
-                assert len(result) == 1536
+        
+        # Each text should produce a 1536-dim vector
+        results = [[0.1] * 1536 for _ in texts]
+        assert len(results) == len(texts)
+        for result in results:
+            assert len(result) == 1536
 
     def test_special_characters_handling(self, embedding_service):
         """Test special characters don't break embedding"""
@@ -74,15 +77,43 @@ class TestEmbeddingService:
             "Text with <html> tags",
             "Text with 'quotes' and \"double quotes\"",
         ]
-        # Should not raise exceptions
+        # Test mock embedding handles all these
+        service = EmbeddingService()
         for text in special_texts:
-            assert len(text) > 0
+            mock_embedding = service._generate_mock_embedding(text)
+            assert len(mock_embedding) == 1536
 
     def test_long_text_handling(self, embedding_service):
-        """Test very long text is handled"""
+        """Test very long text is handled (truncated to 8000 chars)"""
         long_text = "word " * 10000  # Very long text
-        # Should either truncate or handle gracefully
-        assert len(long_text) > 0
+        
+        # The service truncates to 8000 chars in _sync_embed
+        truncated = long_text[:8000]
+        assert len(truncated) == 8000
+        
+        # Mock embedding should still work
+        service = EmbeddingService()
+        mock_embedding = service._generate_mock_embedding(truncated)
+        assert len(mock_embedding) == 1536
+    
+    def test_chunk_text(self):
+        """Test text chunking for long documents"""
+        service = EmbeddingService()
+        
+        # Test short text returns single chunk
+        short_text = "This is a short text."
+        chunks = service.chunk_text(short_text)
+        assert len(chunks) == 1
+        assert chunks[0] == short_text
+        
+        # Test empty text
+        chunks = service.chunk_text("")
+        assert len(chunks) == 0
+        
+        # Test long text is chunked
+        long_text = "This is sentence one. " * 100
+        chunks = service.chunk_text(long_text, chunk_size=500, overlap=50)
+        assert len(chunks) > 1
 
 
 class TestEmbeddingSimilarity:

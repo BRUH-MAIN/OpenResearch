@@ -18,7 +18,7 @@ CRITICAL RULES:
 import os
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from contextlib import asynccontextmanager
 from typing import Optional
 
@@ -38,7 +38,7 @@ from .models import (
     VectorSearchRequest, VectorSearchResponse,
     HealthResponse, ErrorResponse,
 )
-from .gemini_client import gemini_client
+from .groq_client import groq_client
 from .database import database
 from .embeddings import embedding_service
 from .vector_store import vector_store
@@ -51,11 +51,11 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
     print(f"🚀 Starting {settings.app_name}")
     
-    # Initialize Gemini
-    if gemini_client.initialize():
-        print("✅ Gemini AI client initialized")
+    # Initialize Groq
+    if groq_client.initialize():
+        print("✅ Groq AI client initialized")
     else:
-        print("⚠️  Gemini API key not configured - AI features will return errors")
+        print("⚠️  Groq API key not configured - AI features will return errors")
     
     # Initialize embedding service
     if embedding_service.initialize():
@@ -208,10 +208,10 @@ async def health_check():
     """Check the health of the AI service and its dependencies."""
     return HealthResponse(
         status="healthy",
-        gemini_configured=gemini_client.is_configured,
+        groq_configured=groq_client.is_configured,
         database_connected=database.is_connected,
         vector_store_connected=vector_store.is_connected,
-        timestamp=datetime.utcnow(),
+        timestamp=datetime.now(timezone.utc),
     )
 
 
@@ -236,10 +236,10 @@ async def group_ai_chat(group_id: str, request: GroupAIChatRequest):
     # Validate @ai trigger
     validate_ai_trigger(request.prompt)
     
-    if not gemini_client.is_configured:
+    if not groq_client.is_configured:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI service not configured. Please set GEMINI_API_KEY.",
+            detail="AI service not configured. Please set GROQ_API_KEY.",
         )
     
     start_time = time.time()
@@ -310,7 +310,7 @@ User Request: {request.prompt}
 Provide a helpful response based on the group's context."""
 
     try:
-        answer, latency_ms = await gemini_client.generate(
+        answer, latency_ms = await groq_client.generate(
             prompt=prompt,
             system_instruction=system_instruction,
             temperature=0.5,
@@ -338,7 +338,7 @@ Provide a helpful response based on the group's context."""
             id=artifact_id or str(uuid.uuid4()),
             text=answer,
             metadata={
-                "model": gemini_client.model_name,
+                "model": groq_client.model_name,
                 "context_items_used": len(context_items),
                 "vector_ids_used": vector_ids,
             },
@@ -376,7 +376,7 @@ async def paper_question(request: PaperQuestionRequest):
     """
     validate_ai_trigger(request.question, "question")
     
-    if not gemini_client.is_configured:
+    if not groq_client.is_configured:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI service not configured.",
@@ -436,7 +436,7 @@ Question: {request.question}
 Provide a detailed answer based on the paper content."""
 
     try:
-        answer, latency_ms = await gemini_client.generate(
+        answer, latency_ms = await groq_client.generate(
             prompt=prompt,
             system_instruction=system_instruction,
             temperature=0.3,
@@ -466,7 +466,7 @@ Provide a detailed answer based on the paper content."""
                 for item in paper_chunks[:5]
             ],
             metadata={
-                "model": gemini_client.model_name,
+                "model": groq_client.model_name,
                 "paper_title": paper_info.get('title') if paper_info else None,
             },
             latency_ms=total_latency
@@ -499,7 +499,7 @@ async def paper_summarize(request: PaperSummarizeRequest):
     """
     validate_ai_trigger(request.trigger, "trigger")
     
-    if not gemini_client.is_configured:
+    if not groq_client.is_configured:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="AI service not configured.",
@@ -556,7 +556,7 @@ Provide a structured summary with:
 Generate a comprehensive summary of this paper."""
 
     try:
-        summary_text, latency_ms = await gemini_client.generate(
+        summary_text, latency_ms = await groq_client.generate(
             prompt=prompt,
             system_instruction=system_instruction,
             temperature=0.3,
@@ -591,7 +591,7 @@ Generate a comprehensive summary of this paper."""
             key_points=key_points[:5],
             paper_id=request.paper_id,
             metadata={
-                "model": gemini_client.model_name,
+                "model": groq_client.model_name,
                 "paper_title": paper_info.get('title') if paper_info else None,
             },
             latency_ms=total_latency
@@ -789,7 +789,7 @@ async def generate_report(group_id: str, request: GenerateReportRequest):
             filename=filename,
             file_size=file_size,
             group_id=group_id,
-            created_at=datetime.utcnow()
+            created_at=datetime.now(timezone.utc)
         )
         
     except HTTPException:
@@ -840,10 +840,10 @@ async def chat_qa(request: ChatRequest):
     Legacy chat endpoint - session-based, no group isolation.
     Consider using /groups/{group_id}/ai-chat for group-isolated AI chat.
     """
-    if not gemini_client.is_configured:
+    if not groq_client.is_configured:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI service not configured. Please set GEMINI_API_KEY.",
+            detail="AI service not configured. Please set GROQ_API_KEY.",
         )
     
     # Fetch context
@@ -868,7 +868,7 @@ async def chat_qa(request: ChatRequest):
             papers = await database.get_session_papers(request.session_id)
     
     try:
-        answer, sources, latency_ms = await gemini_client.chat_qa(
+        answer, sources, latency_ms = await groq_client.chat_qa(
             question=request.question,
             context_messages=context_messages,
             papers=papers,
@@ -878,7 +878,7 @@ async def chat_qa(request: ChatRequest):
         return ChatResponse(
             answer=answer,
             sources=sources,
-            model=gemini_client.model_name,
+            model=groq_client.model_name,
             latency_ms=latency_ms,
             context_messages_used=len(context_messages),
             papers_used=len(papers),
@@ -908,10 +908,10 @@ async def summarize_session(request: SummarizeRequest):
     """
     Legacy summarization endpoint.
     """
-    if not gemini_client.is_configured:
+    if not groq_client.is_configured:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI service not configured. Please set GEMINI_API_KEY.",
+            detail="AI service not configured. Please set GROQ_API_KEY.",
         )
     
     if not database.is_connected:
@@ -948,7 +948,7 @@ async def summarize_session(request: SummarizeRequest):
     )
     
     try:
-        summary, key_points, latency_ms = await gemini_client.summarize_session(
+        summary, key_points, latency_ms = await groq_client.summarize_session(
             messages=messages,
             session_title=session_info.get("title", "Research Session"),
         )
@@ -958,7 +958,7 @@ async def summarize_session(request: SummarizeRequest):
             key_points=key_points,
             participant_count=len(participants),
             message_count=len(messages),
-            model=gemini_client.model_name,
+            model=groq_client.model_name,
             latency_ms=latency_ms,
         )
         
@@ -978,17 +978,17 @@ async def summarize_session(request: SummarizeRequest):
 )
 async def test_generation(question: str = "What is machine learning?"):
     """
-    Simple test endpoint to verify Gemini is working.
+    Simple test endpoint to verify Groq is working.
     No database or session context required.
     """
-    if not gemini_client.is_configured:
+    if not groq_client.is_configured:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="AI service not configured. Please set GEMINI_API_KEY.",
+            detail="AI service not configured. Please set GROQ_API_KEY.",
         )
     
     try:
-        response, latency_ms = await gemini_client.generate(
+        response, latency_ms = await groq_client.generate(
             prompt=question,
             system_instruction="You are a helpful AI assistant. Be concise.",
             temperature=0.7,
@@ -998,7 +998,7 @@ async def test_generation(question: str = "What is machine learning?"):
         return {
             "question": question,
             "answer": response,
-            "model": gemini_client.model_name,
+            "model": groq_client.model_name,
             "latency_ms": latency_ms,
         }
         

@@ -197,7 +197,7 @@ class VectorSearchResponse(BaseModel):
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str
-    gemini_configured: bool
+    groq_configured: bool
     database_connected: bool
     vector_store_connected: bool = False
     timestamp: datetime

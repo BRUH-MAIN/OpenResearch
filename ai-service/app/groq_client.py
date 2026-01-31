@@ -1,38 +1,37 @@
-"""Gemini AI client wrapper with error handling and retries."""
+"""Groq AI client wrapper with error handling and retries."""
 
 import asyncio
 import time
 from typing import Optional
-from google import genai
-from google.genai import types
+from groq import Groq
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from .config import get_settings
 
 
-class GeminiClient:
-    """Wrapper for Google Gemini API with retries and error handling."""
+class GroqClient:
+    """Wrapper for Groq API with retries and error handling."""
     
     def __init__(self):
         settings = get_settings()
-        self.api_key = settings.gemini_api_key
-        self.model_name = settings.gemini_model
-        self.client: Optional[genai.Client] = None
+        self.api_key = settings.groq_api_key
+        self.model_name = settings.groq_model
+        self.client: Optional[Groq] = None
         self._initialized = False
         
     def initialize(self) -> bool:
-        """Initialize the Gemini client. Returns True if successful."""
+        """Initialize the Groq client. Returns True if successful."""
         if not self.api_key:
-            print("⚠️  GEMINI_API_KEY not set - AI features will be unavailable")
+            print("⚠️  GROQ_API_KEY not set - AI features will be unavailable")
             return False
         try:
-            # Initialize client with API key using new Google GenAI SDK
-            self.client = genai.Client(api_key=self.api_key)
+            # Initialize client with API key
+            self.client = Groq(api_key=self.api_key)
             self._initialized = True
-            print(f"✅ Gemini client initialized with model: {self.model_name}")
+            print(f"✅ Groq client initialized with model: {self.model_name}")
             return True
         except Exception as e:
-            print(f"❌ Failed to initialize Gemini client: {e}")
+            print(f"❌ Failed to initialize Groq client: {e}")
             return False
     
     @property
@@ -48,37 +47,29 @@ class GeminiClient:
         max_tokens: int = 2048,
     ) -> str:
         """
-        Synchronous generate call using new Google GenAI SDK.
-        Reference pattern:
-            client = genai.Client()
-            response = client.models.generate_content(
-                model="gemini-3-flash-preview",
-                contents="...",
-            )
+        Synchronous generate call using Groq SDK.
         """
         if not self.is_configured:
-            raise RuntimeError("Gemini client not initialized. Please set GEMINI_API_KEY.")
+            raise RuntimeError("Groq client not initialized. Please set GROQ_API_KEY.")
         
-        # Build generation config
-        config = types.GenerateContentConfig(
-            temperature=temperature,
-            max_output_tokens=max_tokens,
-        )
-        
+        # Build messages
+        messages = []
         if system_instruction:
-            config.system_instruction = system_instruction
+            messages.append({"role": "system", "content": system_instruction})
+        messages.append({"role": "user", "content": prompt})
         
-        # Use new SDK pattern - synchronous call
-        response = self.client.models.generate_content(
+        # Make API call
+        response = self.client.chat.completions.create(
             model=self.model_name,
-            contents=prompt,
-            config=config,
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
         )
         
-        if response.text:
-            return response.text
+        if response.choices and response.choices[0].message.content:
+            return response.choices[0].message.content
         else:
-            raise RuntimeError("Empty response from Gemini API")
+            raise RuntimeError("Empty response from Groq API")
 
     @retry(
         stop=stop_after_attempt(3),
@@ -93,7 +84,7 @@ class GeminiClient:
         max_tokens: int = 2048,
     ) -> tuple[str, int]:
         """
-        Generate a response from Gemini (async wrapper).
+        Generate a response from Groq (async wrapper).
         
         Uses asyncio.to_thread to run sync SDK call without blocking.
         
@@ -257,4 +248,4 @@ KEY POINTS:
 
 
 # Singleton instance
-gemini_client = GeminiClient()
+groq_client = GroqClient()
