@@ -203,7 +203,7 @@ router.post('/:groupId/papers/:paperId/question', async (req: AuthRequest, res: 
     // Pre-check AI service availability
     const isAvailable = await aiClient.isAvailable();
     if (!isAvailable) {
-      throw createError('AI service is not available. Please ensure GEMINI_API_KEY is configured.', 503);
+      throw createError('AI service is not available. Please ensure GROQ_API_KEY is configured.', 503);
     }
 
     // Verify membership
@@ -244,7 +244,7 @@ router.post('/:groupId/papers/:paperId/summarize', async (req: AuthRequest, res:
     // Pre-check AI service availability
     const isAvailable = await aiClient.isAvailable();
     if (!isAvailable) {
-      throw createError('AI service is not available. Please ensure GEMINI_API_KEY is configured.', 503);
+      throw createError('AI service is not available. Please ensure GROQ_API_KEY is configured.', 503);
     }
 
     // Verify membership

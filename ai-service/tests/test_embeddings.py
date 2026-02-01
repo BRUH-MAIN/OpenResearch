@@ -1,7 +1,7 @@
 """
 Tests for the Embeddings Service
 
-Updated to use OpenAI mocks after migration from Gemini.
+Updated to use local sentence-transformers (SPECTER2) after migration.
 """
 
 import pytest
@@ -16,35 +16,31 @@ class TestEmbeddingService:
 
     @pytest.fixture
     def embedding_service(self):
-        """Create an embedding service with mocked OpenAI client"""
-        with patch("app.embeddings.OpenAI") as mock_openai:
-            # Mock the OpenAI client
-            mock_client = MagicMock()
-            mock_openai.return_value = mock_client
+        """Create an embedding service with mocked sentence-transformer"""
+        with patch("app.embeddings._get_model") as mock_get_model:
+            # Mock the sentence-transformer model
+            mock_model = MagicMock()
+            mock_model.encode.return_value = np.array([0.1] * 768)
+            mock_get_model.return_value = mock_model
             
             service = EmbeddingService()
-            service.client = mock_client
+            service._model = mock_model
             service._initialized = True
             return service
 
     def test_embedding_dimensions(self, embedding_service):
-        """Test embeddings are 1536 dimensions (text-embedding-3-small)"""
-        # Mock the OpenAI embeddings response
-        mock_response = MagicMock()
-        mock_response.data = [MagicMock(embedding=[0.1] * 1536)]
-        embedding_service.client.embeddings.create.return_value = mock_response
-
+        """Test embeddings are 768 dimensions (SPECTER2)"""
         # Test the expected dimension constant
-        assert EmbeddingService.EMBEDDING_DIMENSION == 1536
+        assert EmbeddingService.EMBEDDING_DIMENSION == 768
         
         # Simulated result
-        result = mock_response.data[0].embedding
-        assert len(result) == 1536
+        result = embedding_service._model.encode("test")
+        assert len(result) == 768
 
     def test_embedding_normalization(self):
         """Test embeddings are normalized (unit length)"""
         # Create a mock normalized embedding
-        embedding = np.random.randn(1536)
+        embedding = np.random.randn(768)
         embedding = embedding / np.linalg.norm(embedding)
         
         # Check it's normalized
@@ -57,17 +53,17 @@ class TestEmbeddingService:
         mock_embedding = service._generate_mock_embedding("")
         
         # Mock embedding should still return correct dimensions
-        assert len(mock_embedding) == 1536
+        assert len(mock_embedding) == 768
 
     def test_batch_embedding(self, embedding_service):
         """Test batch embedding generation"""
         texts = ["text 1", "text 2", "text 3"]
         
-        # Each text should produce a 1536-dim vector
-        results = [[0.1] * 1536 for _ in texts]
+        # Each text should produce a 768-dim vector
+        results = [[0.1] * 768 for _ in texts]
         assert len(results) == len(texts)
         for result in results:
-            assert len(result) == 1536
+            assert len(result) == 768
 
     def test_special_characters_handling(self, embedding_service):
         """Test special characters don't break embedding"""
@@ -81,20 +77,20 @@ class TestEmbeddingService:
         service = EmbeddingService()
         for text in special_texts:
             mock_embedding = service._generate_mock_embedding(text)
-            assert len(mock_embedding) == 1536
+            assert len(mock_embedding) == 768
 
     def test_long_text_handling(self, embedding_service):
-        """Test very long text is handled (truncated to 8000 chars)"""
+        """Test very long text is handled (truncated to 4096 chars)"""
         long_text = "word " * 10000  # Very long text
         
-        # The service truncates to 8000 chars in _sync_embed
-        truncated = long_text[:8000]
-        assert len(truncated) == 8000
+        # The service truncates to 4096 chars in _sync_embed
+        truncated = long_text[:4096]
+        assert len(truncated) == 4096
         
         # Mock embedding should still work
         service = EmbeddingService()
         mock_embedding = service._generate_mock_embedding(truncated)
-        assert len(mock_embedding) == 1536
+        assert len(mock_embedding) == 768
     
     def test_chunk_text(self):
         """Test text chunking for long documents"""
@@ -121,23 +117,23 @@ class TestEmbeddingSimilarity:
 
     def test_cosine_similarity_same_vectors(self):
         """Test identical vectors have similarity 1.0"""
-        vec = np.random.randn(1536)
+        vec = np.random.randn(768)
         vec = vec / np.linalg.norm(vec)
         similarity = np.dot(vec, vec)
         assert abs(similarity - 1.0) < 0.0001
 
     def test_cosine_similarity_orthogonal_vectors(self):
         """Test orthogonal vectors have similarity 0.0"""
-        vec1 = np.zeros(1536)
+        vec1 = np.zeros(768)
         vec1[0] = 1.0
-        vec2 = np.zeros(1536)
+        vec2 = np.zeros(768)
         vec2[1] = 1.0
         similarity = np.dot(vec1, vec2)
         assert abs(similarity) < 0.0001
 
     def test_cosine_similarity_opposite_vectors(self):
         """Test opposite vectors have similarity -1.0"""
-        vec1 = np.random.randn(1536)
+        vec1 = np.random.randn(768)
         vec1 = vec1 / np.linalg.norm(vec1)
         vec2 = -vec1
         similarity = np.dot(vec1, vec2)
@@ -146,9 +142,9 @@ class TestEmbeddingSimilarity:
     def test_similarity_range(self):
         """Test similarity is in range [-1, 1]"""
         for _ in range(100):
-            vec1 = np.random.randn(1536)
+            vec1 = np.random.randn(768)
             vec1 = vec1 / np.linalg.norm(vec1)
-            vec2 = np.random.randn(1536)
+            vec2 = np.random.randn(768)
             vec2 = vec2 / np.linalg.norm(vec2)
             similarity = np.dot(vec1, vec2)
             assert -1.0 <= similarity <= 1.0

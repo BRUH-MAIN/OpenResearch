@@ -322,3 +322,196 @@ body {
 .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
 .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* ========================================
+   Research Interface Styles
+   NotebookLM-inspired research-first design
+   ======================================== */
+
+/* Research Layout */
+.research-layout {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  height: 100%;
+  overflow: hidden;
+}
+
+.research-layout-collapsed-left {
+  grid-template-columns: 48px 1fr auto;
+}
+
+.research-layout-collapsed-right {
+  grid-template-columns: auto 1fr 48px;
+}
+
+.research-layout-collapsed-both {
+  grid-template-columns: 48px 1fr 48px;
+}
+
+/* Research Message Prose */
+.prose-research {
+  font-size: 15px;
+  line-height: 1.7;
+  color: var(--color-text-primary);
+}
+
+.prose-research p {
+  margin-bottom: 1em;
+}
+
+.prose-research p:last-child {
+  margin-bottom: 0;
+}
+
+.prose-research strong {
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+.prose-research em {
+  color: var(--color-text-secondary);
+}
+
+.prose-research code {
+  background: var(--color-bg-tertiary);
+  padding: 0.2em 0.4em;
+  border-radius: var(--radius-sm);
+  font-size: 0.9em;
+  color: var(--color-brand-secondary);
+}
+
+.prose-research pre {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border-primary);
+  border-radius: var(--radius-lg);
+  padding: 1rem;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.prose-research ul,
+.prose-research ol {
+  margin: 0.75em 0;
+  padding-left: 1.5em;
+}
+
+.prose-research li {
+  margin: 0.25em 0;
+}
+
+.prose-research blockquote {
+  border-left: 3px solid var(--color-brand-primary);
+  padding-left: 1rem;
+  margin: 1em 0;
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Citation Markers */
+.citation-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--color-brand-primary);
+  color: white;
+  border-radius: var(--radius-sm);
+  vertical-align: super;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.citation-marker:hover {
+  background: var(--color-brand-secondary);
+  color: var(--color-bg-primary);
+}
+
+/* Research Panel Scrollbar */
+.research-panel-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.research-panel-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.research-panel-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-bg-hover);
+  border-radius: var(--radius-full);
+}
+
+.research-panel-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-secondary);
+}
+
+/* Source Item Hover */
+.source-item-hover {
+  transition: all var(--transition-fast);
+}
+
+.source-item-hover:hover {
+  background: var(--color-bg-tertiary);
+}
+
+/* Studio Action Tile */
+.studio-action-tile {
+  position: relative;
+  overflow: hidden;
+}
+
+.studio-action-tile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    rgba(13, 115, 119, 0.05) 100%
+  );
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.studio-action-tile:hover::before {
+  opacity: 1;
+}
+
+/* Empty State for Research */
+.research-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.research-empty-state-icon {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1rem;
+  background: var(--color-bg-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+  color: var(--color-text-tertiary);
+}
+
+/* AI Response Animation */
+@keyframes ai-thinking {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.ai-thinking-animation {
+  animation: ai-thinking 1.5s ease-in-out infinite;
+}

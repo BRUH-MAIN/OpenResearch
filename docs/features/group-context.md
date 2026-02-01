@@ -37,24 +37,30 @@ OpenResearch implements **group-isolated context spaces** using PostgreSQL 16 wi
 ```sql
 CREATE TABLE group_paper_vectors (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    group_id UUID NOT NULL REFERENCES groups(id),
-    paper_id UUID REFERENCES papers(id),
-    session_id UUID REFERENCES sessions(id),
-    content_type VARCHAR(50) NOT NULL, -- 'paper', 'summary', 'qa', 'chat'
-    content TEXT NOT NULL,
-    embedding VECTOR(1536) NOT NULL,
-    metadata JSONB DEFAULT '{}',
-    created_at TIMESTAMP DEFAULT NOW()
+    group_id UUID NOT NULL,  -- Group isolation key
+    paper_id TEXT NOT NULL,  -- Paper or source identifier
+    content_type VARCHAR(50) NOT NULL DEFAULT 'paper', 
+    -- Types: 'paper', 'summary', 'qa', 'memory', 'report'
+    content_id TEXT,  -- Reference to source artifact
+    chunk_index INTEGER DEFAULT 0,  -- For chunked content
+    content TEXT,  -- Text content
+    embedding VECTOR(1536),  -- OpenAI embedding
+    metadata JSONB,  -- Additional metadata
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- HNSW index for fast similarity search
+-- HNSW index for fast similarity search (cosine distance)
 CREATE INDEX idx_group_vectors_hnsw 
 ON group_paper_vectors 
 USING hnsw (embedding vector_cosine_ops);
 
--- Index for group isolation
+-- Index for group isolation (CRITICAL for security)
 CREATE INDEX idx_group_vectors_group_id 
 ON group_paper_vectors(group_id);
+
+-- Index for content type filtering
+CREATE INDEX idx_group_vectors_content_type
+ON group_paper_vectors(content_type);
 ```
 
 ## How It Works
@@ -101,10 +107,12 @@ LIMIT 10;
 AI-generated content is also embedded and stored:
 
 - **Summaries**: When a paper is summarized, the summary is embedded
-- **Q&A Pairs**: Question-answer pairs are combined and embedded
-- **Chat Messages**: AI responses in chat are embedded
+- **Q&A Pairs**: Question-answer pairs are embedded for future retrieval
+- **Chat Messages**: Important AI responses are embedded
+- **Memory Notes**: Group memory notes (decisions, facts, guidelines) are embedded
+- **Reports**: Generated report content is embedded
 
-This creates a growing knowledge base for each group.
+This creates a growing, searchable knowledge base for each group.
 
 ## API Endpoints
 
@@ -237,10 +245,10 @@ await db.execute(batch_insert_query)
 
 ```env
 # AI Service
-GEMINI_API_KEY=your-gemini-api-key
+GROQ_API_KEY=your-groq-api-key
 DATABASE_URL=postgresql://user:pass@host:5432/db
 
-# Embedding dimensions (Gemini default)
+# Embedding dimensions (OpenAI text-embedding-3-small)
 EMBEDDING_DIMENSIONS=1536
 
 # Search settings

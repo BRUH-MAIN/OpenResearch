@@ -9,7 +9,7 @@ Modern **Next.js 16** frontend for the OpenResearch platform - a collaboration-f
 - **Real-time Chat** - Live discussions with Socket.IO integration
 - **Paper Management** - Search, save, and organize academic papers
 - **External Paper Search** - Query arXiv directly for academic papers
-- **AI Chat** - Ask questions about session discussions with Google Gemini
+- **AI Chat** - Ask questions about session discussions with Groq (Llama 3.3)
 - **User Profiles** - Manage user information and research interests
 - **Invitations** - Accept/decline group invitations
 

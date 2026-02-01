@@ -19,14 +19,15 @@ Real-time AI assistance within group chat sessions, with context from all papers
 
 **API:**
 ```typescript
-// HTTP
-POST /api/groups/:groupId/chat
+// HTTP (via AI service proxy)
+POST /api/ai/groups/:groupId/chat
 {
   "prompt": "@ai your question here",
-  "session_id": "optional-session-id"
+  "session_id": "optional-session-id",
+  "user_id": "user-uuid"
 }
 
-// Socket.IO
+// Socket.IO (recommended for real-time)
 socket.emit('message:send', {
   sessionId: 'session-id',
   content: '@ai your question here'
@@ -60,10 +61,12 @@ POST /api/groups/:groupId/papers/:paperId/question
   "session_id": "optional-session-id"
 }
 
-// Socket.IO
+// Socket.IO (includes groupId for context isolation)
 socket.emit('paper:question', {
   paperId: 'paper-id',
-  question: '@ai What is the methodology?'
+  groupId: 'group-id',
+  question: '@ai What is the methodology?',
+  sessionId: 'optional-session-id'
 });
 ```
 
@@ -129,7 +132,43 @@ GET /api/recommendations/group/:groupId?limit=10
 GET /api/recommendations/similar/:paperId?groupId=optional
 ```
 
-### 5. Group Report Generation
+### 5. Vector Semantic Search
+
+Search across group papers, summaries, and notes using semantic similarity.
+
+**How to Use:**
+- Search by meaning, not just keywords
+- Find related content across papers
+- Discover connections between research
+
+**API:**
+```typescript
+POST /api/groups/:groupId/search
+{
+  "query": "transformer attention mechanisms",
+  "limit": 10,
+  "content_types": ["paper", "summary", "qa"]
+}
+```
+
+**Response:**
+```json
+{
+  "results": [
+    {
+      "id": "vector-uuid",
+      "content": "Paper abstract about transformers...",
+      "content_type": "paper",
+      "paper_id": "paper-uuid",
+      "similarity": 0.92,
+      "metadata": {}
+    }
+  ],
+  "total": 10
+}
+```
+
+### 6. Group Report Generation
 
 Generate PDF reports summarizing group activity and research.
 
@@ -285,7 +324,11 @@ AI_SERVICE_URL=http://ai-service:8000
 
 ### AI Service Environment Variables
 ```env
-GEMINI_API_KEY=your-api-key
+GROQ_API_KEY=your-groq-api-key
+OPENAI_API_KEY=your-openai-api-key-for-embeddings
 DATABASE_URL=postgresql://...
+GROQ_MODEL=llama-3.3-70b-versatile
+EMBEDDING_MODEL=text-embedding-3-small
 EMBEDDING_DIMENSIONS=1536
+DEBUG=false
 ```

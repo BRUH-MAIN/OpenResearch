@@ -156,9 +156,9 @@ function GroupPapersPageContent() {
 
   if (!accessToken) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-screen bg-[#0a0a0a] text-white">
         <Navbar />
-        <div className="container mx-auto px-4 py-16 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Sign in to view group papers</h1>
           <Link href="/auth/signin">
             <Button>Sign In</Button>
@@ -170,9 +170,9 @@ function GroupPapersPageContent() {
 
   if (!groupId) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-screen bg-[#0a0a0a] text-white">
         <Navbar />
-        <div className="container mx-auto px-4 py-16 text-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">No group selected</h1>
           <Link href="/home">
             <Button>Go to Groups</Button>
@@ -184,21 +184,22 @@ function GroupPapersPageContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900 text-white">
+      <div className="min-h-screen bg-[#0a0a0a] text-white">
         <Navbar />
-        <div className="flex justify-center items-center h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+        <div className="flex flex-col justify-center items-center h-[60vh]">
+          <Loader2 className="w-10 h-10 animate-spin text-[#14FFEC] mb-4" />
+          <p className="text-[#71717a] text-sm">Loading papers...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
       <Navbar />
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
             <Link href={`/group?id=${groupId}`}>
               <Button variant="ghost" size="sm">
@@ -206,20 +207,20 @@ function GroupPapersPageContent() {
                 Back to Group
               </Button>
             </Link>
-            <div className="h-6 w-px bg-gray-700" />
+            <div className="h-6 w-px bg-[#2a2a2a]" />
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <BookOpen className="w-6 h-6 text-purple-400" />
+                <BookOpen className="w-6 h-6 text-[#14FFEC]" />
                 {group?.name} Papers
               </h1>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-[#71717a]">
                 {papers.length} paper{papers.length !== 1 ? 's' : ''} • Ask questions or get summaries
               </p>
             </div>
           </div>
           <Link href="/discover">
-            <Button className="gap-2">
-              <Sparkles className="w-4 h-4" />
+            <Button>
+              <Sparkles className="w-4 h-4 mr-2" />
               Discover Papers
             </Button>
           </Link>
@@ -228,34 +229,36 @@ function GroupPapersPageContent() {
         {/* Search */}
         <div className="mb-6">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#52525b] w-5 h-5" />
+            <input
               type="text"
               placeholder="Search papers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="w-full pl-12 pr-4 py-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white placeholder-[#52525b] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[#3a3a3a]"
             />
           </div>
         </div>
 
         {/* Papers List */}
         {filteredPapers.length === 0 ? (
-          <Card className="bg-gray-800 border-gray-700">
+          <Card>
             <CardBody className="py-16 text-center">
-              <BookOpen className="w-16 h-16 mx-auto text-gray-600 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">
+              <div className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center mx-auto mb-6">
+                <BookOpen className="w-8 h-8 text-[#52525b]" />
+              </div>
+              <h3 className="text-xl font-semibold mb-2 text-white">
                 {searchQuery ? 'No papers match your search' : 'No papers in this group yet'}
               </h3>
-              <p className="text-gray-400 mb-6">
+              <p className="text-[#71717a] mb-6 max-w-sm mx-auto">
                 {searchQuery
                   ? 'Try a different search term'
                   : 'Add papers from the Discover page to start collaborating'}
               </p>
               {!searchQuery && (
                 <Link href="/discover">
-                  <Button className="gap-2">
-                    <Sparkles className="w-4 h-4" />
+                  <Button>
+                    <Sparkles className="w-4 h-4 mr-2" />
                     Discover Papers
                   </Button>
                 </Link>
@@ -265,21 +268,21 @@ function GroupPapersPageContent() {
         ) : (
           <div className="grid gap-4">
             {filteredPapers.map((paper) => (
-              <Card key={paper.id} className="bg-gray-800 border-gray-700">
+              <Card key={paper.id}>
                 <CardBody>
                   <div className="flex gap-4">
                     <div className="flex-1">
                       <h3 className="font-semibold text-white text-lg mb-1">{paper.title}</h3>
-                      <p className="text-sm text-gray-400 mb-2">
+                      <p className="text-sm text-[#71717a] mb-2">
                         {paper.authors?.slice(0, 3).join(', ')}
                         {paper.authors?.length > 3 && ` +${paper.authors.length - 3} more`}
                       </p>
-                      <p className="text-sm text-gray-300 line-clamp-2 mb-3">{paper.abstract}</p>
+                      <p className="text-sm text-[#a1a1aa] line-clamp-2 mb-3">{paper.abstract}</p>
 
                       {/* Tags */}
                       <div className="flex flex-wrap gap-1 mb-3">
                         {paper.tags?.slice(0, 5).map((tag) => (
-                          <Badge key={tag} variant="outline" className="text-xs">
+                          <Badge key={tag} variant="outline" size="sm">
                             {tag}
                           </Badge>
                         ))}
@@ -287,29 +290,29 @@ function GroupPapersPageContent() {
 
                       {/* Notes */}
                       {paper.notes && (
-                        <p className="text-xs text-purple-400 italic mb-3">
-                          Note: {paper.notes}
-                        </p>
+                        <div className="bg-[#0D7377]/10 border border-[#0D7377]/30 rounded-lg px-3 py-2 mb-3">
+                          <p className="text-xs text-[#14FFEC] italic">
+                            Note: {paper.notes}
+                          </p>
+                        </div>
                       )}
 
                       {/* Actions */}
-                      <div className="flex gap-2">
+                      <div className="flex flex-wrap gap-2">
                         <Button
                           size="sm"
                           variant="secondary"
                           onClick={() => openQaModal(paper, 'question')}
-                          className="gap-1"
                         >
-                          <MessageSquare className="w-3 h-3" />
+                          <MessageSquare className="w-3 h-3 mr-1" />
                           Ask @ai
                         </Button>
                         <Button
                           size="sm"
                           variant="secondary"
                           onClick={() => openQaModal(paper, 'summarize')}
-                          className="gap-1"
                         >
-                          <FileText className="w-3 h-3" />
+                          <FileText className="w-3 h-3 mr-1" />
                           Summarize
                         </Button>
                         {paper.url && (
@@ -324,7 +327,7 @@ function GroupPapersPageContent() {
                           variant="ghost"
                           onClick={() => handleRemovePaper(paper.paperId)}
                           disabled={removingPaper === paper.paperId}
-                          className="text-red-400 hover:text-red-300 hover:bg-red-400/10 ml-auto"
+                          className="text-[#ef4444] hover:text-[#f87171] hover:bg-[#ef4444]/10 ml-auto"
                         >
                           {removingPaper === paper.paperId ? (
                             <Loader2 className="w-4 h-4 animate-spin" />
@@ -343,25 +346,25 @@ function GroupPapersPageContent() {
 
         {/* Q&A Modal */}
         {selectedPaper && qaMode && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-            <Card className="bg-gray-800 border-gray-700 w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-              <CardHeader className="flex-shrink-0">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[500] p-4 animate-fade-in">
+            <div className="relative w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl shadow-2xl animate-scale-in">
+              <div className="px-6 py-5 border-b border-[#2a2a2a] flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-bold flex items-center gap-2">
+                    <h2 className="text-xl font-semibold flex items-center gap-2 text-white">
                       {qaMode === 'question' ? (
                         <>
-                          <MessageSquare className="w-5 h-5 text-purple-400" />
+                          <MessageSquare className="w-5 h-5 text-[#14FFEC]" />
                           Ask a Question
                         </>
                       ) : (
                         <>
-                          <FileText className="w-5 h-5 text-purple-400" />
+                          <FileText className="w-5 h-5 text-[#14FFEC]" />
                           Paper Summary
                         </>
                       )}
                     </h2>
-                    <p className="text-sm text-gray-400 line-clamp-1">
+                    <p className="text-sm text-[#71717a] line-clamp-1 mt-1">
                       {selectedPaper.title}
                     </p>
                   </div>
@@ -369,16 +372,17 @@ function GroupPapersPageContent() {
                     <X className="w-5 h-5" />
                   </Button>
                 </div>
-              </CardHeader>
-              <CardBody className="overflow-y-auto flex-1">
+              </div>
+              <div className="px-6 py-5 overflow-y-auto flex-1">
                 {/* Question Input (for question mode) */}
                 {qaMode === 'question' && (
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Your Question <span className="text-gray-500">(will be sent with @ai trigger)</span>
+                    <label className="block text-sm font-medium text-[#e4e4e7] mb-2">
+                      Your Question <span className="text-[#71717a]">(will be sent with @ai trigger)</span>
                     </label>
                     <div className="flex gap-2">
-                      <Input
+                      <input
+                        type="text"
                         value={question}
                         onChange={(e) => setQuestion(e.target.value)}
                         placeholder="e.g., What are the main findings?"
@@ -389,11 +393,11 @@ function GroupPapersPageContent() {
                           }
                         }}
                         disabled={isAsking}
+                        className="flex-1 px-4 py-2.5 bg-[#0f0f0f] border border-[#2a2a2a] rounded-xl text-white placeholder-[#52525b] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[#3a3a3a] disabled:opacity-50"
                       />
                       <Button
                         onClick={handleAskQuestion}
                         disabled={isAsking || !question.trim()}
-                        className="gap-1"
                       >
                         {isAsking ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
@@ -408,34 +412,37 @@ function GroupPapersPageContent() {
                 {/* Loading State */}
                 {isAsking && (
                   <div className="flex items-center justify-center py-8">
-                    <div className="flex items-center gap-3 text-purple-400">
+                    <div className="flex items-center gap-3 text-[#14FFEC]">
                       <Loader2 className="w-6 h-6 animate-spin" />
-                      <span>{qaMode === 'question' ? 'Thinking...' : 'Generating summary...'}</span>
+                      <span>{qaMode === 'question' ? 'AI is analyzing...' : 'Generating summary...'}</span>
                     </div>
                   </div>
                 )}
 
-                {/* Response */}
+                {/* Response - AI styled */}
                 {qaResponse && (
-                  <div className="bg-gray-700/50 rounded-lg p-4">
+                  <div className="bg-gradient-to-br from-[#0D7377]/10 to-[#14FFEC]/5 border border-[#0D7377]/30 rounded-xl p-5">
                     <div className="flex items-center gap-2 mb-3">
-                      <Sparkles className="w-4 h-4 text-purple-400" />
-                      <span className="text-sm font-medium text-purple-400">AI Response</span>
+                      <div className="p-1.5 rounded-lg bg-[#0D7377]/20">
+                        <Sparkles className="w-4 h-4 text-[#14FFEC]" />
+                      </div>
+                      <span className="text-sm font-medium text-[#14FFEC]">AI Response</span>
                     </div>
 
                     {qaResponse.answer && (
-                      <p className="text-gray-200 whitespace-pre-wrap">{qaResponse.answer}</p>
+                      <p className="text-[#e4e4e7] whitespace-pre-wrap leading-relaxed">{qaResponse.answer}</p>
                     )}
 
                     {qaResponse.summary && (
                       <div>
-                        <p className="text-gray-200 whitespace-pre-wrap mb-4">{qaResponse.summary}</p>
+                        <p className="text-[#e4e4e7] whitespace-pre-wrap leading-relaxed mb-4">{qaResponse.summary}</p>
                         {qaResponse.keyPoints && qaResponse.keyPoints.length > 0 && (
-                          <div className="mt-4">
-                            <h4 className="text-sm font-medium text-gray-300 mb-2">Key Points:</h4>
-                            <ul className="list-disc list-inside space-y-1">
+                          <div className="mt-4 pt-4 border-t border-[#0D7377]/30">
+                            <h4 className="text-sm font-medium text-[#14FFEC] mb-3">Key Points:</h4>
+                            <ul className="space-y-2">
                               {qaResponse.keyPoints.map((point, i) => (
-                                <li key={i} className="text-sm text-gray-300">
+                                <li key={i} className="flex items-start gap-2 text-sm text-[#e4e4e7]">
+                                  <span className="text-[#14FFEC] mt-1">•</span>
                                   {point}
                                 </li>
                               ))}
@@ -450,7 +457,7 @@ function GroupPapersPageContent() {
                 {/* Suggested Questions (for question mode) */}
                 {qaMode === 'question' && !qaResponse && !isAsking && (
                   <div className="mt-4">
-                    <p className="text-sm text-gray-400 mb-3">Suggested questions:</p>
+                    <p className="text-sm text-[#71717a] mb-3">Suggested questions:</p>
                     <div className="flex flex-wrap gap-2">
                       {[
                         'What are the main findings?',
@@ -461,7 +468,7 @@ function GroupPapersPageContent() {
                         <button
                           key={q}
                           onClick={() => setQuestion(q)}
-                          className="px-3 py-1 text-sm bg-gray-700 text-gray-300 rounded-full hover:bg-gray-600"
+                          className="px-3 py-1.5 text-sm bg-[#242424] text-[#a1a1aa] rounded-full hover:bg-[#2a2a2a] hover:text-white transition-colors"
                         >
                           {q}
                         </button>
@@ -469,8 +476,8 @@ function GroupPapersPageContent() {
                     </div>
                   </div>
                 )}
-              </CardBody>
-            </Card>
+              </div>
+            </div>
           </div>
         )}
       </div>
@@ -482,8 +489,9 @@ export default function GroupPapersPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
-          <Loader2 className="w-8 h-8 animate-spin text-purple-400" />
+        <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center">
+          <Loader2 className="w-10 h-10 animate-spin text-[#14FFEC] mb-4" />
+          <p className="text-[#71717a] text-sm">Loading...</p>
         </div>
       }
     >

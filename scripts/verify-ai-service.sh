@@ -41,11 +41,11 @@ HEALTH_RESPONSE=$(curl -s "$AI_SERVICE_URL/health" 2>/dev/null || echo '{"error"
 if echo "$HEALTH_RESPONSE" | grep -q '"status":"healthy"'; then
     pass "AI Service is healthy"
     
-    # Check Gemini configuration
-    if echo "$HEALTH_RESPONSE" | grep -q '"gemini_configured":true'; then
-        pass "Gemini API is configured"
+    # Check Groq configuration
+    if echo "$HEALTH_RESPONSE" | grep -q '"groq_configured":true'; then
+        pass "Groq API is configured"
     else
-        fail "Gemini API is NOT configured - set GEMINI_API_KEY"
+        fail "Groq API is NOT configured - set GROQ_API_KEY"
     fi
     
     # Check database connection
@@ -117,7 +117,7 @@ echo "Verification Complete"
 echo "=========================================="
 echo ""
 echo "Next steps if issues found:"
-echo "1. Ensure GEMINI_API_KEY is set in ai-service/.env"
+echo "1. Ensure GROQ_API_KEY is set in ai-service/.env"
 echo "2. Ensure DATABASE_URL is set for both services"
 echo "3. Check that all services are running:"
 echo "   - AI Service: cd ai-service && uvicorn app.main:app --reload"

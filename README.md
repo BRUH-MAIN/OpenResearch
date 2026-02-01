@@ -58,7 +58,7 @@ A clean, focused platform for research teams to collaborate in real-time with AI
 - **Frontend:** Next.js 16, React 19, TypeScript, TailwindCSS 4, Socket.IO Client, Zustand
 - **Backend:** Node.js 20, Express 5, Socket.IO 4.8, Drizzle ORM, JWT Auth
 - **Database:** PostgreSQL 16 + **pgvector** for vector storage (1536-dim embeddings)
-- **AI Service:** Python 3.12, FastAPI, Google Gemini 2.0 Flash SDK, ReportLab (PDF)
+- **AI Service:** Python 3.12, FastAPI, Groq (Llama 3.3 70B), OpenAI Embeddings, ReportLab (PDF)
 - **Real-time:** Socket.IO for bidirectional communication
 - **Vector Index:** HNSW with cosine similarity for fast semantic search
 
@@ -142,7 +142,7 @@ pip install -r requirements.txt
 
 # Copy and configure environment
 cp .env.example .env
-nano .env  # Set GEMINI_API_KEY and DATABASE_URL
+nano .env  # Set GROQ_API_KEY and DATABASE_URL
 
 # Start service
 uvicorn app.main:app --reload --port 8000
@@ -228,8 +228,8 @@ OpenResearch/
 │   │   ├── main.py        # FastAPI app with RAG endpoints
 │   │   ├── config.py      # Settings
 │   │   ├── database.py    # Async SQLAlchemy
-│   │   ├── gemini_client.py # Google Gemini integration
-│   │   ├── embeddings.py  # Embedding generation (1536-dim)
+│   │   ├── groq_client.py # Groq API integration (Llama 3.3)
+│   │   ├── embeddings.py  # OpenAI embeddings (1536-dim)
 │   │   ├── vector_store.py # pgvector operations
 │   │   ├── report_generator.py # PDF generation (ReportLab)
 │   │   └── models.py      # Pydantic models
@@ -281,6 +281,11 @@ Click "Summarize" button on any paper
 ### Learn More
 - [AI Features Documentation](docs/features/ai-features.md)
 - [Group Context & RAG](docs/features/group-context.md)
+- [Group Memory Notes](docs/features/group-memory-notes.md)
+- [Database Schema](docs/database-schema.md)
+- [Socket.IO Events](docs/socket-io-events.md)
+- [Deployment Guide](docs/deployment.md)
+- [Testing Guide](docs/testing.md)
 ```
 
 ## 🔧 Configuration
@@ -306,9 +311,9 @@ Click "Summarize" button on any paper
 #### AI Service `.env`
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `GEMINI_API_KEY` | Google Gemini API key | Yes |
+| `GROQ_API_KEY` | Groq API key | Yes |
 | `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `GEMINI_MODEL` | Model to use | No (default: gemini-2.0-flash-exp) |
+| `GROQ_MODEL` | Model to use | No (default: llama-3.3-70b-versatile) |
 | `DEBUG` | Enable debug logging | No (default: false) |
 
 ## 🔧 Development
