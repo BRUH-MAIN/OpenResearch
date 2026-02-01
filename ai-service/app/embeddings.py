@@ -1,35 +1,54 @@
-"""Embedding service using OpenAI for text embeddings."""
+"""Embedding service using sentence-transformers for local text embeddings.
+
+Uses SPECTER2 model optimized for scientific/academic papers.
+No API key required - runs locally.
+"""
 
 import asyncio
 import time
 from typing import Optional
 import numpy as np
-from openai import OpenAI
 
 from .config import get_settings
 
+# Lazy load to avoid import overhead
+_model = None
+_tokenizer = None
+
+
+def _get_model():
+    """Lazy load the sentence-transformer model."""
+    global _model, _tokenizer
+    if _model is None:
+        from sentence_transformers import SentenceTransformer
+        # SPECTER2 is optimized for scientific papers (768 dimensions)
+        # Alternative: 'allenai/specter' or 'sentence-transformers/all-mpnet-base-v2'
+        print("🔄 Loading SPECTER2 embedding model (first time may take a moment)...")
+        _model = SentenceTransformer('allenai/specter2')
+        print("✅ SPECTER2 model loaded successfully")
+    return _model
+
 
 class EmbeddingService:
-    """Service for generating text embeddings using OpenAI."""
+    """Service for generating text embeddings using local sentence-transformers.
     
-    # text-embedding-3-small produces 1536-dimensional vectors
-    EMBEDDING_DIMENSION = 1536
+    Uses SPECTER2 model which is specifically trained on scientific papers.
+    No API key required - runs entirely locally.
+    """
+    
+    # SPECTER2 produces 768-dimensional vectors
+    EMBEDDING_DIMENSION = 768
     
     def __init__(self):
-        settings = get_settings()
-        self.api_key = settings.groq_api_key  # You may want to add separate openai_api_key
-        self.client: Optional[OpenAI] = None
         self._initialized = False
+        self._model = None
         
     def initialize(self) -> bool:
-        """Initialize the embedding client. Returns True if successful."""
-        if not self.api_key:
-            print("⚠️  API_KEY not set - embedding service unavailable")
-            return False
+        """Initialize the embedding model. Returns True if successful."""
         try:
-            self.client = OpenAI(api_key=self.api_key)
+            self._model = _get_model()
             self._initialized = True
-            print("✅ Embedding service initialized (OpenAI)")
+            print("✅ Embedding service initialized (SPECTER2 - local)")
             return True
         except Exception as e:
             print(f"❌ Failed to initialize embedding service: {e}")
@@ -38,7 +57,7 @@ class EmbeddingService:
     @property
     def is_configured(self) -> bool:
         """Check if the service is properly configured."""
-        return self._initialized and self.client is not None
+        return self._initialized and self._model is not None
     
     def _sync_embed(
         self,
@@ -46,22 +65,23 @@ class EmbeddingService:
         task_type: str = "RETRIEVAL_DOCUMENT"
     ) -> list[float]:
         """
-        Synchronous embedding call using OpenAI SDK.
+        Synchronous embedding using sentence-transformers.
         """
         if not self.is_configured:
-            raise RuntimeError("Embedding service not initialized")
+            # Lazy init if not already done
+            self.initialize()
+            if not self.is_configured:
+                raise RuntimeError("Embedding service not initialized")
         
-        response = self.client.embeddings.create(
-            model="text-embedding-3-small",
-            input=text[:8000],  # Limit text length
-        )
+        # Truncate text to model's max length (512 tokens typical)
+        # SPECTER2 handles this internally, but we limit for efficiency
+        text = text[:4096]
         
-        # Get the embedding from response
-        if response.data and len(response.data) > 0:
-            embedding = response.data[0].embedding
-            return embedding
-        else:
-            raise RuntimeError("No embedding in response")
+        # Generate embedding
+        embedding = self._model.encode(text, convert_to_numpy=True)
+        
+        # Convert to list
+        return embedding.tolist()
     
     async def generate_embedding(
         self,
@@ -81,7 +101,7 @@ class EmbeddingService:
         start_time = time.time()
         
         try:
-            # Run sync call in thread pool
+            # Run sync call in thread pool to not block event loop
             embedding = await asyncio.to_thread(
                 self._sync_embed,
                 text,
@@ -90,7 +110,7 @@ class EmbeddingService:
             
             latency_ms = int((time.time() - start_time) * 1000)
             
-            # Pad or truncate to EMBEDDING_DIMENSION if needed
+            # Ensure correct dimension
             if len(embedding) < self.EMBEDDING_DIMENSION:
                 embedding.extend([0.0] * (self.EMBEDDING_DIMENSION - len(embedding)))
             elif len(embedding) > self.EMBEDDING_DIMENSION:
@@ -99,7 +119,7 @@ class EmbeddingService:
             return embedding, latency_ms
                 
         except Exception as e:
-            # Fallback to mock embedding for development/when API fails
+            # Fallback to mock embedding for development/when model fails
             print(f"⚠️  Embedding generation failed: {e}, using mock embedding")
             latency_ms = int((time.time() - start_time) * 1000)
             return self._generate_mock_embedding(text), latency_ms

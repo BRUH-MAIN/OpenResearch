@@ -60,13 +60,13 @@ class TestHealthCheck:
         assert "status" in data
         assert data["status"] == "healthy"
         
-    def test_gemini_configured(self, client):
-        """Gemini should be configured (GEMINI_API_KEY set)."""
+    def test_groq_configured(self, client):
+        """Groq should be configured (GROQ_API_KEY set)."""
         response = client.get("/health")
         data = response.json()
-        assert "gemini_configured" in data
-        if not data["gemini_configured"]:
-            pytest.skip("GEMINI_API_KEY not configured - skipping AI tests")
+        assert "groq_configured" in data
+        if not data["groq_configured"]:
+            pytest.skip("GROQ_API_KEY not configured - skipping AI tests")
 
 
 class TestAIGeneration:

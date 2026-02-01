@@ -28,7 +28,7 @@ router.post('/group/:groupId/generate', async (req: AuthRequest, res: Response, 
     // Pre-check AI service availability
     const isAvailable = await aiClient.isAvailable();
     if (!isAvailable) {
-      throw createError('AI service is not available. Please ensure GEMINI_API_KEY is configured.', 503);
+      throw createError('AI service is not available. Please ensure GROQ_API_KEY is configured.', 503);
     }
 
     // Verify membership

@@ -184,7 +184,7 @@ export interface VectorSearchResponse {
 
 export interface HealthResponse {
   status: string;
-  gemini_configured: boolean;
+  groq_configured: boolean;
   database_connected: boolean;
   vector_store_connected: boolean;
   timestamp: string;
@@ -270,7 +270,7 @@ class AIClient {
   async isAvailable(): Promise<boolean> {
     try {
       const health = await this.health();
-      return health.status === 'healthy' && health.gemini_configured;
+      return health.status === 'healthy' && health.groq_configured;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.warn(`AI service not available: ${errorMessage}`);

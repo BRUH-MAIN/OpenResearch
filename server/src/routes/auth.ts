@@ -12,7 +12,8 @@ import { authLogger } from '../utils/logger.js';
 const router = Router();
 
 // Apply rate limiting to all auth routes
-router.use(authLimiter);
+// TODO: Re-enable rate limiting for production
+// router.use(authLimiter);
 
 // Register
 router.post('/register', validate(registerSchema), async (req, res, next) => {

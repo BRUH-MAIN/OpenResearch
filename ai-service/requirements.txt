@@ -9,8 +9,12 @@ python-dotenv>=1.0.0
 # Groq SDK
 groq>=0.11.0
 
-# OpenAI SDK (for embeddings)
-openai>=1.12.0
+# Local Embeddings (sentence-transformers with SPECTER2 for scientific papers)
+# Using CPU-only torch for smaller image size and faster builds
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch>=2.0.0
+sentence-transformers>=2.2.0
+transformers>=4.36.0
 
 # Database (for reading context)
 asyncpg>=0.29.0

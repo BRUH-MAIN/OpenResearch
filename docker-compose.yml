@@ -17,6 +17,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - openresearch-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   # Backend Server (Node.js/Express)
   server:
@@ -38,6 +44,18 @@ services:
       AI_SERVICE_URL: http://ai-service:8000
     ports:
       - "3001:3001"
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - openresearch-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   # AI Service (Python/FastAPI)
   ai-service:
@@ -55,11 +73,22 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/openresearch
       SERVER_URL: http://server:3001
       DEBUG: "false"
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
     ports:
       - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - openresearch-network
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    deploy:
+      resources:
+        limits:
+          memory: 4G
 
   # Frontend Client (Next.js)
   client:
@@ -73,7 +102,8 @@ services:
     container_name: openresearch-client
     restart: unless-stopped
     depends_on:
-      - server
+      server:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: http://localhost:3001
@@ -81,6 +111,22 @@ services:
       NEXT_PUBLIC_AI_URL: http://localhost:8000
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - openresearch-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+networks:
+  openresearch-network:
+    driver: bridge
 
 volumes:
   postgres_data:

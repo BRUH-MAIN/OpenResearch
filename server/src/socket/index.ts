@@ -204,7 +204,7 @@ export function initializeSocket(httpServer: HttpServer) {
             if (!isAvailable) {
               // Emit a user-friendly error without crashing
               socket.emit('ai:error', { 
-                message: 'AI service is not available. Please ensure GEMINI_API_KEY is configured.',
+                message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
                 code: 'AI_NOT_CONFIGURED',
                 recoverable: true
               });
@@ -237,7 +237,7 @@ export function initializeSocket(httpServer: HttpServer) {
                   type: 'ai',
                   metadata: {
                     sources: 'sources' in aiResponse ? aiResponse.sources : [],
-                    model: (metadataObj.model as string) || ('model' in aiResponse ? aiResponse.model : 'gemini'),
+                    model: (metadataObj.model as string) || ('model' in aiResponse ? aiResponse.model : 'groq'),
                     latency_ms: aiResponse.latency_ms,
                     context_items_used: (metadataObj.context_items_used as number) || 0,
                     vector_ids_used: (metadataObj.vector_ids_used as string[]) || [],
@@ -291,7 +291,7 @@ export function initializeSocket(httpServer: HttpServer) {
         const isAvailable = await aiClient.isAvailable();
         if (!isAvailable) {
           socket.emit('ai:error', { 
-            message: 'AI service is not available. Please ensure GEMINI_API_KEY is configured.',
+            message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
             code: 'AI_NOT_CONFIGURED',
             recoverable: true
           });
@@ -379,7 +379,7 @@ export function initializeSocket(httpServer: HttpServer) {
         const isAvailable = await aiClient.isAvailable();
         if (!isAvailable) {
           socket.emit('ai:error', { 
-            message: 'AI service is not available. Please ensure GEMINI_API_KEY is configured.',
+            message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
             code: 'AI_NOT_CONFIGURED',
             recoverable: true
           });
