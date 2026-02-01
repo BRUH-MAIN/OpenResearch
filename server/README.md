@@ -11,7 +11,7 @@ Express.js backend for OpenResearch with JWT authentication, PostgreSQL, and rea
 - **AI Service Integration** - Proxy to FastAPI AI service
 - **RESTful API** - Complete CRUD operations for all resources
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 server/
@@ -108,6 +108,8 @@ Server runs at `http://localhost:3001`
 
 ## 📡 API Endpoints
 
+See [Root README](../README.md#-api-documentation) for comprehensive API documentation.
+
 ### Authentication
 | Method | Endpoint | Description |
 |--------|----------|-------------|
@@ -127,8 +129,8 @@ Server runs at `http://localhost:3001`
 | PATCH | `/api/groups/:id` | Update group |
 | DELETE | `/api/groups/:id` | Delete group |
 | GET | `/api/groups/:id/members` | Get group members |
-| POST | `/api/groups/:id/members` | Add member |
-| DELETE | `/api/groups/:id/members/:userId` | Remove member |
+| POST | `/api/groups/:id/members` | Add member to group |
+| DELETE | `/api/groups/:id/members/:userId` | Remove member from group |
 
 ### Sessions
 | Method | Endpoint | Description |
@@ -138,67 +140,110 @@ Server runs at `http://localhost:3001`
 | POST | `/api/sessions` | Create session |
 | PATCH | `/api/sessions/:id` | Update session |
 | DELETE | `/api/sessions/:id` | Delete session |
-| GET | `/api/sessions/:id/messages` | Get messages |
+| GET | `/api/sessions/:id/messages` | Get session messages |
 | DELETE | `/api/sessions/:id/messages/:msgId` | Delete message |
 
-### Papers
+### Papers & Paper Search
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/papers` | Get all papers |
+| GET | `/api/papers` | List papers |
 | GET | `/api/papers/saved` | Get saved papers |
-| GET | `/api/papers/search/external` | Search arXiv |
+| GET | `/api/papers/search/external` | Search arXiv (external) |
 | POST | `/api/papers/import` | Import external paper |
-| GET | `/api/papers/:id` | Get single paper |
+| GET | `/api/papers/:id` | Get paper details |
 | POST | `/api/papers/:id/save` | Save paper |
 | DELETE | `/api/papers/:id/save` | Unsave paper |
 | GET | `/api/papers/meta/tags` | Get all tags |
 
-### AI Features
+### Group Papers & AI Features (with @ai trigger)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/groups/:groupId/papers` | List group papers |
+| POST | `/api/groups/:groupId/papers` | Add paper to group |
+| POST | `/api/groups/:groupId/papers/:paperId/question` | Ask question about paper (@ai) |
+| POST | `/api/groups/:groupId/papers/:paperId/summarize` | Summarize paper |
+
+### Paper Discovery & Recommendations
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/recommendations/group/:groupId` | AI-powered recommendations |
+| GET | `/api/recommendations/trending` | Trending papers |
+
+### PDF Reports
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/reports/group/:groupId/generate` | Generate PDF report |
+| GET | `/api/reports/group/:groupId` | List group reports |
+| GET | `/api/reports/:reportId` | Get report details |
+| GET | `/api/reports/:reportId/download` | Download PDF report |
+
+### AI Service Integration
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/api/ai/chat` | Chat with session context |
 | POST | `/api/ai/summarize` | Generate session summary |
 | POST | `/api/ai/test` | Test AI without context |
-| GET | `/api/ai/health` | AI service health |
+| GET | `/api/ai/health` | AI service health check |
 
 **Note**: AI endpoints proxy requests to the FastAPI service running on port 8000. See `../ai-service/README.md` for details.
 
 ## 📡 Socket.IO Events
 
+Real-time bidirectional communication. All connections require JWT authentication via `auth.token`. See [Socket.IO Events Documentation](../docs/socket-io-events.md) for comprehensive details.
+
 ### Client → Server
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `session:join` | `sessionId` | Join a chat session |
-| `session:leave` | `sessionId` | Leave a session |
-| `message:send` | `{ sessionId, content }` | Send a message |
-| `typing:start` | `sessionId` | Start typing indicator |
-| `typing:stop` | `sessionId` | Stop typing indicator |
+| `join:session` | `{ sessionId }` | Join a chat session |
+| `leave:session` | `{ sessionId }` | Leave a session |
+| `message:send` | `{ sessionId, content }` | Send a message (triggers @ai if present) |
+| `typing:start` | `{ sessionId }` | Start typing indicator |
+| `typing:stop` | `{ sessionId }` | Stop typing indicator |
+| `paper:question` | `{ paperId, groupId, question, sessionId? }` | Ask paper question (@ai) |
+| `paper:summarize` | `{ paperId }` | Request paper summary |
 
 ### Server → Client
 | Event | Payload | Description |
 |-------|---------|-------------|
-| `session:joined` | `{ sessionId }` | Confirmed joined |
-| `message:new` | `Message` | New message received |
+| `message:new` | `Message` | New message received (includes AI responses) |
 | `user:joined` | `{ userId, userName }` | User joined session |
 | `user:left` | `{ userId, userName }` | User left session |
 | `user:typing` | `{ userId, userName }` | User is typing |
 | `user:stopped-typing` | `{ userId }` | User stopped typing |
+| `paper:answer` | `{ answer, paperId, groupId }` | Paper Q&A response |
+| `paper:summary` | `{ summary, keyPoints, paperId }` | Paper summarization response |
+| `joined:session` | `{ sessionId }` | Confirmed session join |
 | `error` | `{ message }` | Error occurred |
 
 ## 🗄️ Database Schema
 
-### Tables
+See [Database Schema Documentation](../docs/database-schema.md) for comprehensive schema details including relationships and indexes.
+
+### Core Tables
 - `users` - User accounts with authentication
-- `groups` - Research groups
+- `groups` - Research collaboration groups
 - `group_members` - Group membership (junction table)
-- `sessions` - Chat/discussion sessions
-- `messages` - Session messages
+- `sessions` - Chat/discussion sessions within groups
+- `messages` - Session messages with timestamps
 - `papers` - Research papers metadata
 - `saved_papers` - User's saved papers (junction table)
-- `session_papers` - Papers linked to sessions (junction table)
+- `group_papers` - Papers linked to groups
+- `group_paper_vectors` - Vector embeddings for papers (pgvector, 1536-dim)
 - `refresh_tokens` - JWT refresh tokens
+- `group_memory_notes` - Group-scoped memory notes (embeddable)
+- `ai_artifacts` - Generated artifacts (summaries, reports)
+- `group_reports` - PDF reports (group-specific)
+
+### Vector Storage
+- **Table**: `group_paper_vectors`
+- **Embedding**: 1536-dimensional OpenAI embeddings
+- **Index Type**: HNSW (Hierarchical Navigable Small World)
+- **Distance Metric**: Cosine similarity
+- **Group Isolation**: Each group has isolated vector space
 
 ## 🧪 Testing
+
+All code must maintain ≥90% test coverage using Vitest. See [Testing Guide](../docs/testing.md) for comprehensive testing documentation.
 
 ```bash
 # Run all tests
@@ -211,7 +256,16 @@ npm run test:watch
 npm run test:coverage
 ```
 
-## 🧪 Test Credentials
+### Test Files (`tests/`)
+- `auth.test.ts` - Authentication and JWT token tests
+- `groups.test.ts` - Group CRUD and membership tests
+- `papers.test.ts` - Paper management and arXiv search tests
+- `groupPapers.test.ts` - Group papers and AI vector features
+- `reports.test.ts` - PDF report generation tests
+- `recommendations.test.ts` - Paper recommendations and discovery
+- `socket.test.ts` - Real-time Socket.IO handlers
+
+### Test Credentials
 
 After running `npm run db:seed`:
 

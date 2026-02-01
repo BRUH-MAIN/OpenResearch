@@ -473,7 +473,7 @@ npm run lint
 
 ## 🧪 Testing
 
-All services must maintain ≥90% test coverage. CI will fail if coverage drops below threshold.
+All services must maintain ≥90% test coverage. CI will fail if coverage drops below threshold. See [Testing Guide](docs/testing.md) for comprehensive testing documentation.
 
 ```bash
 # Backend tests (Vitest)
@@ -484,6 +484,7 @@ npm run test:watch         # Watch mode
 
 # AI Service tests (pytest)
 cd ai-service
+source venv/bin/activate
 pytest                      # Run all tests
 pytest --cov=app --cov-report=term-missing --cov-fail-under=90
 
