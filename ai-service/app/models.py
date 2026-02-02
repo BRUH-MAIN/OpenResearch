@@ -1,7 +1,7 @@
 """Pydantic models for request/response schemas."""
 
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional
+from typing import Optional, Literal, Any
 from datetime import datetime
 import re
 
@@ -116,6 +116,39 @@ class VectorSearchRequest(BaseModel):
     paper_id: Optional[str] = Field(None, description="Filter by paper ID")
 
 
+# ============ Agentic Models ============
+
+AgenticTaskType = Literal[
+    "paper_retrieval",
+    "literature_survey",
+    "gap_analysis",
+    "fact_check",
+    "novelty_assessment",
+    "research_mentor",
+    "paper_writing",
+    "research_planning",
+    "deep_research",
+]
+
+
+class AgenticRunRequest(BaseModel):
+    """Request for agentic orchestration run."""
+    task_type: AgenticTaskType = Field(..., description="Agentic task type")
+    prompt: str = Field(..., min_length=3, max_length=8000, description="Prompt with @ai trigger")
+    group_id: Optional[str] = Field(None, description="Group ID for context isolation")
+    user_id: Optional[str] = Field(None, description="User ID for memory personalization")
+    session_id: Optional[str] = Field(None, description="Session ID")
+    paper_ids: Optional[list[str]] = Field(None, description="Paper IDs for focused analysis")
+    options: Optional[dict[str, Any]] = Field(None, description="Task-specific options")
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if "@ai" not in v.lower():
+            raise ValueError("Prompt must contain @ai trigger. AI only responds when triggered by @ai.")
+        return v
+
+
 # ============ Response Models ============
 
 class ChatResponse(BaseModel):
@@ -191,6 +224,15 @@ class VectorSearchResponse(BaseModel):
     results: list[dict]
     total: int
     group_id: str
+    latency_ms: int
+
+
+class AgenticRunResponse(BaseModel):
+    """Response from agentic orchestration run."""
+    task_type: AgenticTaskType
+    result: dict = Field(default_factory=dict)
+    artifacts: list[str] = Field(default_factory=list)
+    metadata: dict = Field(default_factory=dict)
     latency_ms: int
 
 

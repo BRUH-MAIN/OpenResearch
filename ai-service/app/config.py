@@ -23,9 +23,18 @@ class Settings(BaseSettings):
     
     # Database (read-only access to main DB for context)
     database_url: str = ""
+
+    # Mem0 memory
+    mem0_enabled: bool = True
+    mem0_database_url: str = ""
+    mem0_collection: str = "openresearch_memories"
     
     # Service URLs
     server_url: str = "http://localhost:3001"
+
+    # MCP servers (JSON mapping of server_name -> base_url)
+    mcp_server_urls: str = ""
+    mcp_request_timeout: int = 30
     
     # Rate limiting
     max_context_messages: int = 50
