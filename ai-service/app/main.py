@@ -36,6 +36,7 @@ from .models import (
     AddPaperToGroupRequest, AddPaperResponse,
     GenerateReportRequest, ReportResponse,
     VectorSearchRequest, VectorSearchResponse,
+    AgenticRunRequest, AgenticRunResponse,
     HealthResponse, ErrorResponse,
 )
 from .groq_client import groq_client
@@ -43,6 +44,7 @@ from .database import database
 from .embeddings import embedding_service
 from .vector_store import vector_store
 from .report_generator import report_generator
+from .agentic import agentic_service
 
 
 @asynccontextmanager
@@ -74,6 +76,12 @@ async def lifespan(app: FastAPI):
         print("✅ Vector store connected")
     else:
         print("⚠️  Vector store not connected - RAG features limited")
+
+    # Initialize agentic orchestration
+    if agentic_service.initialize():
+        print("✅ Agentic orchestration initialized")
+    else:
+        print("⚠️  Agentic orchestration not configured")
     
     # Create reports directory
     os.makedirs("./reports", exist_ok=True)
@@ -213,6 +221,49 @@ async def health_check():
         vector_store_connected=vector_store.is_connected,
         timestamp=datetime.now(timezone.utc),
     )
+
+
+# ============ Agentic Orchestration ============
+
+@app.post(
+    "/agentic/run",
+    response_model=AgenticRunResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "Missing @ai trigger"},
+        503: {"model": ErrorResponse, "description": "AI service not configured"},
+    },
+    tags=["Agentic"],
+    summary="Run agentic research task",
+)
+async def run_agentic_task(request: AgenticRunRequest):
+    """Run an agentic task via LangGraph orchestration."""
+    validate_ai_trigger(request.prompt, "prompt")
+
+    if not groq_client.is_configured:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI service not configured. Please set GROQ_API_KEY.",
+        )
+
+    try:
+        response = await agentic_service.run_task(
+            request.task_type,
+            {
+                "prompt": request.prompt,
+                "group_id": request.group_id,
+                "user_id": request.user_id,
+                "session_id": request.session_id,
+                "paper_ids": request.paper_ids,
+                "options": request.options,
+            },
+        )
+
+        return AgenticRunResponse(**response)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Agentic task failed: {str(e)}",
+        )
 
 
 # ============ Group AI Chat ============

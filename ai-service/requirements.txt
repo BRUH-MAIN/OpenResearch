@@ -9,6 +9,12 @@ python-dotenv>=1.0.0
 # Groq SDK
 groq>=0.11.0
 
+# Agentic frameworks
+langgraph>=0.2.0
+langchain-core>=0.2.0
+langchain-groq>=0.1.0
+mem0ai>=0.1.0
+
 # Local Embeddings (sentence-transformers with SPECTER2 for scientific papers)
 # Using CPU-only torch for smaller image size and faster builds
 --extra-index-url https://download.pytorch.org/whl/cpu

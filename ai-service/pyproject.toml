@@ -11,6 +11,10 @@ dependencies = [
     "httpx>=0.26.0",
     "python-dotenv>=1.0.0",
     "groq>=0.11.0",
+    "langgraph>=0.2.0",
+    "langchain-core>=0.2.0",
+    "langchain-groq>=0.1.0",
+    "mem0ai>=0.1.0",
     "sentence-transformers>=2.2.0",
     "torch>=2.0.0",
     "transformers>=4.36.0",
@@ -29,6 +33,13 @@ test = [
     "pytest-cov>=4.1.0",
 ]
 
+[dependency-groups]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.23.0",
+    "pytest-cov>=4.1.0",
+]
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
@@ -39,3 +50,6 @@ dev-dependencies = [
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
 ]
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
