@@ -39,8 +39,21 @@
 \title{\textbf{Software Requirements Specification} \\ 
        \Large OpenResearch --- Collaboration-First Research Platform \\
        \large Version 1.0}
-\author{OpenResearch Development Team}
-\date{February 9, 2026}
+\author{
+    Prepared by \\
+    \textbf{OpenResearch Development Team} \\
+    \vspace{0.3cm}
+    \textbf{B Pranav Karthik - CB.SC.U4AIE23217} \\
+    \textbf{Bharath Sooryaa M - CB.SC.U4AIE23218} \\
+    \textbf{Hari Karthik V - CB.SC.U4AIE23227} \\
+    \textbf{Prem N - CB.SC.U4AIE23241} \\
+    \textbf{Rohan Ramesh - CB.SC.U4AIE23242} \\
+    \vspace{0.5cm}
+    Course: 22AIE311 Software Engineering \\
+    Project Guide: Dr. Keerthika T. \\
+    Assistant Professor (Sl. Gd.), School of Artificial Intelligence, Coimbatore
+}
+\date{February 11, 2026}
 
 \begin{document}
 
@@ -181,7 +194,7 @@ OpenResearch operates as a standalone web application with integration points to
 \begin{itemize}
     \item \textit{arXiv API}: Paper search and metadata retrieval
     \item \textit{Groq API}: LLM inference using Llama 3.3 70B model
-    \item \textit{OpenAI API}: Text embedding generation (1536 dimensions)
+    \item \textit{SPECTER2 Model}: Local text embedding generation (768 dimensions) --- runs locally without API key
 \end{itemize}
 
 The system supports collaborative research workflows where multiple users can simultaneously interact with shared paper collections, conduct AI-assisted analysis, and maintain persistent conversation history. All AI features are explicitly triggered using the \texttt{@ai} prefix to ensure intentional usage and cost control.
@@ -290,8 +303,8 @@ System Administrator & Technical staff managing deployment and maintenance & Hig
     \item \textbf{External API Dependencies}:
     \begin{itemize}
         \item Groq API for LLM (Llama 3.3 70B)
-        \item OpenAI API for text embeddings (1536 dimensions)
         \item arXiv API for paper search
+        \item SPECTER2 local model for embeddings (no external dependency)
     \end{itemize}
 
     \item \textbf{Real-time Communication}: Socket.IO requires persistent WebSocket connections
@@ -304,7 +317,8 @@ System Administrator & Technical staff managing deployment and maintenance & Hig
 \textbf{Assumptions:}
 \begin{itemize}
     \item Users have stable internet connectivity for real-time features
-    \item External APIs (Groq, OpenAI, arXiv) maintain availability and API compatibility
+    \item External APIs (Groq, arXiv) maintain availability and API compatibility
+    \item SPECTER2 embedding model runs successfully on AI service infrastructure
     \item Users have modern browsers with JavaScript enabled
     \item Research papers are publicly accessible via arXiv
 \end{itemize}
@@ -313,7 +327,7 @@ System Administrator & Technical staff managing deployment and maintenance & Hig
 \begin{itemize}
     \item PostgreSQL 16 with pgvector extension for vector storage
     \item Groq API for LLM inference
-    \item OpenAI API for embedding generation
+    \item SPECTER2 model (via Sentence-Transformers) for local embedding generation
     \item arXiv API for paper metadata and search
 \end{itemize}
 
@@ -369,7 +383,7 @@ No direct hardware & System operates entirely as a web application \\
 \midrule
 arXiv API & REST/HTTP & Search and retrieve academic paper metadata \\
 Groq API & REST/HTTP & LLM inference for Q\&A and summarization \\
-OpenAI API & REST/HTTP & Text embedding generation (1536 dimensions) \\
+SPECTER2 Model & Local (Sentence-Transformers) & Text embedding generation (768 dimensions) --- optimized for scientific papers \\
 PostgreSQL & TCP/IP & Primary data storage with pgvector \\
 \bottomrule
 \end{tabular}
@@ -516,9 +530,65 @@ F33 & The system SHALL generate PDF reports for group activity \\
 F34 & The system SHALL support weekly, monthly, and custom date range reports \\
 F35 & The system SHALL allow selection of report sections (overview, papers, discussions, insights) \\
 F36 & The system SHALL provide report download functionality \\
+F37 & The system SHALL allow users to delete their own reports \\
 \bottomrule
 \end{tabular}
 \caption{Report Generation Requirements}
+\end{table}
+
+\subsubsection{Friends \& Networking}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{1.5cm}p{11.5cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+F38 & The system SHALL allow users to send friend requests to other users \\
+F39 & The system SHALL allow users to accept or reject friend requests \\
+F40 & The system SHALL maintain bidirectional friend relationships \\
+F41 & The system SHALL allow users to remove friends from their friend list \\
+F42 & The system SHALL display pending, accepted, and rejected friend request statuses \\
+\bottomrule
+\end{tabular}
+\caption{Friends \& Networking Requirements}
+\end{table}
+
+\subsubsection{Task Management}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{1.5cm}p{11.5cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+F43 & The system SHALL allow users to create tasks within sessions \\
+F44 & The system SHALL support task statuses: pending, in-progress, completed \\
+F45 & The system SHALL allow task assignment to group members \\
+F46 & The system SHALL allow AI to extract tasks from messages automatically \\
+F47 & The system SHALL allow users to update task status and descriptions \\
+F48 & The system SHALL link tasks to the messages they were extracted from \\
+\bottomrule
+\end{tabular}
+\caption{Task Management Requirements}
+\end{table}
+
+\subsubsection{Session Management}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{1.5cm}p{11.5cm}}
+\toprule
+\textbf{ID} & \textbf{Requirement} \\
+\midrule
+F49 & The system SHALL allow session titles to be updated by group members \\
+F50 & The system SHALL support session archival (active/archived status) \\
+F51 & The system SHALL allow deletion of individual messages by their authors \\
+F52 & The system SHALL allow clearing all messages in a session \\
+F53 & The system SHALL allow sessions to be deleted by group owners \\
+\bottomrule
+\end{tabular}
+\caption{Session Management Requirements}
 \end{table}
 
 \subsection{Use Case Model}
@@ -631,6 +701,219 @@ Includes & U3: Invite Members, U4: Manage Sessions \\
 \bottomrule
 \end{tabular}
 \caption{Use Case U2 Basic Flow}
+\end{table}
+
+\subsubsection{Use Case U3: Invite Members}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4cm}p{9cm}}
+\toprule
+\textbf{Attribute} & \textbf{Description} \\
+\midrule
+Author & OpenResearch Team \\
+Purpose & Allow group owners to invite members to join research groups \\
+Requirements Traceability & F7, F8 \\
+Priority & High \\
+Preconditions & User is group owner or has invite permissions \\
+Postconditions & Invitation is sent and recorded in system \\
+Actors & Group Owner (primary), Invited User (secondary) \\
+Extends & None \\
+Includes & None \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U3 Attributes}
+\end{table}
+
+\textbf{Basic Flow:}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{6cm}p{7cm}}
+\toprule
+\textbf{Actor's Action} & \textbf{System's Response} \\
+\midrule
+1. Owner navigates to group members page & System displays current members and invite option \\
+2. Owner clicks "Invite Member" & System displays user search interface \\
+3. Owner selects user to invite & System validates user is not already a member \\
+4. Owner optionally adds invitation message & System creates invitation record \\
+--- & System sends notification to invited user \\
+--- & Invitation appears in recipient's pending invitations \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U3 Basic Flow}
+\end{table}
+
+\subsubsection{Use Case U4: Manage Sessions}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4cm}p{9cm}}
+\toprule
+\textbf{Attribute} & \textbf{Description} \\
+\midrule
+Author & OpenResearch Team \\
+Purpose & Create and manage discussion sessions within groups \\
+Requirements Traceability & F49, F50, F53 \\
+Priority & High \\
+Preconditions & User is authenticated and is a group member \\
+Postconditions & Session is created/updated/archived/deleted \\
+Actors & Group Members (primary) \\
+Extends & None \\
+Includes & None \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U4 Attributes}
+\end{table}
+
+\textbf{Basic Flow (Create Session):}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{6cm}p{7cm}}
+\toprule
+\textbf{Actor's Action} & \textbf{System's Response} \\
+\midrule
+1. User navigates to group view & System displays list of sessions \\
+2. User clicks "New Session" & System displays session creation form \\
+3. User enters session title & System validates input \\
+4. User submits form & System creates session, sets status to active \\
+--- & System redirects to session chat interface \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U4 Basic Flow}
+\end{table}
+
+\textbf{Alternative Flow (Archive Session):}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{6cm}p{7cm}}
+\toprule
+\textbf{Actor's Action} & \textbf{System's Response} \\
+\midrule
+1. User views active session & System displays session with archive option \\
+2. User clicks "Archive Session" & System confirms action \\
+3. User confirms & System updates session status to archived \\
+--- & Session moves to archived section \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U4 Alternative Flow}
+\end{table}
+
+\subsubsection{Use Case U6: AI Chat}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4cm}p{9cm}}
+\toprule
+\textbf{Attribute} & \textbf{Description} \\
+\midrule
+Author & OpenResearch Team \\
+Purpose & Enable AI-powered chat within group sessions with context awareness \\
+Requirements Traceability & F18, F22, F23 \\
+Priority & High \\
+Preconditions & User is in active session, message contains \texttt{@ai} trigger \\
+Postconditions & AI response is generated using group context and displayed \\
+Actors & User (primary), Groq AI API (secondary) \\
+Extends & U5: Real-time Chat \\
+Includes & None \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U6 Attributes}
+\end{table}
+
+\textbf{Basic Flow:}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{6cm}p{7cm}}
+\toprule
+\textbf{Actor's Action} & \textbf{System's Response} \\
+\midrule
+1. User types message with \texttt{@ai} prefix & System detects AI trigger in message \\
+2. User sends message & System persists user message \\
+--- & System retrieves group context (papers, discussions) via RAG \\
+--- & System sends context + query to Groq API \\
+--- & System receives AI response \\
+--- & System broadcasts AI message to session \\
+--- & System stores AI response as embedding \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U6 Basic Flow}
+\end{table}
+
+\textbf{Exceptions:}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{6cm}p{7cm}}
+\toprule
+\textbf{Actor's Action} & \textbf{System's Response} \\
+\midrule
+AI service returns error & System displays fallback error message in chat \\
+No group context available & System responds using general knowledge only \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U6 Exceptions}
+\end{table}
+
+\subsubsection{Use Case U11: Manage Tasks}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4cm}p{9cm}}
+\toprule
+\textbf{Attribute} & \textbf{Description} \\
+\midrule
+Author & OpenResearch Team \\
+Purpose & Create and track tasks within group sessions \\
+Requirements Traceability & F43, F44, F45, F46, F47, F48 \\
+Priority & Medium \\
+Preconditions & User is authenticated and is a session participant \\
+Postconditions & Task is created/updated with status tracking \\
+Actors & Group Members (primary) \\
+Extends & None \\
+Includes & None \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U11 Attributes}
+\end{table}
+
+\textbf{Basic Flow (Manual Task Creation):}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{6cm}p{7cm}}
+\toprule
+\textbf{Actor's Action} & \textbf{System's Response} \\
+\midrule
+1. User views session interface & System displays task panel \\
+2. User clicks "Create Task" & System displays task creation form \\
+3. User enters title, description, assignee & System validates input \\
+4. User submits form & System creates task with pending status \\
+--- & System notifies assigned user \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U11 Basic Flow}
+\end{table}
+
+\textbf{Alternative Flow (AI Task Extraction):}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{6cm}p{7cm}}
+\toprule
+\textbf{Actor's Action} & \textbf{System's Response} \\
+\midrule
+1. User sends message mentioning action item & System analyzes message content \\
+--- & AI detects task-like content \\
+--- & System suggests creating task from message \\
+2. User accepts suggestion & System creates task linked to message \\
+--- & Task appears in session task list \\
+\bottomrule
+\end{tabular}
+\caption{Use Case U11 Alternative Flow}
 \end{table}
 
 \subsubsection{Use Case U5: Real-time Chat}
@@ -901,7 +1184,7 @@ NFR11 & JWT tokens MUST expire within 24 hours; refresh tokens within 7 days \\
 NFR12 & Rate limiting MUST be enforced on all API endpoints \\
 NFR13 & Vector searches MUST always filter by group\_id to prevent cross-group data access \\
 NFR14 & User data MUST be removed or anonymized upon account deletion \\
-NFR15 & API keys (Groq, OpenAI) MUST never be exposed to the client \\
+NFR15 & API keys (Groq) MUST never be exposed to the client; local embeddings require no API key \\
 \bottomrule
 \end{tabular}
 \caption{Safety and Security Requirements}
@@ -1021,7 +1304,7 @@ Database & PostgreSQL & 16 \\
 Vector Extension & pgvector & Latest \\
 AI Service & FastAPI (Python) & 3.12+ \\
 LLM Provider & Groq (Llama 3.3 70B) & Latest \\
-Embeddings & OpenAI & text-embedding-3-small \\
+Embeddings & SPECTER2 (Sentence-Transformers) & allenai/specter2 (768-dim, optimized for scientific papers) \\
 PDF Generation & ReportLab & Latest \\
 Testing (Server) & Vitest & Latest \\
 Testing (AI) & pytest & Latest \\
@@ -1054,6 +1337,13 @@ Testing (AI) & pytest & Latest \\
     \item \texttt{GET /api/groups/:id/members} --- List members
     \item \texttt{POST /api/groups/:id/members} --- Add member
     \item \texttt{DELETE /api/groups/:id/members/:userId} --- Remove member
+    \item \texttt{GET /api/groups/invitations/pending} --- Get pending invitations
+    \item \texttt{GET /api/groups/:id/invitations} --- List group invitations
+    \item \texttt{POST /api/groups/:id/invitations} --- Create invitation
+    \item \texttt{POST /api/groups/:id/invite-friend/:friendId} --- Invite friend to group
+    \item \texttt{POST /api/groups/invitations/:invitationId/accept} --- Accept invitation
+    \item \texttt{POST /api/groups/invitations/:invitationId/decline} --- Decline invitation
+    \item \texttt{DELETE /api/groups/:id/invitations/:invitationId} --- Cancel invitation
 \end{itemize}
 
 \subsection{Session Endpoints}
@@ -1062,7 +1352,11 @@ Testing (AI) & pytest & Latest \\
     \item \texttt{GET /api/sessions/group/:groupId} --- List group sessions
     \item \texttt{POST /api/sessions} --- Create session
     \item \texttt{GET /api/sessions/:id} --- Get session
+    \item \texttt{PATCH /api/sessions/:id} --- Update session title/status
+    \item \texttt{DELETE /api/sessions/:id} --- Delete session
     \item \texttt{GET /api/sessions/:id/messages} --- Get messages
+    \item \texttt{DELETE /api/sessions/:id/messages/:messageId} --- Delete message
+    \item \texttt{DELETE /api/sessions/:id/messages} --- Clear all messages
 \end{itemize}
 
 \subsection{Paper Endpoints}
@@ -1075,19 +1369,52 @@ Testing (AI) & pytest & Latest \\
     \item \texttt{DELETE /api/papers/:id/save} --- Unsave paper
 \end{itemize}
 
+\subsection{Group Papers Endpoints}
+
+\begin{itemize}
+    \item \texttt{GET /api/groups/:groupId/papers} --- List group papers
+    \item \texttt{POST /api/groups/:groupId/papers} --- Add paper to group
+    \item \texttt{DELETE /api/groups/:groupId/papers/:paperId} --- Remove paper from group
+    \item \texttt{POST /api/groups/:groupId/papers/:paperId/question} --- Paper Q\&A
+    \item \texttt{POST /api/groups/:groupId/papers/:paperId/summarize} --- Summarize paper
+    \item \texttt{POST /api/groups/:groupId/search} --- Semantic search in group papers
+\end{itemize}
+
 \subsection{AI Endpoints}
 
 \begin{itemize}
-    \item \texttt{POST /api/groups/:groupId/papers/:paperId/question} --- Paper Q\&A
-    \item \texttt{POST /api/groups/:groupId/papers/:paperId/summarize} --- Summarize paper
-    \item \texttt{GET /api/recommendations/group/:groupId} --- AI recommendations
+    \item \texttt{GET /api/ai/health} --- AI service health check
+    \item \texttt{POST /api/ai/chat} --- General AI chat
+    \item \texttt{POST /api/ai/ask/:sessionId} --- Session AI Q\&A
+    \item \texttt{POST /api/ai/summarize/:sessionId} --- Session summarization
+\end{itemize}
+
+\subsection{Recommendations Endpoints}
+
+\begin{itemize}
+    \item \texttt{GET /api/recommendations/user} --- Get personalized user recommendations
+    \item \texttt{GET /api/recommendations/group/:groupId} --- AI recommendations for group
+    \item \texttt{GET /api/recommendations/similar/:paperId} --- Find similar papers
+    \item \texttt{GET /api/recommendations/trending} --- Get trending papers
 \end{itemize}
 
 \subsection{Report Endpoints}
 
 \begin{itemize}
     \item \texttt{POST /api/reports/group/:groupId/generate} --- Generate report
+    \item \texttt{GET /api/reports/group/:groupId} --- List group reports
+    \item \texttt{GET /api/reports/:reportId} --- Get report details
     \item \texttt{GET /api/reports/:reportId/download} --- Download PDF
+    \item \texttt{DELETE /api/reports/:reportId} --- Delete report
+\end{itemize}
+
+\subsection{Health Check Endpoints}
+
+\begin{itemize}
+    \item \texttt{GET /health} --- Basic health check
+    \item \texttt{GET /health/detailed} --- Detailed health with service status
+    \item \texttt{GET /health/live} --- Liveness probe
+    \item \texttt{GET /health/ready} --- Readiness probe with database check
 \end{itemize}
 
 \section{Database Schema Summary}
@@ -1111,12 +1438,135 @@ group\_memory\_notes & Group knowledge base \\
 ai\_artifacts & AI-generated content storage \\
 group\_reports & Report generation metadata \\
 group\_invitations & Pending group invitations \\
+tasks & Task management within sessions \\
+friends & User friendship relationships \\
+friend\_requests & Pending friend requests \\
+refresh\_tokens & JWT refresh token storage \\
 \bottomrule
 \end{tabular}
 \caption{Database Schema Summary}
 \end{table}
 
+\section{Socket.IO Events Reference}
+
+\subsection{Client to Server Events}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4cm}p{9cm}}
+\toprule
+\textbf{Event} & \textbf{Description} \\
+\midrule
+\texttt{join:session} & Join a session room to receive real-time updates \\
+\texttt{leave:session} & Leave a session room \\
+\texttt{message:send} & Send a message to a session \\
+\texttt{message:delete} & Delete a message from a session \\
+\texttt{typing:start} & Indicate user started typing \\
+\texttt{typing:stop} & Indicate user stopped typing \\
+\bottomrule
+\end{tabular}
+\caption{Client to Server Socket.IO Events}
+\end{table}
+
+\subsection{Server to Client Events}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{4cm}p{9cm}}
+\toprule
+\textbf{Event} & \textbf{Description} \\
+\midrule
+\texttt{joined:session} & Confirmation of successful session join \\
+\texttt{message:new} & New message received in session \\
+\texttt{message:ai} & AI-generated response message \\
+\texttt{message:deleted} & Message was deleted \\
+\texttt{user:joined} & User joined the session \\
+\texttt{user:left} & User left the session \\
+\texttt{typing:user} & Another user is typing \\
+\texttt{error} & Error occurred during operation \\
+\bottomrule
+\end{tabular}
+\caption{Server to Client Socket.IO Events}
+\end{table}
+
+\section{Revision History and Activity Log}
+
+\begin{table}[H]
+\centering
+\begin{tabular}{p{2cm}p{3cm}p{5cm}p{2.5cm}}
+\toprule
+\textbf{Version} & \textbf{Author(s)} & \textbf{Description} & \textbf{Date} \\
+\midrule
+0.1 & Development Team & Initial draft with core requirements & 2026-01-15 \\
+0.5 & Development Team & Added AI features and vector search requirements & 2026-01-25 \\
+0.8 & Development Team & Completed use cases and non-functional requirements & 2026-02-05 \\
+1.0 & Development Team & Final version with all features, added Friends, Tasks, and Session Management & 2026-02-11 \\
+\bottomrule
+\end{tabular}
+\caption{Revision History}
+\end{table}
+
+\subsection{Team Contributions}
+
+\textbf{Team Members:}
+\begin{itemize}
+    \item B Pranav Karthik - CB.SC.U4AIE23217
+    \item Bharath Sooryaa M - CB.SC.U4AIE23218
+    \item Hari Karthik V - CB.SC.U4AIE23227
+    \item Prem N - CB.SC.U4AIE23241
+    \item Rohan Ramesh - CB.SC.U4AIE23242
+\end{itemize}
+
+\textbf{Project Guide:} Dr. Keerthika T., Assistant Professor (Sl. Gd.), School of Artificial Intelligence, Coimbatore
+
+\textbf{Document Preparation:}
+\begin{itemize}
+    \item Section 1 (Introduction): All team members
+    \item Section 2 (Overall Description): All team members
+    \item Section 3 (Specific Requirements): All team members
+    \item Section 4 (Non-functional Requirements): All team members
+    \item Section 5 (Other Requirements): All team members
+    \item Appendices: All team members
+\end{itemize}
+
+\textbf{Meetings and Milestones:}
+\begin{table}[H]
+\centering
+\begin{tabular}{p{3cm}p{5cm}p{5cm}}
+\toprule
+\textbf{Date} & \textbf{Purpose} & \textbf{Duration} \\
+\midrule
+2026-01-10 & Project kickoff and scope definition & 2 hours \\
+2026-01-18 & Requirements gathering session & 3 hours \\
+2026-01-28 & Technical architecture review & 2 hours \\
+2026-02-02 & Use case modeling workshop & 2.5 hours \\
+2026-02-08 & Final review and validation & 2 hours \\
+2026-02-11 & Document update with missing features & 1.5 hours \\
+\bottomrule
+\end{tabular}
+\caption{Team Meeting Log}
+\end{table}
+
+\subsection{Acknowledgments}
+
+We would like to express our sincere gratitude to \textbf{Dr. Keerthika T.}, Assistant Professor (Sl. Gd.), School of Artificial Intelligence, Coimbatore, for her invaluable guidance and support throughout this project.
+
+We also acknowledge the following resources and inspirations:
+\begin{itemize}
+    \item IEEE Std 830-1998 for SRS structure and best practices
+    \item Dr. Rob Pettit's SRS template from GMU
+    \item Open-source communities: Next.js, FastAPI, PostgreSQL
+    \item Groq for AI API documentation and inference capabilities
+    \item Allen Institute and Sentence-Transformers community for SPECTER2 model
+    \item Course faculty and peers for feedback and guidance
+\end{itemize}
+
 \vspace{1cm}
-\noindent\textit{Document Generated: February 9, 2026}
+\noindent\textit{Document Generated: February 11, 2026} \\
+\noindent\textit{Course: 22AIE311 Software Engineering} \\
+\noindent\textit{Project Guide: Dr. Keerthika T.} \\
+\vspace{0.3cm}
+\noindent\textit{Team Members:} \\
+\noindent\textit{B Pranav Karthik, Bharath Sooryaa M, Hari Karthik V, Prem N, Rohan Ramesh}
 
 \end{document}
