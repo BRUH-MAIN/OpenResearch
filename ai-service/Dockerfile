@@ -18,7 +18,7 @@ COPY pyproject.toml .
 COPY requirements.txt .
 
 # Install Python dependencies with UV
-RUN uv pip install --system --no-cache -r requirements.txt
+RUN uv pip install --system --no-cache --index-strategy unsafe-best-match -r requirements.txt
 
 # Copy application code
 COPY app/ ./app/

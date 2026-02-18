@@ -20,6 +20,25 @@ class Settings(BaseSettings):
     # Groq API
     groq_api_key: str = ""
     groq_model: str = "llama-3.3-70b-versatile"
+
+    # Deep research model routing (Open Deep Research style)
+    summarization_model: str = "gpt-oss-120b"
+    research_model: str = "gpt-oss-120b"
+    compression_model: str = "gpt-oss-120b"
+    final_report_model: str = "gpt-oss-120b"
+
+    # Deep research search configuration
+    search_api: str = "tavily"  # options: tavily, mcp, vector_store, hybrid
+    mcp_search_server: str = "academic_papers"
+    mcp_search_tool: str = "search_arxiv"
+    max_search_queries: int = 5
+    max_search_results: int = 20
+    max_source_summaries: int = 10
+
+    # Tavily Search
+    tavily_api_key: str = ""
+    tavily_search_depth: str = "advanced"  # basic | advanced
+    tavily_include_answer: bool = False
     
     # Database (read-only access to main DB for context)
     database_url: str = ""

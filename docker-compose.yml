@@ -73,6 +73,8 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/openresearch
       SERVER_URL: http://server:3001
       DEBUG: "false"
+      MCP_SERVER_URLS: '{"academic_papers":"http://mcp-academic-papers:9010"}'
+      MCP_REQUEST_TIMEOUT: "20"
     ports:
       - "8000:8000"
     healthcheck:
@@ -89,6 +91,28 @@ services:
       resources:
         limits:
           memory: 4G
+
+  # MCP Academic Papers (ArXiv)
+  mcp-academic-papers:
+    build:
+      context: ./mcp/academic-papers
+      dockerfile: Dockerfile
+    container_name: openresearch-mcp-academic-papers
+    restart: unless-stopped
+    ports:
+      - "9010:9010"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9010/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    networks:
+      - openresearch-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   # Frontend Client (Next.js)
   client:

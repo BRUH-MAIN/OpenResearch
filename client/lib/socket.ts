@@ -127,6 +127,16 @@ export function useSocket(sessionId: string | null) {
     setMessages(initialMessages);
   }, []);
 
+  const appendMessage = useCallback((message: Message) => {
+    setMessages((prev) => [...prev, message]);
+  }, []);
+
+  const updateMessage = useCallback((messageId: string, updates: Partial<Message>) => {
+    setMessages((prev) =>
+      prev.map((message) => (message.id === messageId ? { ...message, ...updates } : message))
+    );
+  }, []);
+
   // Clear messages
   const clearMessages = useCallback(() => {
     setMessages([]);
@@ -147,6 +157,8 @@ export function useSocket(sessionId: string | null) {
     startTyping,
     stopTyping,
     initMessages,
+    appendMessage,
+    updateMessage,
     clearMessages,
     clearAIError,
   };

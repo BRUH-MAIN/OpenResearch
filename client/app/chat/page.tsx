@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Loader2, Bot, MoreVertical, Copy, ThumbsUp, ThumbsDown, BookmarkPlus, Plus } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
-import { api, Session, GroupPaper } from '@/lib/api';
+import { api, Session, GroupPaper, AgenticTaskType, AgenticRunResponse } from '@/lib/api';
 import { useSocket } from '@/lib/socket';
 import { useToastStore } from '@/lib/toast';
 import { Button, Modal } from '@/components/ui';
@@ -24,6 +24,18 @@ const DEFAULT_QUESTIONS = [
   'How did Transformers overcome the limitations of recurrent neural networks?',
   'What are the core components of the original Transformer architecture?',
   'Can you explain the mathematical causes of hallucinations in LLMs?',
+];
+
+const AGENTIC_TASKS: { value: AgenticTaskType; label: string; description: string }[] = [
+  { value: 'paper_retrieval', label: 'Paper Retrieval', description: 'Find and rank relevant papers.' },
+  { value: 'literature_survey', label: 'Literature Survey', description: 'Synthesize a structured review.' },
+  { value: 'gap_analysis', label: 'Gap Analysis', description: 'Identify research gaps and opportunities.' },
+  { value: 'fact_check', label: 'Fact Check', description: 'Verify claims against available context.' },
+  { value: 'novelty_assessment', label: 'Novelty Assessment', description: 'Assess novelty vs existing work.' },
+  { value: 'research_mentor', label: 'Research Mentor', description: 'Provide mentoring and next steps.' },
+  { value: 'paper_writing', label: 'Paper Writing', description: 'Draft outline and starter content.' },
+  { value: 'research_planning', label: 'Research Planning', description: 'Create a milestone-based plan.' },
+  { value: 'deep_research', label: 'Deep Research', description: 'Multi-hop synthesis across papers.' },
 ];
 
 function ChatPageContent() {
@@ -45,6 +57,11 @@ function ChatPageContent() {
   // Sources State
   const [sources, setSources] = useState<Source[]>([]);
   const [studioOutputs, setStudioOutputs] = useState<StudioOutput[]>([]);
+  const [isDeepResearching, setIsDeepResearching] = useState(false);
+  const [deepResearchMessageId, setDeepResearchMessageId] = useState<string | null>(null);
+  const [agenticMode, setAgenticMode] = useState(false);
+  const [agenticTask, setAgenticTask] = useState<AgenticTaskType>('literature_survey');
+  const [isAgenticRunning, setIsAgenticRunning] = useState(false);
 
   // Socket connection
   const {
@@ -54,6 +71,8 @@ function ChatPageContent() {
     startTyping,
     stopTyping,
     initMessages,
+    appendMessage,
+    updateMessage,
   } = useSocket(sessionId);
 
   // Fetch session, messages, and group papers
@@ -118,13 +137,180 @@ function ChatPageContent() {
     typingTimeoutRef.current = setTimeout(() => stopTyping(), 2000);
   }, [startTyping, stopTyping]);
 
-  const handleSendMessage = useCallback(() => {
-    if (!inputMessage.trim() || !isConnected) return;
-    sendMessage(inputMessage.trim());
+  const getAgenticLabel = useCallback((task: AgenticTaskType) => {
+    return AGENTIC_TASKS.find((t) => t.value === task)?.label || 'Agentic Task';
+  }, []);
+
+  const formatAgenticResponse = useCallback((response: AgenticRunResponse): string => {
+    const label = getAgenticLabel(response.task_type);
+    const result = response.result as Record<string, unknown> | string | undefined;
+
+    let body = '';
+    if (typeof result === 'string') {
+      body = result;
+    } else if (result && typeof result === 'object') {
+      const sections: Array<{ key: string; title: string }> = [
+        { key: 'deep_research', title: 'Deep Research' },
+        { key: 'literature_review', title: 'Literature Review' },
+        { key: 'research_gaps', title: 'Research Gaps' },
+        { key: 'fact_check', title: 'Fact Check' },
+        { key: 'novelty', title: 'Novelty Assessment' },
+        { key: 'mentor_advice', title: 'Mentor Advice' },
+        { key: 'paper_draft', title: 'Paper Draft' },
+        { key: 'research_plan', title: 'Research Plan' },
+        { key: 'papers', title: 'Papers' },
+        { key: 'result', title: 'Result' },
+      ];
+
+      const parts: string[] = [];
+      sections.forEach(({ key, title }) => {
+        if (!(key in result)) return;
+        const value = (result as Record<string, unknown>)[key];
+        if (value == null) return;
+
+        let sectionBody = '';
+        if (Array.isArray(value)) {
+          sectionBody = value
+            .map((item) => (typeof item === 'string' ? `- ${item}` : `- ${JSON.stringify(item)}`))
+            .join('\n');
+        } else if (typeof value === 'string') {
+          sectionBody = value;
+        } else {
+          sectionBody = JSON.stringify(value, null, 2);
+        }
+
+        parts.push(`### ${title}\n\n${sectionBody}`);
+      });
+
+      body = parts.join('\n\n');
+    }
+
+    if (!body) {
+      body = JSON.stringify(result || {}, null, 2);
+    }
+
+    const artifacts = response.artifacts?.length
+      ? `\n\n**Artifacts**\n${response.artifacts.map((artifactId) => `- ${artifactId}`).join('\n')}`
+      : '';
+
+    const latency = response.latency_ms ? `\n\n_Completed in ${response.latency_ms}ms_` : '';
+
+    return `## ${label}\n\n${body}${artifacts}${latency}`;
+  }, [getAgenticLabel]);
+
+  const parseAgenticCommand = useCallback((message: string) => {
+    const match = message.trim().match(/^\/agent(?:ic)?\s+(\S+)\s+([\s\S]+)$/i);
+    if (!match) return null;
+    const rawTask = match[1].toLowerCase().replace(/-/g, '_');
+    const prompt = match[2].trim();
+    if (!prompt) return null;
+    const task = AGENTIC_TASKS.find((t) => t.value === rawTask)?.value as AgenticTaskType | undefined;
+    if (!task) return null;
+    return { task, prompt };
+  }, []);
+
+  const handleSendMessage = useCallback(async () => {
+    if (!inputMessage.trim() || !sessionId) return;
+
+    const rawMessage = inputMessage.trim();
+    const command = parseAgenticCommand(rawMessage);
+    const shouldRunAgentic = agenticMode || Boolean(command);
+
+    if (!shouldRunAgentic) {
+      if (!isConnected) return;
+      sendMessage(rawMessage);
+      setInputMessage('');
+      stopTyping();
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      return;
+    }
+
+    if (!accessToken) {
+      addToast('Please sign in to run agentic tasks', 'error');
+      return;
+    }
+
+    const taskType = command?.task ?? agenticTask;
+    const prompt = command?.prompt ?? rawMessage;
+    const promptWithTrigger = prompt.toLowerCase().includes('@ai') ? prompt : `@ai ${prompt}`;
+
+    const enabledPaperIds = sources
+      .filter((source) => source.enabled && source.type === 'paper')
+      .map((source) => source.id);
+
+    const pendingMessageId = `agentic-${Date.now()}`;
+    const userMessageId = `agentic-user-${Date.now()}`;
+
+    appendMessage({
+      id: userMessageId,
+      sessionId,
+      userId: user?.id || 'user',
+      content: rawMessage,
+      type: 'user',
+      createdAt: new Date().toISOString(),
+      userName: user?.name,
+      userAvatar: user?.avatar,
+    });
+
+    appendMessage({
+      id: pendingMessageId,
+      sessionId,
+      userId: null,
+      content: `${getAgenticLabel(taskType)} is running...`,
+      type: 'ai',
+      createdAt: new Date().toISOString(),
+      userName: 'Research Assistant',
+    });
+
     setInputMessage('');
     stopTyping();
     if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-  }, [inputMessage, isConnected, sendMessage, stopTyping]);
+
+    setIsAgenticRunning(true);
+
+    try {
+      const response = await api.runAgenticTask(accessToken, {
+        taskType,
+        prompt: promptWithTrigger,
+        groupId: session?.groupId,
+        sessionId,
+        paperIds: enabledPaperIds.length > 0 ? enabledPaperIds : undefined,
+        options: {
+          selected_source_count: enabledPaperIds.length,
+        },
+      });
+
+      const content = formatAgenticResponse(response);
+      updateMessage(pendingMessageId, { content });
+      addToast('Agentic task completed', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Agentic task failed';
+      updateMessage(pendingMessageId, { content: `Agentic task failed.\n\n${message}` });
+      addToast(message, 'error');
+    } finally {
+      setIsAgenticRunning(false);
+    }
+  }, [
+    inputMessage,
+    isConnected,
+    sessionId,
+    parseAgenticCommand,
+    agenticMode,
+    accessToken,
+    agenticTask,
+    sources,
+    appendMessage,
+    updateMessage,
+    sendMessage,
+    stopTyping,
+    getAgenticLabel,
+    formatAgenticResponse,
+    addToast,
+    session?.groupId,
+    user?.id,
+    user?.name,
+    user?.avatar,
+  ]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -132,6 +318,67 @@ function ChatPageContent() {
       handleSendMessage();
     }
   };
+
+  const handleDeepResearch = useCallback(async () => {
+    if (!accessToken || !sessionId || !session?.groupId) {
+      addToast('Deep research requires an active group session', 'error');
+      return;
+    }
+
+    const enabledPaperIds = sources
+      .filter((source) => source.enabled && source.type === 'paper')
+      .map((source) => source.id);
+
+    const prompt = `@ai Deep research on "${session.title}". Focus on the selected sources and provide a comprehensive synthesis with citations.`;
+    const pendingMessageId = `agentic-${Date.now()}`;
+
+    setIsDeepResearching(true);
+    setDeepResearchMessageId(pendingMessageId);
+
+    appendMessage({
+      id: pendingMessageId,
+      sessionId,
+      userId: 'ai',
+      content: 'Deep Research is running...\n\nI will share a comprehensive report shortly.',
+      type: 'ai',
+      createdAt: new Date().toISOString(),
+      userName: 'Research Assistant',
+    });
+
+    try {
+      const response = await api.runAgenticTask(accessToken, {
+        taskType: 'deep_research',
+        prompt,
+        groupId: session.groupId,
+        sessionId,
+        paperIds: enabledPaperIds.length > 0 ? enabledPaperIds : undefined,
+        options: {
+          selected_source_count: enabledPaperIds.length,
+        },
+      });
+
+      const deepResearch =
+        (response.result?.deep_research as string | undefined) ||
+        (response.result?.report as string | undefined) ||
+        JSON.stringify(response.result || {}, null, 2);
+
+      const artifacts = response.artifacts?.length
+        ? `\n\n**Artifacts**\n${response.artifacts.map((artifactId) => `- ${artifactId}`).join('\n')}`
+        : '';
+
+      const content = `### Deep Research Report\n\n${deepResearch}${artifacts}\n\n_Completed in ${response.latency_ms}ms_`;
+
+      updateMessage(pendingMessageId, { content });
+      addToast('Deep research completed', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Deep research failed';
+      updateMessage(pendingMessageId, { content: `Deep research failed.\n\n${message}` });
+      addToast(message, 'error');
+    } finally {
+      setIsDeepResearching(false);
+      setDeepResearchMessageId(null);
+    }
+  }, [accessToken, sessionId, session?.groupId, session?.title, sources, appendMessage, updateMessage, addToast]);
 
   // Source handlers
   const handleToggleSource = useCallback((id: string) => {
@@ -241,8 +488,9 @@ function ChatPageContent() {
           onToggleSource={handleToggleSource}
           onToggleAll={handleToggleAll}
           onAddSource={() => setShowAddSourceModal(true)}
-          onDeepResearch={() => addToast('Deep research coming soon', 'info')}
+          onDeepResearch={handleDeepResearch}
           onWebSearch={(query: string) => addToast(`Searching for: ${query}`, 'info')}
+          isDeepResearching={isDeepResearching}
           isCollapsed={leftPanelCollapsed}
           onToggleCollapse={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
         />
@@ -326,21 +574,26 @@ function ChatPageContent() {
               ) : (
                 /* Message Thread */
                 <div className="space-y-2">
-                  {messages.map((msg) => (
-                    <ResearchMessage
-                      key={msg.id}
-                      id={msg.id}
-                      content={msg.content}
-                      type={msg.type === 'ai' ? 'ai' : 'user'}
-                      userName={msg.userName}
-                      userAvatar={msg.userAvatar}
-                      timestamp={new Date(msg.createdAt)}
-                      isCurrentUser={msg.userId === user?.id}
-                      onFeedback={msg.type === 'ai' ? handleFeedback : undefined}
-                      onCopy={handleCopy}
-                      onSaveToNotes={msg.type === 'ai' ? handleSaveToNotes : undefined}
-                    />
-                  ))}
+                  {messages.map((msg) => {
+                    const isAgenticPending = deepResearchMessageId === msg.id && msg.type === 'ai';
+
+                    return (
+                      <ResearchMessage
+                        key={msg.id}
+                        id={msg.id}
+                        content={msg.content}
+                        type={msg.type === 'ai' ? 'ai' : 'user'}
+                        userName={msg.userName}
+                        userAvatar={msg.userAvatar}
+                        timestamp={new Date(msg.createdAt)}
+                        isCurrentUser={msg.userId === user?.id}
+                        onFeedback={msg.type === 'ai' ? handleFeedback : undefined}
+                        onCopy={handleCopy}
+                        onSaveToNotes={msg.type === 'ai' ? handleSaveToNotes : undefined}
+                        className={isAgenticPending ? 'animate-pulse' : ''}
+                      />
+                    );
+                  })}
                   <div ref={messagesEndRef} />
                 </div>
               )}
@@ -350,14 +603,51 @@ function ChatPageContent() {
           {/* Chat Input */}
           <div className="px-6 py-4 border-t border-[#3c4043]">
             <div className="max-w-3xl mx-auto">
+              {/* Agentic Controls */}
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setAgenticMode((prev) => !prev)}
+                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] border transition-colors ${
+                      agenticMode
+                        ? 'bg-[#8ab4f8]/20 text-[#8ab4f8] border-[#8ab4f8]/40'
+                        : 'bg-[#28292a] text-[#9aa0a6] border-[#3c4043]'
+                    }`}
+                  >
+                    <Bot size={14} />
+                    {agenticMode ? 'Agentic On' : 'Agentic Off'}
+                  </button>
+
+                  {agenticMode && (
+                    <select
+                      value={agenticTask}
+                      onChange={(e) => setAgenticTask(e.target.value as AgenticTaskType)}
+                      className="bg-[#28292a] border border-[#3c4043] text-[#e8eaed] text-[12px] rounded-full px-3 py-1.5"
+                    >
+                      {AGENTIC_TASKS.map((task) => (
+                        <option key={task.value} value={task.value}>
+                          {task.label}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {agenticMode && (
+                  <span className="text-[11px] text-[#5f6368]">
+                    Tip: /agent &lt;task&gt; &lt;prompt&gt;
+                  </span>
+                )}
+              </div>
+
               <div className="flex items-center gap-3 px-5 py-3 bg-[#28292a] border border-[#3c4043] rounded-full focus-within:border-[#8ab4f8] transition-colors">
                 <input
                   type="text"
                   value={inputMessage}
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Start typing..."
-                  disabled={!isConnected}
+                  placeholder={agenticMode ? 'Describe your research task…' : 'Start typing...'}
+                  disabled={(!isConnected && !agenticMode) || isAgenticRunning}
                   className="flex-1 bg-transparent text-[14px] text-[#e8eaed] placeholder:text-[#9aa0a6] focus:outline-none disabled:opacity-50"
                 />
                 
@@ -369,7 +659,7 @@ function ChatPageContent() {
                 {/* Send Button */}
                 <button
                   onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || !isConnected}
+                  disabled={!inputMessage.trim() || ((!isConnected && !agenticMode)) || isAgenticRunning}
                   className="p-2 bg-[#8ab4f8] hover:bg-[#aecbfa] rounded-full text-[#1e1f20] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

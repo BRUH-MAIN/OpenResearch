@@ -236,6 +236,26 @@ class AgenticRunResponse(BaseModel):
     latency_ms: int
 
 
+class IntentClassifyRequest(BaseModel):
+    """Request to classify agentic intent from a prompt."""
+    prompt: str = Field(..., min_length=3, max_length=8000, description="Prompt with @ai trigger")
+
+    @field_validator("prompt")
+    @classmethod
+    def validate_prompt(cls, v: str) -> str:
+        if "@ai" not in v.lower():
+            raise ValueError("Prompt must contain @ai trigger. AI only responds when triggered by @ai.")
+        return v
+
+
+class IntentClassifyResponse(BaseModel):
+    """Response for agentic intent classification."""
+    task_type: Optional[AgenticTaskType] = None
+    similarity: float
+    threshold: float
+    matched_phrase: Optional[str] = None
+
+
 class HealthResponse(BaseModel):
     """Health check response."""
     status: str

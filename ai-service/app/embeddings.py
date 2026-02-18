@@ -24,8 +24,14 @@ def _get_model():
         # SPECTER2 is optimized for scientific papers (768 dimensions)
         # Alternative: 'allenai/specter' or 'sentence-transformers/all-mpnet-base-v2'
         print("🔄 Loading SPECTER2 embedding model (first time may take a moment)...")
-        _model = SentenceTransformer('allenai/specter2')
-        print("✅ SPECTER2 model loaded successfully")
+        try:
+            _model = SentenceTransformer('allenai/specter2')
+            print("✅ SPECTER2 model loaded successfully")
+        except Exception as exc:
+            print(f"⚠️  SPECTER2 load failed: {exc}")
+            print("🔄 Falling back to SPECTER embeddings...")
+            _model = SentenceTransformer('allenai/specter')
+            print("✅ SPECTER model loaded successfully")
     return _model
 
 
