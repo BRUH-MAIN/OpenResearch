@@ -1,6 +1,7 @@
 """Vector store operations for group-isolated RAG using PostgreSQL + pgvector."""
 
 from typing import Optional
+import uuid
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
@@ -204,6 +205,10 @@ class VectorStore:
         
         if not group_id:
             raise ValueError("groupId is REQUIRED for vector search")
+        try:
+            uuid.UUID(group_id)
+        except (ValueError, AttributeError, TypeError) as exc:
+            raise ValueError("group_id must be a valid UUID.") from exc
         
         # Generate query embedding
         query_embedding, _ = await embedding_service.generate_embedding(

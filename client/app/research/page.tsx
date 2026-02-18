@@ -43,6 +43,8 @@ function ResearchChatContent() {
   const [sources, setSources] = useState<Source[]>([]);
   const [studioOutputs, setStudioOutputs] = useState<StudioOutput[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isDeepResearching, setIsDeepResearching] = useState(false);
+  const [deepResearchMessageId, setDeepResearchMessageId] = useState<string | null>(null);
 
   // Socket connection
   const {
@@ -53,6 +55,8 @@ function ResearchChatContent() {
     startTyping,
     stopTyping,
     initMessages,
+    appendMessage,
+    updateMessage,
   } = useSocket(sessionId);
 
   // Fetch session, messages, and group papers
@@ -202,6 +206,67 @@ function ResearchChatContent() {
     addToast('Slide deck generation coming soon', 'info');
   }, [addToast]);
 
+  const handleDeepResearch = useCallback(async () => {
+    if (!accessToken || !sessionId || !session?.groupId) {
+      addToast('Deep research requires an active group session', 'error');
+      return;
+    }
+
+    const enabledPaperIds = sources
+      .filter((source) => source.enabled && source.type === 'paper')
+      .map((source) => source.id);
+
+    const prompt = `@ai Deep research on "${session.title}". Focus on the selected sources and provide a comprehensive synthesis with citations.`;
+    const pendingMessageId = `agentic-${Date.now()}`;
+
+    setIsDeepResearching(true);
+    setDeepResearchMessageId(pendingMessageId);
+
+    appendMessage({
+      id: pendingMessageId,
+      sessionId,
+      userId: 'ai',
+      content: 'Deep Research is running...\n\nI will share a comprehensive report shortly.',
+      type: 'ai',
+      createdAt: new Date().toISOString(),
+      userName: 'Research Assistant',
+    });
+
+    try {
+      const response = await api.runAgenticTask(accessToken, {
+        taskType: 'deep_research',
+        prompt,
+        groupId: session.groupId,
+        sessionId,
+        paperIds: enabledPaperIds.length > 0 ? enabledPaperIds : undefined,
+        options: {
+          selected_source_count: enabledPaperIds.length,
+        },
+      });
+
+      const deepResearch =
+        (response.result?.deep_research as string | undefined) ||
+        (response.result?.report as string | undefined) ||
+        JSON.stringify(response.result || {}, null, 2);
+
+      const artifacts = response.artifacts?.length
+        ? `\n\n**Artifacts**\n${response.artifacts.map((artifactId) => `- ${artifactId}`).join('\n')}`
+        : '';
+
+      const content = `### Deep Research Report\n\n${deepResearch}${artifacts}\n\n_Completed in ${response.latency_ms}ms_`;
+
+      updateMessage(pendingMessageId, { content });
+      addToast('Deep research completed', 'success');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Deep research failed';
+      updateMessage(pendingMessageId, { content: `Deep research failed.\n\n${message}` });
+      addToast(message, 'error');
+    } finally {
+      setIsDeepResearching(false);
+      setDeepResearchMessageId(null);
+    }
+  }, [accessToken, sessionId, session?.groupId, session?.title, sources, appendMessage, updateMessage, addToast]);
+
   // Message handlers
   const handleFeedback = useCallback(
     (messageId: string, feedback: 'up' | 'down') => {
@@ -294,8 +359,9 @@ function ResearchChatContent() {
           onToggleSource={handleToggleSource}
           onToggleAll={handleToggleAll}
           onAddSource={() => setShowAddSourceModal(true)}
-          onDeepResearch={() => addToast('Deep research coming soon', 'info')}
+          onDeepResearch={handleDeepResearch}
           onWebSearch={(query: string) => addToast(`Searching for: ${query}`, 'info')}
+          isDeepResearching={isDeepResearching}
           isCollapsed={leftPanelCollapsed}
           onToggleCollapse={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
         />
@@ -334,6 +400,7 @@ function ResearchChatContent() {
               {messages.map((msg) => {
                 const isCurrentUser = msg.userId === user?.id;
                 const isAI = msg.type === 'ai';
+                const isAgenticPending = deepResearchMessageId === msg.id && isAI;
 
                 return (
                   <ResearchMessage
@@ -349,6 +416,7 @@ function ResearchChatContent() {
                     onCopy={handleCopy}
                     onSaveToNotes={isAI ? handleSaveToNotes : undefined}
                     onCitationClick={handleCitationClick}
+                    className={isAgenticPending ? 'animate-pulse' : ''}
                   />
                 );
               })}

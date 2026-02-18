@@ -1,12 +1,17 @@
 """Groq AI client wrapper with error handling and retries."""
 
 import asyncio
+import logging
+import re
 import time
 from typing import Optional
+
 from groq import Groq
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 from .config import get_settings
+
+logger = logging.getLogger(__name__)
 
 
 class GroqClient:
@@ -22,16 +27,16 @@ class GroqClient:
     def initialize(self) -> bool:
         """Initialize the Groq client. Returns True if successful."""
         if not self.api_key:
-            print("⚠️  GROQ_API_KEY not set - AI features will be unavailable")
+            logger.warning("GROQ_API_KEY not set - AI features will be unavailable")
             return False
         try:
             # Initialize client with API key
             self.client = Groq(api_key=self.api_key)
             self._initialized = True
-            print(f"✅ Groq client initialized with model: {self.model_name}")
+            logger.info("Groq client initialized with model: %s", self.model_name)
             return True
         except Exception as e:
-            print(f"❌ Failed to initialize Groq client: {e}")
+            logger.error("Failed to initialize Groq client: %s", e)
             return False
     
     @property
@@ -45,6 +50,7 @@ class GroqClient:
         system_instruction: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
+        model: Optional[str] = None,
     ) -> str:
         """
         Synchronous generate call using Groq SDK.
@@ -60,7 +66,7 @@ class GroqClient:
         
         # Make API call
         response = self.client.chat.completions.create(
-            model=self.model_name,
+            model=model or self.model_name,
             messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
@@ -82,6 +88,7 @@ class GroqClient:
         system_instruction: Optional[str] = None,
         temperature: float = 0.7,
         max_tokens: int = 2048,
+        model: Optional[str] = None,
     ) -> tuple[str, int]:
         """
         Generate a response from Groq (async wrapper).
@@ -100,6 +107,7 @@ class GroqClient:
             system_instruction,
             temperature,
             max_tokens,
+            model,
         )
         
         latency_ms = int((time.time() - start_time) * 1000)
@@ -118,26 +126,27 @@ class GroqClient:
         Returns:
             Tuple of (answer, source_message_ids, latency_ms)
         """
-        # Build context string
-        context_parts = []
-        
-        if context_messages:
-            messages_text = "\n".join([
-                f"[MSG-{i}] [{msg.get('user_name', 'Unknown')}]: {msg.get('content', '')}"
-                for i, msg in enumerate(context_messages)
-            ])
-            context_parts.append(f"## Recent Messages\n{messages_text}")
-        
-        if papers:
-            papers_text = "\n".join([
-                f"[PAPER-{i}] {p.get('title', 'Untitled')} - {p.get('abstract', '')[:500]}..."
-                for i, p in enumerate(papers)
-            ])
-            context_parts.append(f"## Linked Papers\n{papers_text}")
-        
-        context = "\n\n".join(context_parts) if context_parts else "No context available."
-        
-        system_instruction = """You are an AI research assistant for OpenResearch, a collaboration platform for research teams.
+        try:
+            # Build context string
+            context_parts = []
+            
+            if context_messages:
+                messages_text = "\n".join([
+                    f"[MSG-{i}] [{msg.get('user_name', 'Unknown')}]: {msg.get('content', '')}"
+                    for i, msg in enumerate(context_messages)
+                ])
+                context_parts.append(f"## Recent Messages\n{messages_text}")
+            
+            if papers:
+                papers_text = "\n".join([
+                    f"[PAPER-{i}] {p.get('title', 'Untitled')} - {p.get('abstract', '')[:500]}..."
+                    for i, p in enumerate(papers)
+                ])
+                context_parts.append(f"## Linked Papers\n{papers_text}")
+            
+            context = "\n\n".join(context_parts) if context_parts else "No context available."
+            
+            system_instruction = """You are an AI research assistant for OpenResearch, a collaboration platform for research teams.
 Your role is to help researchers by answering questions based on their discussion context and linked papers.
 
 Guidelines:
@@ -147,7 +156,7 @@ Guidelines:
 - Be concise, accurate, and helpful
 - Use academic language appropriate for researchers"""
 
-        prompt = f"""Session: {session_title}
+            prompt = f"""Session: {session_title}
 
 {context}
 
@@ -157,25 +166,27 @@ Question: {question}
 
 Provide a helpful answer based on the context above. Reference specific messages or papers when applicable."""
 
-        response_text, latency_ms = await self.generate(
-            prompt=prompt,
-            system_instruction=system_instruction,
-            temperature=0.5,
-            max_tokens=1024,
-        )
-        
-        # Extract source references from the response
-        sources = []
-        import re
-        msg_refs = re.findall(r'MSG-(\d+)', response_text)
-        for ref in msg_refs:
-            idx = int(ref)
-            if idx < len(context_messages):
-                msg_id = context_messages[idx].get('id')
-                if msg_id and msg_id not in sources:
-                    sources.append(msg_id)
-        
-        return response_text, sources, latency_ms
+            response_text, latency_ms = await self.generate(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                temperature=0.5,
+                max_tokens=1024,
+            )
+            
+            # Extract source references from the response
+            sources = []
+            msg_refs = re.findall(r'MSG-(\d+)', response_text)
+            for ref in msg_refs:
+                idx = int(ref)
+                if idx < len(context_messages):
+                    msg_id = context_messages[idx].get('id')
+                    if msg_id and msg_id not in sources:
+                        sources.append(msg_id)
+            
+            return response_text, sources, latency_ms
+        except Exception as exc:
+            logger.error("chat_qa failed: %s", exc, exc_info=True)
+            return f"I encountered an error processing your question: {exc}", [], 0
     
     async def summarize_session(
         self,
@@ -191,16 +202,17 @@ Provide a helpful answer based on the context above. Reference specific messages
         if not messages:
             return "No messages to summarize.", [], 0
         
-        messages_text = "\n".join([
-            f"[{msg.get('user_name', 'Unknown')}]: {msg.get('content', '')}"
-            for msg in messages
-            if msg.get('type') == 'user'
-        ])
-        
-        system_instruction = """You are an AI assistant that creates concise summaries of research discussions.
+        try:
+            messages_text = "\n".join([
+                f"[{msg.get('user_name', 'Unknown')}]: {msg.get('content', '')}"
+                for msg in messages
+                if msg.get('type') == 'user'
+            ])
+            
+            system_instruction = """You are an AI assistant that creates concise summaries of research discussions.
 Focus on key decisions, insights, and action items discussed by the team."""
 
-        prompt = f"""Session: {session_title}
+            prompt = f"""Session: {session_title}
 
 Discussion:
 {messages_text}
@@ -220,31 +232,34 @@ KEY POINTS:
 - Point 2
 ..."""
 
-        response_text, latency_ms = await self.generate(
-            prompt=prompt,
-            system_instruction=system_instruction,
-            temperature=0.3,
-            max_tokens=1024,
-        )
-        
-        # Parse response
-        summary = ""
-        key_points = []
-        
-        if "SUMMARY:" in response_text:
-            parts = response_text.split("KEY POINTS:")
-            summary = parts[0].replace("SUMMARY:", "").strip()
-            if len(parts) > 1:
-                points_text = parts[1].strip()
-                key_points = [
-                    line.strip().lstrip("-•").strip()
-                    for line in points_text.split("\n")
-                    if line.strip() and line.strip() not in ["-", "•"]
-                ][:5]
-        else:
-            summary = response_text.strip()
-        
-        return summary, key_points, latency_ms
+            response_text, latency_ms = await self.generate(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                temperature=0.3,
+                max_tokens=1024,
+            )
+            
+            # Parse response
+            summary = ""
+            key_points = []
+            
+            if "SUMMARY:" in response_text:
+                parts = response_text.split("KEY POINTS:")
+                summary = parts[0].replace("SUMMARY:", "").strip()
+                if len(parts) > 1:
+                    points_text = parts[1].strip()
+                    key_points = [
+                        line.strip().lstrip("-•").strip()
+                        for line in points_text.split("\n")
+                        if line.strip() and line.strip() not in ["-", "•"]
+                    ][:5]
+            else:
+                summary = response_text.strip()
+            
+            return summary, key_points, latency_ms
+        except Exception as exc:
+            logger.error("summarize_session failed: %s", exc, exc_info=True)
+            return f"Failed to summarize session: {exc}", [], 0
 
 
 # Singleton instance

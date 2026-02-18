@@ -38,8 +38,10 @@ from .models import (
     VectorSearchRequest, VectorSearchResponse,
     AgenticRunRequest, AgenticRunResponse,
     HealthResponse, ErrorResponse,
+    IntentClassifyRequest, IntentClassifyResponse,
 )
 from .groq_client import groq_client
+from .intent_classifier import classify_intent
 from .database import database
 from .embeddings import embedding_service
 from .vector_store import vector_store
@@ -138,6 +140,18 @@ def validate_ai_trigger(text: str, field_name: str = "prompt") -> str:
     return text
 
 
+def validate_uuid(value: str, field_name: str = "id") -> str:
+    """Validate UUID format. Raises 400 if invalid."""
+    try:
+        uuid.UUID(value)
+    except (ValueError, AttributeError, TypeError):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"{field_name} must be a valid UUID.",
+        )
+    return value
+
+
 async def get_group_context(
     group_id: str,
     query: str,
@@ -150,6 +164,7 @@ async def get_group_context(
     Returns:
         Tuple of (context_items, vector_ids_used)
     """
+    validate_uuid(group_id, "group_id")
     if not vector_store.is_connected:
         return [], []
     
@@ -265,6 +280,26 @@ async def run_agentic_task(request: AgenticRunRequest):
             detail=f"Agentic task failed: {str(e)}",
         )
 
+@app.post(
+    "/agentic/classify-intent",
+    response_model=IntentClassifyResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "Missing @ai trigger"},
+        503: {"model": ErrorResponse, "description": "AI service not configured"},
+    },
+    tags=["Agentic"],
+    summary="Classify agentic intent using embeddings",
+)
+async def classify_agentic_intent(request: IntentClassifyRequest):
+    """Classify a prompt into an agentic task using embedding similarity."""
+    validate_ai_trigger(request.prompt, "prompt")
+
+    if not embedding_service.is_configured:
+        embedding_service.initialize()
+
+    result = await classify_intent(request.prompt)
+    return IntentClassifyResponse(**result)
+
 
 # ============ Group AI Chat ============
 
@@ -284,6 +319,13 @@ async def group_ai_chat(group_id: str, request: GroupAIChatRequest):
     
     CRITICAL: Requires @ai trigger in prompt. Uses group-isolated RAG context.
     """
+    validate_uuid(group_id, "group_id")
+    validate_uuid(request.group_id, "group_id")
+    if request.group_id != group_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="group_id in body must match path.",
+        )
     # Validate @ai trigger
     validate_ai_trigger(request.prompt)
     
@@ -299,12 +341,20 @@ async def group_ai_chat(group_id: str, request: GroupAIChatRequest):
     query = request.prompt.lower().replace('@ai', '').strip()
     
     # Get group-isolated context via RAG
-    context_items, vector_ids = await get_group_context(
-        group_id=group_id,
-        query=query,
-        limit=10,
-        content_types=["paper", "qa", "summary", "memory"]
-    )
+    try:
+        context_items, vector_ids = await get_group_context(
+            group_id=group_id,
+            query=query,
+            limit=10,
+            content_types=["paper", "qa", "summary", "memory"]
+        )
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     
     # Get session messages if provided
     session_messages = []
@@ -425,6 +475,7 @@ async def paper_question(request: PaperQuestionRequest):
     
     CRITICAL: Requires @ai trigger. Uses group-isolated paper context.
     """
+    validate_uuid(request.group_id, "group_id")
     validate_ai_trigger(request.question, "question")
     
     if not groq_client.is_configured:
@@ -548,6 +599,7 @@ async def paper_summarize(request: PaperSummarizeRequest):
     
     CRITICAL: Requires @ai trigger. Summary is stored in group namespace.
     """
+    validate_uuid(request.group_id, "group_id")
     validate_ai_trigger(request.trigger, "trigger")
     
     if not groq_client.is_configured:
@@ -669,6 +721,12 @@ async def add_paper_to_group(group_id: str, request: AddPaperToGroupRequest):
     
     This enables RAG retrieval for this paper within the group namespace.
     """
+    validate_uuid(group_id, "group_id")
+    if request.group_id != group_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="group_id in body must match path.",
+        )
     if not vector_store.is_connected:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -718,6 +776,7 @@ async def search_vectors(request: VectorSearchRequest):
     
     CRITICAL: Always filters by groupId to prevent cross-group retrieval.
     """
+    validate_uuid(request.group_id, "group_id")
     if not vector_store.is_connected:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -744,6 +803,13 @@ async def search_vectors(request: VectorSearchRequest):
             latency_ms=latency_ms
         )
         
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -765,6 +831,13 @@ async def generate_report(group_id: str, request: GenerateReportRequest):
     
     Report includes only group-linked content.
     """
+    validate_uuid(group_id, "group_id")
+    validate_uuid(request.group_id, "group_id")
+    if request.group_id != group_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="group_id in body must match path.",
+        )
     if request.prompt:
         validate_ai_trigger(request.prompt)
     
@@ -845,6 +918,13 @@ async def generate_report(group_id: str, request: GenerateReportRequest):
         
     except HTTPException:
         raise
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        )
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

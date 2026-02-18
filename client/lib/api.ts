@@ -362,6 +362,26 @@ class ApiClient {
     });
   }
 
+  // ==================== AGENTIC TASKS ====================
+
+  async runAgenticTask(
+    token: string,
+    data: {
+      taskType: AgenticTaskType;
+      prompt: string;
+      groupId?: string;
+      sessionId?: string;
+      paperIds?: string[];
+      options?: Record<string, unknown>;
+    }
+  ) {
+    return this.request<AgenticRunResponse>('/api/ai/agentic/run', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
   async getGroupReports(token: string, groupId: string) {
     return this.request<Report[]>(`/api/reports/group/${groupId}`, { token });
   }
@@ -577,4 +597,25 @@ export interface Report {
   createdBy: string;
   createdAt: string;
   downloadUrl?: string | null;
+}
+
+// ==================== AGENTIC TYPES ====================
+
+export type AgenticTaskType =
+  | 'paper_retrieval'
+  | 'literature_survey'
+  | 'gap_analysis'
+  | 'fact_check'
+  | 'novelty_assessment'
+  | 'research_mentor'
+  | 'paper_writing'
+  | 'research_planning'
+  | 'deep_research';
+
+export interface AgenticRunResponse {
+  task_type: AgenticTaskType;
+  result: Record<string, unknown>;
+  artifacts: string[];
+  metadata: Record<string, unknown>;
+  latency_ms: number;
 }

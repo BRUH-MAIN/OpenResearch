@@ -333,7 +333,10 @@ tests/
 - `fastapi` 0.104+ - Modern async web framework
 - `uvicorn[standard]` 0.24+ - ASGI application server
 - `groq` - Groq SDK for LLM inference (Llama 3.3)
-- `openai` 1.0+ - OpenAI SDK for embeddings
+- `sentence-transformers` - Local embeddings (SPECTER2/SPECTER)
+- `torch` - Model runtime (CPU wheels supported)
+- `transformers` - Model loading utilities
+- `peft` - Required for SPECTER2 adapters
 - `sqlalchemy[asyncio]` 2.0+ - Async ORM for database
 - `asyncpg` 0.29+ - PostgreSQL async driver
 - `psycopg2-binary` - PostgreSQL interface

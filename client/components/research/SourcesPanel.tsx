@@ -13,6 +13,7 @@ import {
   File,
   BookOpen,
   PanelLeftClose,
+  Loader2,
 } from 'lucide-react';
 
 export interface Source {
@@ -33,6 +34,7 @@ interface SourcesPanelProps {
   onAddSource: () => void;
   onDeepResearch: () => void;
   onWebSearch: (query: string) => void;
+  isDeepResearching?: boolean;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   className?: string;
@@ -45,6 +47,7 @@ export function SourcesPanel({
   onAddSource,
   onDeepResearch,
   onWebSearch,
+  isDeepResearching = false,
   isCollapsed = false,
   onToggleCollapse,
   className = '',
@@ -120,11 +123,24 @@ export function SourcesPanel({
       <div className="px-4 pt-3">
         <button
           onClick={onDeepResearch}
-          className="w-full flex items-center gap-2.5 px-4 py-3 bg-[#0d3d3d] hover:bg-[#134545] border border-[#1a5c5c] rounded-xl transition-colors text-left"
+          disabled={isDeepResearching}
+          className={`w-full flex items-center gap-2.5 px-4 py-3 bg-[#0d3d3d] hover:bg-[#134545] border border-[#1a5c5c] rounded-xl transition-colors text-left ${
+            isDeepResearching ? 'animate-pulse cursor-not-allowed opacity-80' : ''
+          }`}
         >
-          <Sparkles size={18} className="text-[#81c995] flex-shrink-0" />
+          {isDeepResearching ? (
+            <Loader2 size={18} className="text-[#81c995] shrink-0 animate-spin" />
+          ) : (
+            <Sparkles size={18} className="text-[#81c995] shrink-0" />
+          )}
           <span className="text-[13px] text-[#81c995] leading-snug">
-            Try <span className="font-semibold">Deep Research</span> for an in-depth report and new sources!
+            {isDeepResearching ? (
+              <span>Deep Research is running...</span>
+            ) : (
+              <>
+                Try <span className="font-semibold">Deep Research</span> for an in-depth report and new sources!
+              </>
+            )}
           </span>
         </button>
       </div>
@@ -192,7 +208,7 @@ export function SourcesPanel({
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#28292a] transition-colors group text-left"
               >
                 {/* Icon */}
-                <div className="flex-shrink-0 w-5 h-5 flex items-center justify-center">
+                <div className="shrink-0 w-5 h-5 flex items-center justify-center">
                   {getSourceIcon(source.type)}
                 </div>
 
@@ -203,7 +219,7 @@ export function SourcesPanel({
 
                 {/* Checkbox */}
                 <div
-                  className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center transition-colors ${
+                  className={`shrink-0 w-5 h-5 rounded flex items-center justify-center transition-colors ${
                     source.enabled
                       ? 'bg-[#8ab4f8]'
                       : 'border-2 border-[#5f6368] group-hover:border-[#9aa0a6]'

@@ -182,6 +182,54 @@ export interface VectorSearchResponse {
   latency_ms: number;
 }
 
+export type AgenticTaskType =
+  | 'paper_retrieval'
+  | 'literature_survey'
+  | 'gap_analysis'
+  | 'fact_check'
+  | 'novelty_assessment'
+  | 'research_mentor'
+  | 'paper_writing'
+  | 'research_planning'
+  | 'deep_research';
+
+export interface AgenticRunRequest {
+  task_type: AgenticTaskType;
+  prompt: string;
+  group_id?: string;
+  user_id?: string;
+  session_id?: string;
+  paper_ids?: string[];
+  options?: Record<string, unknown>;
+}
+
+export interface AgenticRunResponse {
+  task_type: AgenticTaskType;
+  result: Record<string, unknown>;
+  artifacts: string[];
+  metadata: Record<string, unknown>;
+  latency_ms: number;
+}
+
+export interface IntentClassifyRequest {
+  prompt: string;
+}
+
+export interface IntentClassifyResponse {
+  task_type?: AgenticTaskType | null;
+  similarity: number;
+  threshold: number;
+  matched_phrase?: string | null;
+}
+
+export interface AgenticChatResponse {
+  id: string;
+  text: string;
+  metadata: Record<string, unknown>;
+  sources: Array<{ id: string; type: string; similarity?: number }>;
+  latency_ms: number;
+}
+
 export interface HealthResponse {
   status: string;
   groq_configured: boolean;
@@ -407,6 +455,38 @@ class AIClient {
   }
 
   /**
+   * Run an agentic research task (LangGraph orchestration)
+   */
+  async runAgenticTask(request: AgenticRunRequest): Promise<AgenticRunResponse> {
+    validateAiTrigger(request.prompt, 'prompt');
+
+    logger.info(`Agentic task: ${request.task_type}`);
+
+    const response = await this.request<AgenticRunResponse>('/agentic/run', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+
+    logger.info(`Agentic task completed in ${response.latency_ms}ms`);
+
+    return response;
+  }
+
+  /**
+   * Classify an @ai prompt into an agentic task using embeddings
+   */
+  async classifyAgenticIntent(request: IntentClassifyRequest): Promise<IntentClassifyResponse> {
+    validateAiTrigger(request.prompt, 'prompt');
+
+    const response = await this.request<IntentClassifyResponse>('/agentic/classify-intent', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+
+    return response;
+  }
+
+  /**
    * Get AI-powered recommendations for a group
    * Note: This endpoint may not be implemented in AI service - fallback logic handles this
    */
@@ -448,15 +528,61 @@ class AIClient {
     sessionId: string,
     userId: string,
     groupId?: string
-  ): Promise<GroupAIChatResponse | ChatResponse | null> {
+  ): Promise<GroupAIChatResponse | ChatResponse | AgenticChatResponse | null> {
     // Check if message contains @ai
     const trimmed = content.trim();
     if (!trimmed.toLowerCase().includes('@ai')) {
       return null;
     }
 
-    // If groupId is provided, use group AI chat (with RAG)
+    // If groupId is provided, classify intent and route
     if (groupId) {
+      try {
+        const intent = await this.classifyAgenticIntent({ prompt: content });
+        if (intent.task_type === 'deep_research') {
+          const response = await this.runAgenticTask({
+            task_type: 'deep_research',
+            prompt: content,
+            group_id: groupId,
+            user_id: userId,
+            session_id: sessionId,
+            options: {
+              intent_similarity: intent.similarity,
+              intent_threshold: intent.threshold,
+              matched_phrase: intent.matched_phrase,
+            },
+          });
+
+          const deepResearch =
+            (response.result?.deep_research as string | undefined) ||
+            (response.result?.report as string | undefined) ||
+            JSON.stringify(response.result || {}, null, 2);
+
+          const artifacts = response.artifacts?.length
+            ? `\n\n**Artifacts**\n${response.artifacts.map((artifactId) => `- ${artifactId}`).join('\n')}`
+            : '';
+
+          const text = `### Deep Research Report\n\n${deepResearch}${artifacts}\n\n_Completed in ${response.latency_ms}ms_`;
+
+          return {
+            id: `agentic-${Date.now()}`,
+            text,
+            sources: [],
+            latency_ms: response.latency_ms,
+            metadata: {
+              task_type: response.task_type,
+              artifacts: response.artifacts,
+              model: 'groq',
+              intent_similarity: intent.similarity,
+              intent_threshold: intent.threshold,
+              matched_phrase: intent.matched_phrase,
+            },
+          };
+        }
+      } catch (error) {
+        logger.warn(`Intent classification failed, falling back to group chat: ${String(error)}`);
+      }
+
       return this.groupAIChat({
         prompt: content,
         group_id: groupId,

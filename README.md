@@ -481,7 +481,7 @@ cd server
 npm test                    # Run all tests
 npm run test:coverage       # With coverage report
 npm run test:watch         # Watch mode
-
+Flash-
 # AI Service tests (pytest)
 cd ai-service
 source venv/bin/activate

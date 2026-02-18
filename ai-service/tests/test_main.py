@@ -22,6 +22,15 @@ from app.models import (
 
 client = TestClient(app)
 
+GROUP_ID = "11111111-1111-1111-1111-111111111111"
+GROUP_ID_ALT = "22222222-2222-2222-2222-222222222222"
+SESSION_ID = "33333333-3333-3333-3333-333333333333"
+SESSION_ID_ALT = "44444444-4444-4444-4444-444444444444"
+USER_ID = "55555555-5555-5555-5555-555555555555"
+USER_ID_ALT = "66666666-6666-6666-6666-666666666666"
+PAPER_ID = "77777777-7777-7777-7777-777777777777"
+PAPER_ID_ALT = "88888888-8888-8888-8888-888888888888"
+
 
 class TestHealthEndpoint:
     """Tests for the health check endpoint"""
@@ -51,20 +60,20 @@ class TestGroupChatEndpoint:
     def valid_request(self):
         return {
             "prompt": "@ai what papers are relevant to machine learning?",
-            "group_id": "test-group-123",
-            "session_id": "test-session-456",
-            "user_id": "user-789",
+            "group_id": GROUP_ID,
+            "session_id": SESSION_ID,
+            "user_id": USER_ID,
         }
 
     def test_group_chat_requires_ai_trigger(self):
         """Test that @ai trigger is required - validation happens at Pydantic level (422)"""
         response = client.post(
-            "/groups/test-group-123/ai-chat",
+            f"/groups/{GROUP_ID}/ai-chat",
             json={
                 "prompt": "what papers are relevant?",  # Missing @ai
-                "group_id": "test-group-123",
-                "session_id": "test-session-456",
-                "user_id": "user-789",
+                "group_id": GROUP_ID,
+                "session_id": SESSION_ID,
+                "user_id": USER_ID,
             },
         )
         # Pydantic validation returns 422, not 400
@@ -82,12 +91,12 @@ class TestGroupChatEndpoint:
             mock_db.is_connected = False  # Skip database calls
 
             response = client.post(
-                "/groups/test-group-123/ai-chat",
+                f"/groups/{GROUP_ID}/ai-chat",
                 json={
                     "prompt": "@ai what papers are relevant to ML?",
-                    "group_id": "test-group-123",
-                    "session_id": "test-session-456",
-                    "user_id": "user-789",
+                    "group_id": GROUP_ID,
+                    "session_id": SESSION_ID,
+                    "user_id": USER_ID,
                 },
             )
             # 422 = validation failed, 404 = route not found, anything else = validation passed
@@ -106,12 +115,12 @@ class TestGroupChatEndpoint:
 
             for trigger in ["@AI", "@Ai", "@aI", "@ai"]:
                 response = client.post(
-                    "/groups/test-group-123/ai-chat",
+                    f"/groups/{GROUP_ID}/ai-chat",
                     json={
                         "prompt": f"{trigger} question here",
-                        "group_id": "test-group-123",
-                        "session_id": "test-session-456",
-                        "user_id": "user-789",
+                        "group_id": GROUP_ID,
+                        "session_id": SESSION_ID,
+                        "user_id": USER_ID,
                     },
                 )
                 # Should not fail validation (422 means validation failed)
@@ -129,12 +138,12 @@ class TestGroupChatEndpoint:
             mock_db.is_connected = False
 
             response = client.post(
-                "/groups/group-A/ai-chat",
+                f"/groups/{GROUP_ID_ALT}/ai-chat",
                 json={
                     "prompt": "@ai test question",
-                    "group_id": "group-A",
-                    "session_id": "session-1",
-                    "user_id": "user-1",
+                    "group_id": GROUP_ID_ALT,
+                    "session_id": SESSION_ID_ALT,
+                    "user_id": USER_ID_ALT,
                 },
             )
 
@@ -150,10 +159,10 @@ class TestPaperQAEndpoint:
         response = client.post(
             "/papers/question",
             json={
-                "paper_id": "paper-123",
+                "paper_id": PAPER_ID,
                 "question": "What is the methodology?",  # Missing @ai
-                "group_id": "test-group",
-                "user_id": "user-1",
+                "group_id": GROUP_ID,
+                "user_id": USER_ID,
             },
         )
         # Pydantic validation returns 422
@@ -173,10 +182,10 @@ class TestPaperQAEndpoint:
             response = client.post(
                 "/papers/question",
                 json={
-                    "paper_id": "paper-123",
+                    "paper_id": PAPER_ID,
                     "question": "@ai What is the methodology?",
-                    "group_id": "test-group",
-                    "user_id": "user-1",
+                    "group_id": GROUP_ID,
+                    "user_id": USER_ID,
                 },
             )
             # 422 = validation failed, 404 = route not found
@@ -205,9 +214,9 @@ class TestPaperSummarizeEndpoint:
             response = client.post(
                 "/papers/summarize",
                 json={
-                    "paper_id": "paper-123",
-                    "group_id": "test-group",
-                    "user_id": "user-1",
+                    "paper_id": PAPER_ID,
+                    "group_id": GROUP_ID,
+                    "user_id": USER_ID,
                     "trigger": "@ai summarize",
                 },
             )
@@ -239,10 +248,10 @@ class TestReportGenerationEndpoint:
             mock_db.is_connected = True
 
             response = client.post(
-                "/reports/group/test-group/generate",
+                f"/reports/group/{GROUP_ID}/generate",
                 json={
-                    "group_id": "test-group",
-                    "user_id": "user-1",
+                    "group_id": GROUP_ID,
+                    "user_id": USER_ID,
                 },
             )
             assert response.status_code in [200, 500, 503]
@@ -250,9 +259,9 @@ class TestReportGenerationEndpoint:
     def test_report_requires_user_id(self):
         """Test that user_id is required"""
         response = client.post(
-            "/reports/group/test-group/generate",
+            f"/reports/group/{GROUP_ID}/generate",
             json={
-                "group_id": "test-group",
+                "group_id": GROUP_ID,
                 # Missing user_id
             },
         )
@@ -273,7 +282,7 @@ class TestEmbeddingsEndpoint:
             response = client.post(
                 "/vectors/search",
                 json={
-                    "group_id": "test-group",
+                    "group_id": GROUP_ID,
                     "query": "test query",
                     "limit": 10,
                 },
@@ -309,8 +318,8 @@ class TestVectorSearchEndpoint:
                 return_value=[
                     {
                         "id": "vec-1",
-                        "group_id": "group-A",
-                        "paper_id": "paper-1",
+                        "group_id": GROUP_ID_ALT,
+                        "paper_id": PAPER_ID_ALT,
                         "content": "Test content",
                         "similarity": 0.9,
                     }
@@ -320,7 +329,7 @@ class TestVectorSearchEndpoint:
             response = client.post(
                 "/vectors/search",
                 json={
-                    "group_id": "group-A",
+                    "group_id": GROUP_ID_ALT,
                     "query": "machine learning",
                     "limit": 10,
                 },
@@ -332,7 +341,7 @@ class TestVectorSearchEndpoint:
                 assert "results" in data
                 # All results should be from the requested group
                 for result in data["results"]:
-                    assert result["group_id"] == "group-A"
+                    assert result["group_id"] == GROUP_ID_ALT
 
 
 class TestInputValidation:
@@ -341,12 +350,12 @@ class TestInputValidation:
     def test_empty_prompt_rejected(self):
         """Test empty prompts are rejected"""
         response = client.post(
-            "/groups/test-group/ai-chat",
+            f"/groups/{GROUP_ID}/ai-chat",
             json={
                 "prompt": "",
-                "group_id": "test-group",
-                "session_id": "session-1",
-                "user_id": "user-1",
+                "group_id": GROUP_ID,
+                "session_id": SESSION_ID_ALT,
+                "user_id": USER_ID_ALT,
             },
         )
         assert response.status_code in [400, 422]
@@ -354,12 +363,12 @@ class TestInputValidation:
     def test_whitespace_only_prompt_rejected(self):
         """Test whitespace-only prompts are rejected"""
         response = client.post(
-            "/groups/test-group/ai-chat",
+            f"/groups/{GROUP_ID}/ai-chat",
             json={
                 "prompt": "   ",
-                "group_id": "test-group",
-                "session_id": "session-1",
-                "user_id": "user-1",
+                "group_id": GROUP_ID,
+                "session_id": SESSION_ID_ALT,
+                "user_id": USER_ID_ALT,
             },
         )
         assert response.status_code in [400, 422]
@@ -367,7 +376,7 @@ class TestInputValidation:
     def test_missing_required_fields(self):
         """Test missing required fields are rejected"""
         response = client.post(
-            "/groups/test-group/ai-chat",
+            f"/groups/{GROUP_ID}/ai-chat",
             json={
                 "prompt": "@ai test",
                 # Missing user_id
@@ -384,16 +393,16 @@ class TestModelsValidation:
         with pytest.raises(ValueError):
             GroupAIChatRequest(
                 prompt="no trigger here",
-                group_id="group-1",
-                user_id="user-1",
+                group_id=GROUP_ID,
+                user_id=USER_ID,
             )
 
     def test_group_chat_request_accepts_valid(self):
         """Test GroupAIChatRequest accepts valid input"""
         req = GroupAIChatRequest(
             prompt="@ai what's in this group?",
-            group_id="group-1",
-            user_id="user-1",
+            group_id=GROUP_ID,
+            user_id=USER_ID,
         )
         assert req.prompt == "@ai what's in this group?"
 
@@ -401,16 +410,16 @@ class TestModelsValidation:
         """Test PaperQuestionRequest validates @ai trigger"""
         with pytest.raises(ValueError):
             PaperQuestionRequest(
-                paper_id="paper-1",
+                paper_id=PAPER_ID,
                 question="no trigger",
-                group_id="group-1",
-                user_id="user-1",
+                group_id=GROUP_ID,
+                user_id=USER_ID,
             )
 
     def test_vector_search_request_valid(self):
         """Test VectorSearchRequest accepts valid input"""
         req = VectorSearchRequest(
-            group_id="group-1",
+            group_id=GROUP_ID,
             query="test query",
             limit=10,
         )
@@ -423,7 +432,7 @@ class TestErrorHandling:
     def test_invalid_json_returns_422(self):
         """Test invalid JSON returns 422"""
         response = client.post(
-            "/groups/test-group/ai-chat",
+            f"/groups/{GROUP_ID}/ai-chat",
             content="not valid json",
             headers={"Content-Type": "application/json"},
         )
@@ -438,12 +447,12 @@ class TestErrorHandling:
             mock_groq.is_configured = True
 
             response = client.post(
-                "/groups/test-group/ai-chat",
+                f"/groups/{GROUP_ID}/ai-chat",
                 json={
                     "prompt": "@ai test",
-                    "group_id": "test-group",
-                    "session_id": "session-1",
-                    "user_id": "user-1",
+                    "group_id": GROUP_ID,
+                    "session_id": SESSION_ID_ALT,
+                    "user_id": USER_ID_ALT,
                 },
             )
             # May get 503 if other deps aren't mocked
