@@ -4,6 +4,9 @@ import jwt from 'jsonwebtoken';
 import { db, messages, sessions, groupMembers, users } from '../db/index.js';
 import { eq, and, desc } from 'drizzle-orm';
 import { aiClient, validateAiTrigger } from '../services/aiClient.js';
+import logger from '../utils/logger.js';
+
+const socketLogger = logger.child({ context: 'socket' });
 
 interface AuthenticatedSocket extends Socket {
   userId?: string;
@@ -43,13 +46,13 @@ export function initializeSocket(httpServer: HttpServer) {
   io.use(async (socket: AuthenticatedSocket, next) => {
     try {
       const token = socket.handshake.auth.token;
-      
+
       if (!token) {
         return next(new Error('Authentication required'));
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
-      
+
       const [user] = await db
         .select({ id: users.id, name: users.name })
         .from(users)
@@ -69,7 +72,7 @@ export function initializeSocket(httpServer: HttpServer) {
   });
 
   io.on('connection', (socket: AuthenticatedSocket) => {
-    console.log(`User connected: ${socket.userId}`);
+    socketLogger.info({ userId: socket.userId }, 'User connected');
 
     // Join session room
     socket.on('join:session', async (sessionId: string) => {
@@ -104,14 +107,14 @@ export function initializeSocket(httpServer: HttpServer) {
 
         socket.join(`session:${sessionId}`);
         socket.emit('joined:session', { sessionId });
-        
+
         // Notify others
         socket.to(`session:${sessionId}`).emit('user:joined', {
           userId: socket.userId,
           userName: socket.userName,
         });
       } catch (error) {
-        console.error('Error joining session:', error);
+        socketLogger.error({ err: error }, 'Error joining session');
         socket.emit('error', { message: 'Failed to join session' });
       }
     });
@@ -203,7 +206,7 @@ export function initializeSocket(httpServer: HttpServer) {
             const isAvailable = await aiClient.isAvailable();
             if (!isAvailable) {
               // Emit a user-friendly error without crashing
-              socket.emit('ai:error', { 
+              socket.emit('ai:error', {
                 message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
                 code: 'AI_NOT_CONFIGURED',
                 recoverable: true
@@ -222,11 +225,11 @@ export function initializeSocket(httpServer: HttpServer) {
             if (aiResponse) {
               // Determine answer field based on response type
               const answerText = 'text' in aiResponse ? aiResponse.text : aiResponse.answer;
-              
+
               // Extract metadata safely - GroupAIChatResponse has metadata, ChatResponse doesn't
               const hasMetadata = 'metadata' in aiResponse && aiResponse.metadata;
               const metadataObj = hasMetadata ? aiResponse.metadata as Record<string, unknown> : {};
-              
+
               // Save AI response to database
               const [aiMessage] = await db
                 .insert(messages)
@@ -255,11 +258,11 @@ export function initializeSocket(httpServer: HttpServer) {
               io.to(`session:${sessionId}`).emit('message:new', aiMessageWithMeta);
             }
           } catch (aiError) {
-            console.error('AI response error:', aiError);
+            socketLogger.error({ err: aiError }, 'AI response error');
             // Send structured error so client can handle gracefully
             const errorMessage = aiError instanceof Error ? aiError.message : 'AI service unavailable';
             const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
-            socket.emit('ai:error', { 
+            socket.emit('ai:error', {
               message: isTimeout ? 'AI request timed out. Please try again.' : `AI Error: ${errorMessage}`,
               code: isTimeout ? 'AI_TIMEOUT' : 'AI_ERROR',
               recoverable: true
@@ -267,7 +270,7 @@ export function initializeSocket(httpServer: HttpServer) {
           }
         }
       } catch (error) {
-        console.error('Error sending message:', error);
+        socketLogger.error({ err: error }, 'Error sending message');
         socket.emit('error', { message: 'Failed to send message' });
       }
     });
@@ -279,7 +282,7 @@ export function initializeSocket(httpServer: HttpServer) {
 
         // Validate @ai trigger - CRITICAL
         if (!question.toLowerCase().includes('@ai')) {
-          socket.emit('ai:error', { 
+          socket.emit('ai:error', {
             message: 'Question must contain @ai trigger. AI only responds when triggered by @ai.',
             code: 'MISSING_AI_TRIGGER',
             recoverable: true
@@ -290,7 +293,7 @@ export function initializeSocket(httpServer: HttpServer) {
         // Pre-check AI service availability
         const isAvailable = await aiClient.isAvailable();
         if (!isAvailable) {
-          socket.emit('ai:error', { 
+          socket.emit('ai:error', {
             message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
             code: 'AI_NOT_CONFIGURED',
             recoverable: true
@@ -359,10 +362,10 @@ export function initializeSocket(httpServer: HttpServer) {
           });
         }
       } catch (error) {
-        console.error('Paper question error:', error);
+        socketLogger.error({ err: error }, 'Paper question error');
         const errorMessage = error instanceof Error ? error.message : 'Failed to process question';
         const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
-        socket.emit('ai:error', { 
+        socket.emit('ai:error', {
           message: isTimeout ? 'AI request timed out. Please try again.' : errorMessage,
           code: isTimeout ? 'AI_TIMEOUT' : 'AI_ERROR',
           recoverable: true
@@ -378,7 +381,7 @@ export function initializeSocket(httpServer: HttpServer) {
         // Pre-check AI service availability
         const isAvailable = await aiClient.isAvailable();
         if (!isAvailable) {
-          socket.emit('ai:error', { 
+          socket.emit('ai:error', {
             message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
             code: 'AI_NOT_CONFIGURED',
             recoverable: true
@@ -424,7 +427,7 @@ export function initializeSocket(httpServer: HttpServer) {
         // Also broadcast to session room if in a session
         if (sessionId) {
           const summaryContent = `**Paper Summary**\n\n${response.summary}\n\n**Key Points:**\n${response.key_points.map(p => `- ${p}`).join('\n')}`;
-          
+
           const [aiMessage] = await db
             .insert(messages)
             .values({
@@ -447,10 +450,10 @@ export function initializeSocket(httpServer: HttpServer) {
           });
         }
       } catch (error) {
-        console.error('Paper summarize error:', error);
+        socketLogger.error({ err: error }, 'Paper summarize error');
         const errorMessage = error instanceof Error ? error.message : 'Failed to summarize paper';
         const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
-        socket.emit('ai:error', { 
+        socket.emit('ai:error', {
           message: isTimeout ? 'AI request timed out. Please try again.' : errorMessage,
           code: isTimeout ? 'AI_TIMEOUT' : 'AI_ERROR',
           recoverable: true
@@ -474,7 +477,7 @@ export function initializeSocket(httpServer: HttpServer) {
 
     // Disconnect
     socket.on('disconnect', () => {
-      console.log(`User disconnected: ${socket.userId}`);
+      socketLogger.info({ userId: socket.userId }, 'User disconnected');
     });
   });
 

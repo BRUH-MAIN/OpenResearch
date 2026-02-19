@@ -1,150 +1,215 @@
 """
-Tests for the Embeddings Service
-
-Updated to use local sentence-transformers (SPECTER2) after migration.
+Tests for the Embedding Service.
 """
 
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch, MagicMock
 import numpy as np
 
-from app.embeddings import EmbeddingService
+
+class TestEmbeddingServiceInit:
+
+    def test_initial_state(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        assert es._initialized is False
+        assert es._model is None
+        assert es.is_configured is False
+        assert es.EMBEDDING_DIMENSION == 768
+
+    @patch("app.embeddings._get_model")
+    def test_initialize_success(self, mock_get):
+        from app.embeddings import EmbeddingService
+        mock_get.return_value = MagicMock()
+        es = EmbeddingService()
+        result = es.initialize()
+        assert result is True
+        assert es.is_configured is True
+
+    @patch("app.embeddings._get_model", side_effect=RuntimeError("Model fail"))
+    def test_initialize_failure(self, mock_get):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        result = es.initialize()
+        assert result is False
+        assert es.is_configured is False
 
 
-class TestEmbeddingService:
-    """Tests for the embedding service"""
+class TestSyncEmbed:
 
-    @pytest.fixture
-    def embedding_service(self):
-        """Create an embedding service with mocked sentence-transformer"""
-        with patch("app.embeddings._get_model") as mock_get_model:
-            # Mock the sentence-transformer model
-            mock_model = MagicMock()
-            mock_model.encode.return_value = np.array([0.1] * 768)
-            mock_get_model.return_value = mock_model
-            
-            service = EmbeddingService()
-            service._model = mock_model
-            service._initialized = True
-            return service
+    @patch("app.embeddings._get_model")
+    def test_sync_embed_lazy_init(self, mock_get):
+        from app.embeddings import EmbeddingService
+        model = MagicMock()
+        model.encode.return_value = np.random.randn(768)
+        mock_get.return_value = model
 
-    def test_embedding_dimensions(self, embedding_service):
-        """Test embeddings are 768 dimensions (SPECTER2)"""
-        # Test the expected dimension constant
-        assert EmbeddingService.EMBEDDING_DIMENSION == 768
-        
-        # Simulated result
-        result = embedding_service._model.encode("test")
+        es = EmbeddingService()
+        result = es._sync_embed("test text")
         assert len(result) == 768
+        assert es.is_configured is True
 
-    def test_embedding_normalization(self):
-        """Test embeddings are normalized (unit length)"""
-        # Create a mock normalized embedding
-        embedding = np.random.randn(768)
-        embedding = embedding / np.linalg.norm(embedding)
-        
-        # Check it's normalized
-        assert abs(np.linalg.norm(embedding) - 1.0) < 0.0001
+    def test_sync_embed_not_configured_raises(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        with patch("app.embeddings._get_model", side_effect=RuntimeError("fail")):
+            with pytest.raises(RuntimeError, match="not initialized"):
+                es._sync_embed("test")
 
-    def test_empty_text_handling(self, embedding_service):
-        """Test empty text is handled gracefully"""
-        # The service should use mock embedding for failures
-        service = EmbeddingService()
-        mock_embedding = service._generate_mock_embedding("")
-        
-        # Mock embedding should still return correct dimensions
-        assert len(mock_embedding) == 768
+    @patch("app.embeddings._get_model")
+    def test_sync_embed_truncates_long_text(self, mock_get):
+        from app.embeddings import EmbeddingService
+        model = MagicMock()
+        model.encode.return_value = np.random.randn(768)
+        mock_get.return_value = model
 
-    def test_batch_embedding(self, embedding_service):
-        """Test batch embedding generation"""
-        texts = ["text 1", "text 2", "text 3"]
-        
-        # Each text should produce a 768-dim vector
-        results = [[0.1] * 768 for _ in texts]
-        assert len(results) == len(texts)
-        for result in results:
-            assert len(result) == 768
+        es = EmbeddingService()
+        es.initialize()
+        es._sync_embed("x" * 10000)
+        # Check the text passed to encode was truncated
+        called_text = model.encode.call_args[0][0]
+        assert len(called_text) == 4096
 
-    def test_special_characters_handling(self, embedding_service):
-        """Test special characters don't break embedding"""
-        special_texts = [
-            "Text with emoji 🔬",
-            "Text with unicode: αβγδ",
-            "Text with <html> tags",
-            "Text with 'quotes' and \"double quotes\"",
-        ]
-        # Test mock embedding handles all these
-        service = EmbeddingService()
-        for text in special_texts:
-            mock_embedding = service._generate_mock_embedding(text)
-            assert len(mock_embedding) == 768
 
-    def test_long_text_handling(self, embedding_service):
-        """Test very long text is handled (truncated to 4096 chars)"""
-        long_text = "word " * 10000  # Very long text
-        
-        # The service truncates to 4096 chars in _sync_embed
-        truncated = long_text[:4096]
-        assert len(truncated) == 4096
-        
-        # Mock embedding should still work
-        service = EmbeddingService()
-        mock_embedding = service._generate_mock_embedding(truncated)
-        assert len(mock_embedding) == 768
-    
-    def test_chunk_text(self):
-        """Test text chunking for long documents"""
-        service = EmbeddingService()
-        
-        # Test short text returns single chunk
-        short_text = "This is a short text."
-        chunks = service.chunk_text(short_text)
-        assert len(chunks) == 1
-        assert chunks[0] == short_text
-        
-        # Test empty text
-        chunks = service.chunk_text("")
-        assert len(chunks) == 0
-        
-        # Test long text is chunked
-        long_text = "This is sentence one. " * 100
-        chunks = service.chunk_text(long_text, chunk_size=500, overlap=50)
+class TestGenerateEmbedding:
+
+    @pytest.mark.asyncio
+    async def test_generate_embedding_success(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        es._initialized = True
+        es._model = MagicMock()
+        es._model.encode.return_value = np.random.randn(768)
+
+        embedding, latency = await es.generate_embedding("test text")
+        assert len(embedding) == 768
+        assert isinstance(latency, int)
+
+    @pytest.mark.asyncio
+    async def test_generate_embedding_pads_short(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        es._initialized = True
+        es._model = MagicMock()
+        # Return embedding shorter than 768
+        es._model.encode.return_value = np.random.randn(100)
+
+        embedding, _ = await es.generate_embedding("test")
+        assert len(embedding) == 768
+
+    @pytest.mark.asyncio
+    async def test_generate_embedding_truncates_long(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        es._initialized = True
+        es._model = MagicMock()
+        es._model.encode.return_value = np.random.randn(1024)
+
+        embedding, _ = await es.generate_embedding("test")
+        assert len(embedding) == 768
+
+    @pytest.mark.asyncio
+    async def test_generate_embedding_fallback_on_error(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        es._initialized = True
+        es._model = MagicMock()
+        es._model.encode.side_effect = RuntimeError("fail")
+
+        embedding, _ = await es.generate_embedding("test text")
+        assert len(embedding) == 768  # mock embedding
+
+
+class TestGenerateEmbeddingsBatch:
+
+    @pytest.mark.asyncio
+    async def test_batch_embedding(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        es._initialized = True
+        es._model = MagicMock()
+        es._model.encode.return_value = np.random.randn(768)
+
+        embeddings, total_latency = await es.generate_embeddings_batch(["text1", "text2", "text3"])
+        assert len(embeddings) == 3
+        assert all(len(e) == 768 for e in embeddings)
+
+    @pytest.mark.asyncio
+    async def test_batch_empty_list(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        es._initialized = True
+        es._model = MagicMock()
+
+        embeddings, latency = await es.generate_embeddings_batch([])
+        assert embeddings == []
+        assert latency == 0
+
+
+class TestMockEmbedding:
+
+    def test_mock_embedding_deterministic(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        e1 = es._generate_mock_embedding("same text")
+        e2 = es._generate_mock_embedding("same text")
+        assert e1 == e2
+
+    def test_mock_embedding_different_for_different_text(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        e1 = es._generate_mock_embedding("foo")
+        e2 = es._generate_mock_embedding("bar")
+        assert e1 != e2
+
+    def test_mock_embedding_normalized(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        e = es._generate_mock_embedding("test")
+        norm = np.linalg.norm(e)
+        assert abs(norm - 1.0) < 0.01
+
+
+class TestChunkText:
+
+    def test_empty_text(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        assert es.chunk_text("") == []
+
+    def test_none_text(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        assert es.chunk_text(None) == []
+
+    def test_short_text(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        result = es.chunk_text("short text")
+        assert result == ["short text"]
+
+    def test_long_text_chunks(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        text = "word " * 500  # ~2500 chars
+        chunks = es.chunk_text(text, chunk_size=500, overlap=100)
         assert len(chunks) > 1
+        # Each chunk should be non-empty
+        assert all(len(c) > 0 for c in chunks)
 
+    def test_chunks_have_overlap(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        text = "A. " * 200 + "B. " * 200 + "C. " * 200
+        chunks = es.chunk_text(text, chunk_size=300, overlap=100)
+        assert len(chunks) >= 2
 
-class TestEmbeddingSimilarity:
-    """Tests for embedding similarity calculations"""
-
-    def test_cosine_similarity_same_vectors(self):
-        """Test identical vectors have similarity 1.0"""
-        vec = np.random.randn(768)
-        vec = vec / np.linalg.norm(vec)
-        similarity = np.dot(vec, vec)
-        assert abs(similarity - 1.0) < 0.0001
-
-    def test_cosine_similarity_orthogonal_vectors(self):
-        """Test orthogonal vectors have similarity 0.0"""
-        vec1 = np.zeros(768)
-        vec1[0] = 1.0
-        vec2 = np.zeros(768)
-        vec2[1] = 1.0
-        similarity = np.dot(vec1, vec2)
-        assert abs(similarity) < 0.0001
-
-    def test_cosine_similarity_opposite_vectors(self):
-        """Test opposite vectors have similarity -1.0"""
-        vec1 = np.random.randn(768)
-        vec1 = vec1 / np.linalg.norm(vec1)
-        vec2 = -vec1
-        similarity = np.dot(vec1, vec2)
-        assert abs(similarity + 1.0) < 0.0001
-
-    def test_similarity_range(self):
-        """Test similarity is in range [-1, 1]"""
-        for _ in range(100):
-            vec1 = np.random.randn(768)
-            vec1 = vec1 / np.linalg.norm(vec1)
-            vec2 = np.random.randn(768)
-            vec2 = vec2 / np.linalg.norm(vec2)
-            similarity = np.dot(vec1, vec2)
-            assert -1.0 <= similarity <= 1.0
+    def test_sentence_boundary_break(self):
+        from app.embeddings import EmbeddingService
+        es = EmbeddingService()
+        # Create text with a clear sentence boundary
+        text = "First sentence. " * 30 + "Second sentence. " * 30
+        chunks = es.chunk_text(text, chunk_size=200, overlap=50)
+        # Chunks should try to end at sentence boundaries
+        for chunk in chunks[:-1]:  # skip last
+            assert chunk.rstrip().endswith(".") or len(chunk) <= 200

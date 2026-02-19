@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import logger from '../utils/logger.js';
 
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -16,26 +17,26 @@ let env: Env | null = null;
 
 export function loadEnv(): Env {
   const parsed = envSchema.safeParse(process.env);
-  
+
   if (!parsed.success) {
-    console.error('❌ Invalid environment variables:');
-    console.error(parsed.error.format());
+    process.stderr.write('❌ Invalid environment variables:\n');
+    process.stderr.write(JSON.stringify(parsed.error.format(), null, 2) + '\n');
     throw new Error('Invalid environment configuration');
   }
-  
+
   env = parsed.data;
-  
+
   // Validate JWT secrets are different
   if (env.JWT_SECRET === env.JWT_REFRESH_SECRET) {
     throw new Error('JWT_SECRET and JWT_REFRESH_SECRET must be different');
   }
-  
+
   // Warn about weak secrets in development
   const weakSecrets = ['secret', 'password', 'your-super-secret', 'change-in-production'];
   if (weakSecrets.some(weak => env!.JWT_SECRET.toLowerCase().includes(weak))) {
-    console.warn('⚠️  WARNING: JWT_SECRET appears to be a weak or default value');
+    logger.warn('JWT_SECRET appears to be a weak or default value');
   }
-  
+
   return env;
 }
 

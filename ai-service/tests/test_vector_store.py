@@ -1,201 +1,312 @@
 """
-Tests for the Vector Store
+Tests for the Vector Store — actual VectorStore class methods.
 """
 
 import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
-import json
 
 
-class TestVectorStore:
-    """Tests for the vector store with group isolation"""
+# ---------------------------------------------------------------------------
+# Initialization
+# ---------------------------------------------------------------------------
 
-    def test_store_with_group_id(self):
-        """Test vectors are stored with group_id"""
-        vector_data = {
-            "id": "vec-1",
-            "group_id": "group-A",
-            "paper_id": "paper-1",
-            "content_type": "paper",
-            "content": "Test content",
-            "embedding": [0.1] * 1536,
-        }
-        assert vector_data["group_id"] == "group-A"
-        assert len(vector_data["embedding"]) == 1536
+class TestVectorStoreInit:
 
-    def test_search_filters_by_group(self):
-        """Test search only returns results from specified group"""
-        all_vectors = [
-            {"id": "1", "group_id": "group-A", "similarity": 0.9},
-            {"id": "2", "group_id": "group-B", "similarity": 0.85},
-            {"id": "3", "group_id": "group-A", "similarity": 0.8},
-        ]
-        
-        group_a_results = [v for v in all_vectors if v["group_id"] == "group-A"]
-        assert len(group_a_results) == 2
-        for result in group_a_results:
-            assert result["group_id"] == "group-A"
+    def test_initial_state(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        assert vs.engine is None
+        assert vs.session_factory is None
+        assert vs.is_connected is False
 
-    def test_search_respects_limit(self):
-        """Test search respects limit parameter"""
-        all_vectors = [{"id": str(i), "similarity": 1.0 - i * 0.1} for i in range(20)]
-        limit = 5
-        results = all_vectors[:limit]
-        assert len(results) == limit
+    @pytest.mark.asyncio
+    @patch("app.vector_store.get_settings")
+    async def test_connect_no_url(self, mock_settings):
+        from app.vector_store import VectorStore
+        settings = MagicMock()
+        settings.database_url = ""
+        mock_settings.return_value = settings
 
-    def test_search_orders_by_similarity(self):
-        """Test search orders by similarity descending"""
-        results = [
-            {"id": "1", "similarity": 0.9},
-            {"id": "2", "similarity": 0.95},
-            {"id": "3", "similarity": 0.8},
-        ]
-        sorted_results = sorted(results, key=lambda x: x["similarity"], reverse=True)
-        assert sorted_results[0]["similarity"] >= sorted_results[1]["similarity"]
-        assert sorted_results[1]["similarity"] >= sorted_results[2]["similarity"]
+        vs = VectorStore()
+        result = await vs.connect()
+        assert result is False
 
-    def test_search_filters_by_content_type(self):
-        """Test search can filter by content_type"""
-        all_vectors = [
-            {"id": "1", "content_type": "paper", "group_id": "A"},
-            {"id": "2", "content_type": "summary", "group_id": "A"},
-            {"id": "3", "content_type": "paper", "group_id": "A"},
-        ]
-        
-        paper_results = [v for v in all_vectors if v["content_type"] == "paper"]
-        assert len(paper_results) == 2
+    @pytest.mark.asyncio
+    async def test_disconnect(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs.engine = AsyncMock()
+        vs._connected = True
 
-    def test_search_filters_by_paper_id(self):
-        """Test search can filter by paper_id"""
-        all_vectors = [
-            {"id": "1", "paper_id": "paper-1", "group_id": "A"},
-            {"id": "2", "paper_id": "paper-2", "group_id": "A"},
-            {"id": "3", "paper_id": "paper-1", "group_id": "A"},
-        ]
-        
-        paper_1_results = [v for v in all_vectors if v["paper_id"] == "paper-1"]
-        assert len(paper_1_results) == 2
+        await vs.disconnect()
+        assert vs.is_connected is False
+        vs.engine.dispose.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_disconnect_no_engine(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        await vs.disconnect()  # should not raise
 
 
-class TestVectorStoreGroupIsolation:
-    """Tests specifically for group isolation"""
+# ---------------------------------------------------------------------------
+# insert_vector
+# ---------------------------------------------------------------------------
 
-    def test_different_groups_isolated(self):
-        """Test vectors from different groups are completely isolated"""
-        group_a_vectors = [
-            {"id": "a1", "group_id": "group-A", "content": "Sensitive A"},
-            {"id": "a2", "group_id": "group-A", "content": "Private A"},
-        ]
-        group_b_vectors = [
-            {"id": "b1", "group_id": "group-B", "content": "Sensitive B"},
-        ]
-        
-        # Searching in group A should never see group B content
-        search_group_a = [v for v in group_a_vectors + group_b_vectors 
-                         if v["group_id"] == "group-A"]
-        
-        for result in search_group_a:
-            assert result["group_id"] == "group-A"
-            assert "B" not in result.get("content", "")
+class TestInsertVector:
 
-    def test_cannot_access_other_group_by_id(self):
-        """Test direct ID access respects group isolation"""
-        vectors = {
-            "vec-1": {"id": "vec-1", "group_id": "group-A", "content": "A content"},
-            "vec-2": {"id": "vec-2", "group_id": "group-B", "content": "B content"},
-        }
-        
-        def get_vector(vector_id, requesting_group_id):
-            vec = vectors.get(vector_id)
-            if vec and vec["group_id"] == requesting_group_id:
-                return vec
-            return None
-        
-        # Group A can access their own vector
-        result = get_vector("vec-1", "group-A")
-        assert result is not None
-        
-        # Group A cannot access Group B's vector
-        result = get_vector("vec-2", "group-A")
-        assert result is None
+    @pytest.fixture
+    def vs(self):
+        from app.vector_store import VectorStore
+        v = VectorStore()
+        v._connected = True
+        mock_session = AsyncMock()
+        row = MagicMock(id="vec-1")
+        mock_session.execute.return_value = MagicMock(fetchone=MagicMock(return_value=row))
+        mock_session_factory = MagicMock()
+        mock_session_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_session_factory.return_value.__aexit__ = AsyncMock(return_value=None)
+        v.session_factory = mock_session_factory
+        v._mock_session = mock_session
+        return v
 
-    def test_group_context_only_includes_own_data(self):
-        """Test get_group_context only returns own group's data"""
-        all_data = [
-            {"id": "1", "group_id": "A", "type": "paper"},
-            {"id": "2", "group_id": "B", "type": "paper"},
-            {"id": "3", "group_id": "A", "type": "summary"},
-            {"id": "4", "group_id": "C", "type": "paper"},
-        ]
-        
-        group_a_context = [d for d in all_data if d["group_id"] == "A"]
-        assert len(group_a_context) == 2
-        assert all(d["group_id"] == "A" for d in group_a_context)
+    @pytest.mark.asyncio
+    async def test_insert_vector_not_connected(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        with pytest.raises(RuntimeError, match="not connected"):
+            await vs.insert_vector("g1", "p1", "content")
+
+    @pytest.mark.asyncio
+    async def test_insert_vector_no_group_id(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs._connected = True
+        with pytest.raises(ValueError, match="REQUIRED"):
+            await vs.insert_vector("", "p1", "content")
+
+    @pytest.mark.asyncio
+    @patch("app.vector_store.embedding_service")
+    async def test_insert_vector_success(self, mock_emb, vs):
+        mock_emb.generate_embedding = AsyncMock(return_value=([0.1] * 768, 10))
+        result = await vs.insert_vector("g1", "p1", "content")
+        assert result == "vec-1"
+        vs._mock_session.commit.assert_awaited_once()
 
 
-class TestVectorStorePerformance:
-    """Tests for vector store performance characteristics"""
+# ---------------------------------------------------------------------------
+# insert_paper_chunks
+# ---------------------------------------------------------------------------
 
-    def test_similarity_search_uses_index(self):
-        """Test similarity search can use HNSW index"""
-        # This is more of a documentation test
-        # Real HNSW index would be in PostgreSQL
-        assert True  # Index exists and is used
+class TestInsertPaperChunks:
 
-    def test_batch_insert_efficient(self):
-        """Test batch inserts are efficient"""
-        batch_size = 100
-        vectors = [
-            {"id": str(i), "group_id": "test", "embedding": [0.1] * 1536}
-            for i in range(batch_size)
-        ]
-        # Should handle batch efficiently
-        assert len(vectors) == batch_size
+    @pytest.mark.asyncio
+    async def test_insert_paper_chunks_no_group_id(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        with pytest.raises(ValueError, match="REQUIRED"):
+            await vs.insert_paper_chunks("", "p1", "Title", "Abstract")
+
+    @pytest.mark.asyncio
+    @patch("app.vector_store.embedding_service")
+    async def test_insert_paper_chunks_title_abstract_only(self, mock_emb):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs._connected = True
+
+        mock_session = AsyncMock()
+        row = MagicMock(id="v1")
+        mock_session.execute.return_value = MagicMock(fetchone=MagicMock(return_value=row))
+        mock_sf = MagicMock()
+        mock_sf.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_sf.return_value.__aexit__ = AsyncMock(return_value=None)
+        vs.session_factory = mock_sf
+
+        mock_emb.generate_embedding = AsyncMock(return_value=([0.1] * 768, 10))
+
+        result = await vs.insert_paper_chunks("g1", "p1", "My Title", "Abstract text")
+        assert len(result) == 1
+        assert result[0] == "v1"
+
+    @pytest.mark.asyncio
+    @patch("app.vector_store.embedding_service")
+    async def test_insert_paper_chunks_with_full_text(self, mock_emb):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs._connected = True
+
+        mock_session = AsyncMock()
+        row = MagicMock(id="v1")
+        mock_session.execute.return_value = MagicMock(fetchone=MagicMock(return_value=row))
+        mock_sf = MagicMock()
+        mock_sf.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_sf.return_value.__aexit__ = AsyncMock(return_value=None)
+        vs.session_factory = mock_sf
+
+        mock_emb.generate_embedding = AsyncMock(return_value=([0.1] * 768, 10))
+        mock_emb.chunk_text.return_value = ["chunk1", "chunk2"]
+
+        result = await vs.insert_paper_chunks("g1", "p1", "Title", "Abstract", full_text="long text")
+        # title_abstract + 2 chunks = 3 vectors
+        assert len(result) == 3
 
 
-class TestVectorStoreDataTypes:
-    """Tests for different content types in vector store"""
+# ---------------------------------------------------------------------------
+# search_group_vectors
+# ---------------------------------------------------------------------------
 
-    def test_paper_content_type(self):
-        """Test paper content type is stored correctly"""
-        vector = {
-            "id": "v1",
-            "group_id": "g1",
-            "content_type": "paper",
-            "paper_id": "p1",
-            "content": "Paper abstract...",
-        }
-        assert vector["content_type"] == "paper"
+class TestSearchGroupVectors:
 
-    def test_summary_content_type(self):
-        """Test summary content type is stored correctly"""
-        vector = {
-            "id": "v2",
-            "group_id": "g1",
-            "content_type": "summary",
-            "paper_id": "p1",
-            "content": "AI-generated summary...",
-        }
-        assert vector["content_type"] == "summary"
+    @pytest.mark.asyncio
+    async def test_search_not_connected(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        with pytest.raises(RuntimeError, match="not connected"):
+            await vs.search_group_vectors("g1", "query")
 
-    def test_qa_content_type(self):
-        """Test Q&A content type is stored correctly"""
-        vector = {
-            "id": "v3",
-            "group_id": "g1",
-            "content_type": "qa",
-            "paper_id": "p1",
-            "content": "Q: What is this? A: This is...",
-        }
-        assert vector["content_type"] == "qa"
+    @pytest.mark.asyncio
+    async def test_search_no_group_id(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs._connected = True
+        with pytest.raises(ValueError, match="REQUIRED"):
+            await vs.search_group_vectors("", "query")
 
-    def test_chat_content_type(self):
-        """Test chat content type is stored correctly"""
-        vector = {
-            "id": "v4",
-            "group_id": "g1",
-            "content_type": "chat",
-            "session_id": "s1",
-            "content": "Chat message...",
-        }
-        assert vector["content_type"] == "chat"
+    @pytest.mark.asyncio
+    async def test_search_invalid_uuid(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs._connected = True
+        with pytest.raises(ValueError, match="valid UUID"):
+            await vs.search_group_vectors("not-a-uuid", "query")
+
+    @pytest.mark.asyncio
+    @patch("app.vector_store.embedding_service")
+    async def test_search_success(self, mock_emb):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs._connected = True
+
+        mock_emb.generate_embedding = AsyncMock(return_value=([0.1] * 768, 10))
+
+        row = MagicMock(
+            id="v1", group_id="g1", paper_id="p1",
+            content_type="paper", content_id="c1",
+            chunk_index=0, content="text", metadata={},
+            distance=0.2,
+        )
+        mock_session = AsyncMock()
+        mock_session.execute.return_value = MagicMock(fetchall=MagicMock(return_value=[row]))
+        mock_sf = MagicMock()
+        mock_sf.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_sf.return_value.__aexit__ = AsyncMock(return_value=None)
+        vs.session_factory = mock_sf
+
+        gid = "11111111-1111-1111-1111-111111111111"
+        results = await vs.search_group_vectors(gid, "query")
+        assert len(results) == 1
+        assert results[0]["similarity"] == pytest.approx(0.8)
+
+    @pytest.mark.asyncio
+    @patch("app.vector_store.embedding_service")
+    async def test_search_with_content_type_filter(self, mock_emb):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs._connected = True
+        mock_emb.generate_embedding = AsyncMock(return_value=([0.1] * 768, 10))
+
+        mock_session = AsyncMock()
+        mock_session.execute.return_value = MagicMock(fetchall=MagicMock(return_value=[]))
+        mock_sf = MagicMock()
+        mock_sf.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_sf.return_value.__aexit__ = AsyncMock(return_value=None)
+        vs.session_factory = mock_sf
+
+        gid = "11111111-1111-1111-1111-111111111111"
+        results = await vs.search_group_vectors(gid, "query", content_types=["paper", "qa"])
+        assert results == []
+
+    @pytest.mark.asyncio
+    @patch("app.vector_store.embedding_service")
+    async def test_search_filters_invalid_content_types(self, mock_emb):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs._connected = True
+        mock_emb.generate_embedding = AsyncMock(return_value=([0.1] * 768, 10))
+
+        mock_session = AsyncMock()
+        mock_session.execute.return_value = MagicMock(fetchall=MagicMock(return_value=[]))
+        mock_sf = MagicMock()
+        mock_sf.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_sf.return_value.__aexit__ = AsyncMock(return_value=None)
+        vs.session_factory = mock_sf
+
+        gid = "11111111-1111-1111-1111-111111111111"
+        # "invalid_type" should be filtered out
+        results = await vs.search_group_vectors(gid, "query", content_types=["invalid_type"])
+        assert results == []
+
+
+# ---------------------------------------------------------------------------
+# delete_paper_vectors
+# ---------------------------------------------------------------------------
+
+class TestDeletePaperVectors:
+
+    @pytest.mark.asyncio
+    async def test_delete_no_group_id(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        with pytest.raises(ValueError, match="REQUIRED"):
+            await vs.delete_paper_vectors("", "p1")
+
+    @pytest.mark.asyncio
+    async def test_delete_success(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs._connected = True
+
+        mock_session = AsyncMock()
+        mock_session.execute.return_value = MagicMock(fetchall=MagicMock(return_value=[MagicMock(), MagicMock()]))
+        mock_sf = MagicMock()
+        mock_sf.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_sf.return_value.__aexit__ = AsyncMock(return_value=None)
+        vs.session_factory = mock_sf
+
+        count = await vs.delete_paper_vectors("g1", "p1")
+        assert count == 2
+        mock_session.commit.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# get_group_vector_stats
+# ---------------------------------------------------------------------------
+
+class TestGetGroupVectorStats:
+
+    @pytest.mark.asyncio
+    async def test_stats_no_group_id(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        with pytest.raises(ValueError, match="REQUIRED"):
+            await vs.get_group_vector_stats("")
+
+    @pytest.mark.asyncio
+    async def test_stats_success(self):
+        from app.vector_store import VectorStore
+        vs = VectorStore()
+        vs._connected = True
+
+        row_paper = MagicMock(content_type="paper", count=10)
+        row_qa = MagicMock(content_type="qa", count=5)
+        mock_session = AsyncMock()
+        mock_session.execute.return_value = MagicMock(fetchall=MagicMock(return_value=[row_paper, row_qa]))
+        mock_sf = MagicMock()
+        mock_sf.return_value.__aenter__ = AsyncMock(return_value=mock_session)
+        mock_sf.return_value.__aexit__ = AsyncMock(return_value=None)
+        vs.session_factory = mock_sf
+
+        stats = await vs.get_group_vector_stats("g1")
+        assert stats["paper"] == 10
+        assert stats["qa"] == 5
+        assert stats["total"] == 15
