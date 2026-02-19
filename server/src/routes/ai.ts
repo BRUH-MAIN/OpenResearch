@@ -11,6 +11,7 @@ import { aiClient, AgenticRunResponse, AgenticTaskType } from '../services/aiCli
 import { db, sessions, groupMembers, messages } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { createError } from '../middleware/error.js';
+import { chatLimiter, summarizeLimiter, agenticLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -118,7 +119,7 @@ router.get('/health', async (req, res, next) => {
 router.use(authenticate);
 
 // Chat Q&A
-router.post('/chat', async (req: AuthRequest, res: Response, next) => {
+router.post('/chat', chatLimiter, async (req: AuthRequest, res: Response, next) => {
   try {
     const { question, sessionId, includePapers = true, maxContextMessages = 30 } = req.body;
     const userId = req.user!.id;
@@ -150,7 +151,7 @@ router.post('/chat', async (req: AuthRequest, res: Response, next) => {
 });
 
 // Ask in session context (with @ai prefix handling)
-router.post('/ask/:sessionId', async (req: AuthRequest, res: Response, next) => {
+router.post('/ask/:sessionId', chatLimiter, async (req: AuthRequest, res: Response, next) => {
   try {
     const { sessionId } = req.params;
     const { question } = req.body;
@@ -205,7 +206,7 @@ router.post('/ask/:sessionId', async (req: AuthRequest, res: Response, next) => 
 });
 
 // Summarize session
-router.post('/summarize/:sessionId', async (req: AuthRequest, res: Response, next) => {
+router.post('/summarize/:sessionId', summarizeLimiter, async (req: AuthRequest, res: Response, next) => {
   try {
     const { sessionId } = req.params;
     const { maxMessages = 100 } = req.body;
@@ -229,7 +230,7 @@ router.post('/summarize/:sessionId', async (req: AuthRequest, res: Response, nex
 });
 
 // Agentic task runner
-router.post('/agentic/run', async (req: AuthRequest, res: Response, next) => {
+router.post('/agentic/run', agenticLimiter, async (req: AuthRequest, res: Response, next) => {
   try {
     const { taskType, prompt, groupId, sessionId, paperIds, options } = req.body;
     const userId = req.user!.id;

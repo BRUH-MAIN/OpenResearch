@@ -10,6 +10,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { createError } from '../middleware/error.js';
 import { aiClient } from '../services/aiClient.js';
+import { reportLimiter } from '../middleware/rateLimiter.js';
 
 const router = Router();
 
@@ -19,7 +20,7 @@ router.use(authenticate);
 /**
  * Generate a new group report
  */
-router.post('/group/:groupId/generate', async (req: AuthRequest, res: Response, next) => {
+router.post('/group/:groupId/generate', reportLimiter, async (req: AuthRequest, res: Response, next) => {
   try {
     const { groupId } = req.params;
     const { reportType, dateRange, sections, customTitle, paperIds } = req.body;
