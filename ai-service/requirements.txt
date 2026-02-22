@@ -6,16 +6,14 @@ pydantic-settings>=2.1.0
 httpx>=0.26.0
 python-dotenv>=1.0.0
 
-# Groq SDK
-groq>=0.11.0
+# Groq (via LangChain — single unified LLM client)
+langchain-groq>=0.1.0
 
 # Agentic frameworks
 langgraph>=0.2.0
 langchain-core>=0.2.0
-langchain-groq>=0.1.0
 
 # Local Embeddings (sentence-transformers with SPECTER2 for scientific papers)
-# Using CPU-only torch for smaller image size and faster builds
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch>=2.0.0
 sentence-transformers>=2.2.0
@@ -39,5 +37,3 @@ feedparser>=6.0.0
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
 pytest-cov>=4.1.0
-httpx>=0.26.0
-deepagents

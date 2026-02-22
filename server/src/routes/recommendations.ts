@@ -89,20 +89,8 @@ router.get('/group/:groupId', async (req: AuthRequest, res: Response, next) => {
     const existingIds = groupPaperIds.map(p => p.paperId);
 
     // Try to get AI-powered recommendations
-    try {
-      const aiRecommendations = await aiClient.getRecommendations({
-        group_id: groupId,
-        limit,
-        exclude_paper_ids: existingIds,
-      });
+    // Removed dead AI recommendations path
 
-      if (aiRecommendations.recommendations && aiRecommendations.recommendations.length > 0) {
-        res.json(aiRecommendations);
-        return;
-      }
-    } catch (aiError) {
-      logger.warn({ err: aiError }, 'AI recommendations failed, falling back to tag-based');
-    }
 
     // Fallback: recommend papers similar to those in group by tags
     let recommendations: any[] = [];

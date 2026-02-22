@@ -5,11 +5,14 @@ No API key required - runs locally.
 """
 
 import asyncio
+import logging
 import time
 from typing import Optional
 import numpy as np
 
 from .config import get_settings
+
+logger = logging.getLogger(__name__)
 
 # Lazy load to avoid import overhead
 _model = None
@@ -21,17 +24,14 @@ def _get_model():
     global _model, _tokenizer
     if _model is None:
         from sentence_transformers import SentenceTransformer
-        # SPECTER2 is optimized for scientific papers (768 dimensions)
-        # Alternative: 'allenai/specter' or 'sentence-transformers/all-mpnet-base-v2'
-        print("🔄 Loading SPECTER2 embedding model (first time may take a moment)...")
+        logger.info("Loading SPECTER2 embedding model...")
         try:
             _model = SentenceTransformer('allenai/specter2')
-            print("✅ SPECTER2 model loaded successfully")
+            logger.info("SPECTER2 model loaded successfully")
         except Exception as exc:
-            print(f"⚠️  SPECTER2 load failed: {exc}")
-            print("🔄 Falling back to SPECTER embeddings...")
+            logger.warning("SPECTER2 load failed: %s, falling back to SPECTER", exc)
             _model = SentenceTransformer('allenai/specter')
-            print("✅ SPECTER model loaded successfully")
+            logger.info("SPECTER model loaded successfully")
     return _model
 
 
@@ -54,10 +54,10 @@ class EmbeddingService:
         try:
             self._model = _get_model()
             self._initialized = True
-            print("✅ Embedding service initialized (SPECTER2 - local)")
+            logger.info("Embedding service initialized (SPECTER2 - local)")
             return True
         except Exception as e:
-            print(f"❌ Failed to initialize embedding service: {e}")
+            logger.error("Failed to initialize embedding service: %s", e)
             return False
     
     @property
@@ -126,7 +126,7 @@ class EmbeddingService:
                 
         except Exception as e:
             # Fallback to mock embedding for development/when model fails
-            print(f"⚠️  Embedding generation failed: {e}, using mock embedding")
+            logger.warning("Embedding generation failed: %s, using mock embedding", e)
             latency_ms = int((time.time() - start_time) * 1000)
             return self._generate_mock_embedding(text), latency_ms
     

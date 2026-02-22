@@ -8,42 +8,12 @@
  */
 
 import logger from '../utils/logger.js';
+import { createError } from '../middleware/error.js';
+import { setTimeout, clearTimeout } from 'timers';
 
 // Get AI service URL from environment (with fallback)
 function getAiServiceUrl(): string {
   return process.env.AI_SERVICE_URL || 'http://localhost:8000';
-}
-
-// Types matching FastAPI models
-export interface ChatRequest {
-  question: string;
-  session_id?: string;
-  user_id?: string;
-  include_papers?: boolean;
-  max_context_messages?: number;
-}
-
-export interface ChatResponse {
-  answer: string;
-  sources: string[];
-  model: string;
-  latency_ms: number;
-  context_messages_used: number;
-  papers_used: number;
-}
-
-export interface SummarizeRequest {
-  session_id: string;
-  max_messages?: number;
-}
-
-export interface SummaryResponse {
-  summary: string;
-  key_points: string[];
-  participant_count: number;
-  message_count: number;
-  model: string;
-  latency_ms: number;
 }
 
 export interface GroupAIChatRequest {
@@ -140,24 +110,6 @@ export interface ReportResponse {
   group_id: string;
   summary?: string;
   created_at?: string;
-}
-
-export interface RecommendationsRequest {
-  group_id: string;
-  limit?: number;
-  exclude_paper_ids?: string[];
-}
-
-export interface RecommendationsResponse {
-  recommendations: Array<{
-    id: string;
-    title: string;
-    abstract?: string;
-    score: number;
-    reason: string;
-  }>;
-  total: number;
-  source: string;
 }
 
 export interface VectorSearchRequest {
@@ -282,7 +234,7 @@ class AIClient {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
-          ...options.headers,
+          ...(options.headers || {}),
         },
       });
 
@@ -324,38 +276,6 @@ class AIClient {
       logger.warn(`AI service not available: ${errorMessage}`);
       return false;
     }
-  }
-
-  /**
-   * Legacy chat Q&A with session context
-   */
-  async chat(request: ChatRequest): Promise<ChatResponse> {
-    logger.info(`AI chat request for session: ${request.session_id || 'none'}`);
-
-    const response = await this.request<ChatResponse>('/chat', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-
-    logger.info(`AI chat response in ${response.latency_ms}ms, ${response.context_messages_used} messages used`);
-
-    return response;
-  }
-
-  /**
-   * Legacy summarize a session
-   */
-  async summarize(request: SummarizeRequest): Promise<SummaryResponse> {
-    logger.info(`AI summarize request for session: ${request.session_id}`);
-
-    const response = await this.request<SummaryResponse>('/summarize', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-
-    logger.info(`AI summary generated in ${response.latency_ms}ms`);
-
-    return response;
   }
 
   /**
@@ -485,17 +405,6 @@ class AIClient {
   }
 
   /**
-   * Get AI-powered recommendations for a group
-   * Note: This endpoint may not be implemented in AI service - fallback logic handles this
-   */
-  async getRecommendations(request: RecommendationsRequest): Promise<RecommendationsResponse> {
-    logger.info(`Getting recommendations for group: ${request.group_id}`);
-
-    // AI service doesn't have this endpoint yet - throw to trigger fallback
-    throw new Error('AI recommendations endpoint not implemented');
-  }
-
-  /**
    * Generate group report
    */
   async generateReport(request: GenerateReportRequest): Promise<ReportResponse> {
@@ -526,82 +435,22 @@ class AIClient {
     sessionId: string,
     userId: string,
     groupId?: string
-  ): Promise<GroupAIChatResponse | ChatResponse | AgenticChatResponse | null> {
+  ): Promise<GroupAIChatResponse | null> {
     // Check if message contains @ai
     const trimmed = content.trim();
     if (!trimmed.toLowerCase().includes('@ai')) {
       return null;
     }
 
-    // If groupId is provided, classify intent and route
-    if (groupId) {
-      try {
-        const intent = await this.classifyAgenticIntent({ prompt: content });
-        if (intent.task_type === 'deep_research') {
-          const response = await this.runAgenticTask({
-            task_type: 'deep_research',
-            prompt: content,
-            group_id: groupId,
-            user_id: userId,
-            session_id: sessionId,
-            options: {
-              intent_similarity: intent.similarity,
-              intent_threshold: intent.threshold,
-              matched_phrase: intent.matched_phrase,
-            },
-          });
-
-          const deepResearch =
-            (response.result?.deep_research as string | undefined) ||
-            (response.result?.report as string | undefined) ||
-            JSON.stringify(response.result || {}, null, 2);
-
-          const artifacts = response.artifacts?.length
-            ? `\n\n**Artifacts**\n${response.artifacts.map((artifactId) => `- ${artifactId}`).join('\n')}`
-            : '';
-
-          const text = `### Deep Research Report\n\n${deepResearch}${artifacts}\n\n_Completed in ${response.latency_ms}ms_`;
-
-          return {
-            id: `agentic-${Date.now()}`,
-            text,
-            sources: [],
-            latency_ms: response.latency_ms,
-            metadata: {
-              task_type: response.task_type,
-              artifacts: response.artifacts,
-              model: 'groq',
-              intent_similarity: intent.similarity,
-              intent_threshold: intent.threshold,
-              matched_phrase: intent.matched_phrase,
-            },
-          };
-        }
-      } catch (error) {
-        logger.warn(`Intent classification failed, falling back to group chat: ${String(error)}`);
-      }
-
-      return this.groupAIChat({
-        prompt: content,
-        group_id: groupId,
-        session_id: sessionId,
-        user_id: userId,
-      });
+    if (!groupId) {
+      throw new Error('AI chat is only supported within research groups');
     }
 
-    // Fallback to legacy chat
-    const question = trimmed.replace(/@ai/gi, '').trim();
-
-    if (!question) {
-      throw new Error('Please provide a question after @ai');
-    }
-
-    return this.chat({
-      question,
+    return this.groupAIChat({
+      prompt: content,
+      group_id: groupId,
       session_id: sessionId,
       user_id: userId,
-      include_papers: true,
-      max_context_messages: 30,
     });
   }
 }

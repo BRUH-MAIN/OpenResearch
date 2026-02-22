@@ -223,12 +223,11 @@ export function initializeSocket(httpServer: HttpServer) {
             );
 
             if (aiResponse) {
-              // Determine answer field based on response type
-              const answerText = 'text' in aiResponse ? aiResponse.text : aiResponse.answer;
+              // Now always a GroupAIChatResponse
+              const answerText = aiResponse.text;
 
-              // Extract metadata safely - GroupAIChatResponse has metadata, ChatResponse doesn't
-              const hasMetadata = 'metadata' in aiResponse && aiResponse.metadata;
-              const metadataObj = hasMetadata ? aiResponse.metadata as Record<string, unknown> : {};
+              // Extract metadata safely
+              const metadataObj = aiResponse.metadata as Record<string, unknown> || {};
 
               // Save AI response to database
               const [aiMessage] = await db
@@ -239,8 +238,8 @@ export function initializeSocket(httpServer: HttpServer) {
                   content: answerText,
                   type: 'ai',
                   metadata: {
-                    sources: 'sources' in aiResponse ? aiResponse.sources : [],
-                    model: (metadataObj.model as string) || ('model' in aiResponse ? aiResponse.model : 'groq'),
+                    sources: aiResponse.sources || [],
+                    model: (metadataObj.model as string) || 'groq',
                     latency_ms: aiResponse.latency_ms,
                     context_items_used: (metadataObj.context_items_used as number) || 0,
                     vector_ids_used: (metadataObj.vector_ids_used as string[]) || [],

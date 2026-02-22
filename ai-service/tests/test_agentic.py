@@ -36,11 +36,7 @@ def initialized_service(service, mock_llm):
     service._api_key = "test-key"
     service._initialized = True
 
-    # Build the agent (needs deepagents imports to be available)
-    try:
-        service._build_agent()
-    except Exception:
-        pytest.skip("DeepAgents dependencies not available")
+    # Agent building is handled dynamically now
 
     return service
 
@@ -206,11 +202,8 @@ class TestFormatMemoryContext:
         assert "Retrieved 1 papers" in result
 
     @pytest.mark.asyncio
-    @patch("app.agentic.mem0_adapter")
     @patch("app.agentic.database")
-    async def test_literature_survey_tool(self, mock_db, mock_mem0, initialized_service):
-        mock_mem0.search = AsyncMock(return_value=[])
-        mock_mem0.add = AsyncMock()
+    async def test_literature_survey_tool(self, mock_db, initialized_service):
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[{"title": "Test Paper", "abstract": "Deep learning..."}])
 
@@ -220,10 +213,8 @@ class TestFormatMemoryContext:
         assert result == "mock LLM response"
 
     @pytest.mark.asyncio
-    @patch("app.agentic.mem0_adapter")
     @patch("app.agentic.database")
-    async def test_gap_analysis_tool(self, mock_db, mock_mem0, initialized_service):
-        mock_mem0.add = AsyncMock()
+    async def test_gap_analysis_tool(self, mock_db, initialized_service):
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
 
@@ -327,10 +318,8 @@ class TestErrorBoundaries:
         assert "Error retrieving papers:" in result
 
     @pytest.mark.asyncio
-    @patch("app.agentic.mem0_adapter")
     @patch("app.agentic.database")
-    async def test_literature_survey_error_boundary(self, mock_db, mock_mem0, initialized_service):
-        mock_mem0.search = AsyncMock(return_value=[])
+    async def test_literature_survey_error_boundary(self, mock_db, initialized_service):
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
         # Force LLM to raise
@@ -572,15 +561,12 @@ class TestAutoIntentClassification:
     @patch("app.agentic.classify_intent")
     @patch("app.agentic.database")
     @patch("app.agentic.vector_store")
-    @patch("app.agentic.mem0_adapter")
     @patch("app.agentic.mcp_client")
     async def test_auto_classify_below_threshold_defaults(
-        self, mock_mcp, mock_mem0, mock_vs, mock_db, mock_classify, initialized_service
+        self, mock_mcp, mock_vs, mock_db, mock_classify, initialized_service
     ):
         mock_classify.return_value = (None, 0.45, None)
         mock_mcp.is_configured.return_value = False
-        mock_mem0.search = AsyncMock(return_value=[])
-        mock_mem0.add = AsyncMock()
         mock_vs.is_connected = False
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
