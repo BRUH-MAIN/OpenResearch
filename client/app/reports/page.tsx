@@ -75,7 +75,7 @@ function ReportsPageContent() {
 
       toast.success('Report generated successfully!');
       setShowCreateModal(false);
-      
+
       // Refresh reports list
       const reportsData = await api.getGroupReports(accessToken, groupId);
       setReports(reportsData);
@@ -117,7 +117,7 @@ function ReportsPageContent() {
 
   if (!accessToken) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Sign in to view reports</h1>
@@ -131,7 +131,7 @@ function ReportsPageContent() {
 
   if (!groupId) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">No group selected</h1>
@@ -145,18 +145,18 @@ function ReportsPageContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
         <Navbar />
         <div className="flex flex-col justify-center items-center h-[60vh]">
           <Loader2 className="w-10 h-10 animate-spin text-[#14FFEC] mb-4" />
-          <p className="text-[#71717a] text-sm">Loading reports...</p>
+          <p className="text-[var(--color-text-secondary)] text-sm">Loading reports...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -168,13 +168,13 @@ function ReportsPageContent() {
                 Back to Group
               </Button>
             </Link>
-            <div className="h-6 w-px bg-[#2a2a2a]" />
+            <div className="h-6 w-px bg-[var(--color-border-primary)]" />
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <FileText className="w-6 h-6 text-[#14FFEC]" />
                 {group?.name} Reports
               </h1>
-              <p className="text-sm text-[#71717a]">Generate and download PDF research reports</p>
+              <p className="text-sm text-[var(--color-text-tertiary)]">Generate and download PDF research reports</p>
             </div>
           </div>
           <Button onClick={() => setShowCreateModal(true)}>
@@ -187,11 +187,11 @@ function ReportsPageContent() {
         {reports.length === 0 ? (
           <Card>
             <CardBody className="py-16 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center mx-auto mb-6">
-                <FileText className="w-8 h-8 text-[#52525b]" />
+              <div className="w-16 h-16 rounded-2xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] flex items-center justify-center mx-auto mb-6">
+                <FileText className="w-8 h-8 text-[var(--color-text-tertiary)]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">No reports yet</h3>
-              <p className="text-[#71717a] mb-6 max-w-sm mx-auto">
+              <h3 className="text-xl font-semibold mb-2 text-[var(--color-text-primary)]">No reports yet</h3>
+              <p className="text-[var(--color-text-tertiary)] mb-6 max-w-sm mx-auto">
                 Generate your first research report to summarize group activity
               </p>
               <Button onClick={() => setShowCreateModal(true)}>
@@ -210,8 +210,8 @@ function ReportsPageContent() {
                       <FileText className="w-6 h-6 text-[#14FFEC]" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-white">{report.title}</h3>
-                      <div className="flex items-center gap-3 text-sm text-[#71717a]">
+                      <h3 className="font-semibold text-[var(--color-text-primary)]">{report.title}</h3>
+                      <div className="flex items-center gap-3 text-sm text-[var(--color-text-tertiary)]">
                         <span className="flex items-center gap-1">
                           <Calendar className="w-3 h-3" />
                           {new Date(report.createdAt).toLocaleDateString()}
@@ -221,8 +221,8 @@ function ReportsPageContent() {
                             report.status === 'completed'
                               ? 'success'
                               : report.status === 'generating'
-                              ? 'secondary'
-                              : 'danger'
+                                ? 'secondary'
+                                : 'danger'
                           }
                           className="capitalize"
                         >
@@ -272,17 +272,17 @@ function ReportsPageContent() {
         {/* Create Report Modal */}
         {showCreateModal && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[500] p-4 animate-fade-in">
-            <div className="relative w-full max-w-lg bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl shadow-2xl animate-scale-in">
-              <div className="px-6 py-5 border-b border-[#2a2a2a]">
-                <h2 className="text-xl font-semibold text-white">Generate Research Report</h2>
-                <p className="text-sm text-[#71717a] mt-1">
+            <div className="relative w-full max-w-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-2xl shadow-2xl animate-scale-in">
+              <div className="px-6 py-5 border-b border-[var(--color-border-primary)]">
+                <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">Generate Research Report</h2>
+                <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
                   Create a PDF report summarizing your group&apos;s research activity
                 </p>
               </div>
               <div className="px-6 py-5 space-y-5">
                 {/* Report Type */}
                 <div>
-                  <label className="block text-sm font-medium text-[#e4e4e7] mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                     Report Type
                   </label>
                   <div className="flex gap-2">
@@ -290,11 +290,10 @@ function ReportsPageContent() {
                       <button
                         key={type}
                         onClick={() => setReportConfig((prev) => ({ ...prev, reportType: type }))}
-                        className={`px-4 py-2 rounded-xl capitalize text-sm font-medium transition-all ${
-                          reportConfig.reportType === type
+                        className={`px-4 py-2 rounded-xl capitalize text-sm font-medium transition-all ${reportConfig.reportType === type
                             ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                            : 'bg-[#242424] text-[#a1a1aa] hover:bg-[#2a2a2a] hover:text-white'
-                        }`}
+                            : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-white'
+                          }`}
                       >
                         {type}
                       </button>
@@ -304,7 +303,7 @@ function ReportsPageContent() {
 
                 {/* Custom Title */}
                 <div>
-                  <label className="block text-sm font-medium text-[#e4e4e7] mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                     Custom Title (optional)
                   </label>
                   <input
@@ -314,13 +313,13 @@ function ReportsPageContent() {
                       setReportConfig((prev) => ({ ...prev, customTitle: e.target.value }))
                     }
                     placeholder={`${group?.name} Research Report`}
-                    className="w-full bg-[#0f0f0f] border border-[#2a2a2a] rounded-xl px-4 py-2.5 text-white placeholder-[#52525b] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[#3a3a3a]"
+                    className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
                   />
                 </div>
 
                 {/* Sections */}
                 <div>
-                  <label className="block text-sm font-medium text-[#e4e4e7] mb-2">
+                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
                     Include Sections
                   </label>
                   <div className="flex flex-wrap gap-2">
@@ -329,11 +328,10 @@ function ReportsPageContent() {
                         <button
                           key={section}
                           onClick={() => toggleSection(section)}
-                          className={`px-3 py-1.5 rounded-full text-sm capitalize font-medium transition-all ${
-                            reportConfig.sections.includes(section)
+                          className={`px-3 py-1.5 rounded-full text-sm capitalize font-medium transition-all ${reportConfig.sections.includes(section)
                               ? 'bg-[#0D7377]/20 text-[#14FFEC] border border-[#0D7377]/40'
-                              : 'bg-[#242424] text-[#a1a1aa] border border-transparent hover:bg-[#2a2a2a] hover:text-white'
-                          }`}
+                              : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-transparent hover:bg-[var(--color-bg-hover)] hover:text-white'
+                            }`}
                         >
                           {section}
                         </button>
@@ -344,7 +342,7 @@ function ReportsPageContent() {
               </div>
 
               {/* Actions */}
-              <div className="px-6 py-4 border-t border-[#2a2a2a] bg-[#141414] rounded-b-2xl flex justify-end gap-3">
+              <div className="px-6 py-4 border-t border-[var(--color-border-primary)] bg-[var(--color-bg-tertiary)] rounded-b-2xl flex justify-end gap-3">
                 <Button
                   variant="ghost"
                   onClick={() => setShowCreateModal(false)}
@@ -381,9 +379,9 @@ export default function ReportsPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center">
+        <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] flex flex-col items-center justify-center">
           <Loader2 className="w-10 h-10 animate-spin text-[#14FFEC] mb-4" />
-          <p className="text-[#71717a] text-sm">Loading...</p>
+          <p className="text-[var(--color-text-secondary)] text-sm">Loading...</p>
         </div>
       }
     >

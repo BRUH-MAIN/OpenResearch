@@ -82,7 +82,7 @@ export default function InvitationsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]">
+    <div className="min-h-screen bg-[var(--color-bg-primary)]">
       <Navbar />
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -90,7 +90,7 @@ export default function InvitationsPage() {
         <div className="flex items-center gap-4 mb-8">
           <Link
             href="/home"
-            className="p-2 rounded-xl text-[#71717a] hover:text-white hover:bg-[#1a1a1a] transition-colors"
+            className="p-2 rounded-xl text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
           >
             <ArrowLeft size={20} />
           </Link>
@@ -99,8 +99,8 @@ export default function InvitationsPage() {
               <Mail size={24} className="text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-white">Group Invitations</h1>
-              <p className="text-sm text-[#71717a]">
+              <h1 className="text-2xl font-bold text-[var(--color-text-primary)]">Group Invitations</h1>
+              <p className="text-sm text-[var(--color-text-tertiary)]">
                 {invitations.length} pending invitation{invitations.length !== 1 ? 's' : ''}
               </p>
             </div>
@@ -111,17 +111,17 @@ export default function InvitationsPage() {
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
-            <p className="text-[#71717a]">Loading invitations...</p>
+            <p className="text-[var(--color-text-secondary)]">Loading invitations...</p>
           </div>
         ) : invitations.length === 0 ? (
           /* Empty State */
           <Card>
             <CardBody className="p-12 text-center">
-              <div className="w-20 h-20 rounded-full bg-[#1a1a1a] flex items-center justify-center mx-auto mb-6">
+              <div className="w-20 h-20 rounded-full bg-[var(--color-bg-secondary)] flex items-center justify-center mx-auto mb-6">
                 <Mail size={40} className="text-[#3f3f46]" />
               </div>
-              <h2 className="text-xl font-semibold text-white mb-2">No pending invitations</h2>
-              <p className="text-[#71717a] mb-6">
+              <h2 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">No pending invitations</h2>
+              <p className="text-[var(--color-text-secondary)] mb-6">
                 When someone invites you to a group, it will appear here.
               </p>
               <Link href="/home">
@@ -148,18 +148,18 @@ export default function InvitationsPage() {
 
                     {/* Invitation Details */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg font-semibold text-white truncate">
+                      <h3 className="text-lg font-semibold text-[var(--color-text-primary)] truncate">
                         {invitation.groupName || 'Unknown Group'}
                       </h3>
                       {invitation.groupDescription && (
-                        <p className="text-sm text-[#a1a1aa] line-clamp-2 mt-1">
+                        <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2 mt-1">
                           {invitation.groupDescription}
                         </p>
                       )}
-                      <div className="flex items-center gap-4 mt-3 text-sm text-[#71717a]">
+                      <div className="flex items-center gap-4 mt-3 text-sm text-[var(--color-text-tertiary)]">
                         <span className="flex items-center gap-1">
                           Invited by{' '}
-                          <span className="text-[#a1a1aa]">
+                          <span className="text-[var(--color-text-secondary)]">
                             {invitation.inviterName || invitation.invitedByUserName || 'Unknown'}
                           </span>
                         </span>
@@ -169,8 +169,8 @@ export default function InvitationsPage() {
                         </span>
                       </div>
                       {invitation.message && (
-                        <div className="mt-3 p-3 bg-[#1a1a1a] rounded-lg border border-[#2a2a2a]">
-                          <p className="text-sm text-[#a1a1aa] italic">&ldquo;{invitation.message}&rdquo;</p>
+                        <div className="mt-3 p-3 bg-[var(--color-bg-secondary)] rounded-lg border border-[var(--color-border-primary)]">
+                          <p className="text-sm text-[var(--color-text-secondary)] italic">&ldquo;{invitation.message}&rdquo;</p>
                         </div>
                       )}
                     </div>

@@ -2,24 +2,17 @@
 
 import React from 'react';
 import {
-  Headphones,
-  Video,
-  BrainCircuit,
   FileText,
-  Layers,
-  CheckSquare,
-  BarChart3,
-  Presentation,
-  Table2,
-  Pencil,
   Sparkles,
   PanelRightClose,
-  Plus,
+  Download,
+  Loader2,
+  CalendarDays,
 } from 'lucide-react';
 
 export interface StudioOutput {
   id: string;
-  type: 'audio' | 'video' | 'mindmap' | 'report' | 'flashcards' | 'quiz' | 'infographic' | 'slides' | 'table';
+  type: 'report';
   title: string;
   status: 'ready' | 'generating' | 'failed';
   createdAt: string;
@@ -28,16 +21,7 @@ export interface StudioOutput {
 
 interface StudioPanelProps {
   outputs: StudioOutput[];
-  onGenerateAudio: () => void;
-  onGenerateVideo: () => void;
-  onGenerateMindmap: () => void;
   onGenerateReport: () => void;
-  onGenerateFlashcards: () => void;
-  onGenerateQuiz: () => void;
-  onGenerateInfographic: () => void;
-  onGenerateSlides: () => void;
-  onGenerateTable: () => void;
-  onAddNote: () => void;
   onDownloadOutput?: (id: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -45,186 +29,201 @@ interface StudioPanelProps {
   className?: string;
 }
 
-const STUDIO_ACTIONS: Array<{
-  id: string;
-  label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  hasEdit: boolean;
-  beta?: boolean;
-}> = [
-  { id: 'audio', label: 'Audio...', icon: Headphones, hasEdit: true },
-  { id: 'video', label: 'Video...', icon: Video, hasEdit: true },
-  { id: 'mindmap', label: 'Mind Map', icon: BrainCircuit, hasEdit: false },
-  { id: 'report', label: 'Reports', icon: FileText, hasEdit: false },
-  { id: 'flashcards', label: 'Flashcards', icon: Layers, hasEdit: true },
-  { id: 'quiz', label: 'Quiz', icon: CheckSquare, hasEdit: true },
-  { id: 'infographic', label: 'Infographic', icon: BarChart3, hasEdit: true, beta: true },
-  { id: 'slides', label: 'Slide deck', icon: Presentation, hasEdit: true, beta: true },
-  { id: 'table', label: 'Data table', icon: Table2, hasEdit: true },
-];
-
 export function StudioPanel({
   outputs,
-  onGenerateAudio,
-  onGenerateVideo,
-  onGenerateMindmap,
   onGenerateReport,
-  onGenerateFlashcards,
-  onGenerateQuiz,
-  onGenerateInfographic,
-  onGenerateSlides,
-  onGenerateTable,
-  onAddNote,
+  onDownloadOutput,
   isCollapsed = false,
   onToggleCollapse,
   hasSourcesSelected = false,
   className = '',
 }: StudioPanelProps) {
-  const handleAction = (actionId: string) => {
-    switch (actionId) {
-      case 'audio':
-        onGenerateAudio();
-        break;
-      case 'video':
-        onGenerateVideo();
-        break;
-      case 'mindmap':
-        onGenerateMindmap();
-        break;
-      case 'report':
-        onGenerateReport();
-        break;
-      case 'flashcards':
-        onGenerateFlashcards();
-        break;
-      case 'quiz':
-        onGenerateQuiz();
-        break;
-      case 'infographic':
-        onGenerateInfographic();
-        break;
-      case 'slides':
-        onGenerateSlides();
-        break;
-      case 'table':
-        onGenerateTable();
-        break;
-    }
-  };
-
   if (isCollapsed) {
     return (
-      <div className={`w-[52px] bg-[#1e1f20] border-l border-[#3c4043] flex flex-col ${className}`}>
+      <div className={`w-[52px] border-l flex flex-col ${className}`}
+        style={{
+          background: 'var(--color-bg-secondary)',
+          borderColor: 'var(--color-border-primary)',
+        }}
+      >
         <button
           onClick={onToggleCollapse}
-          className="p-4 hover:bg-[#28292a] transition-colors"
-          title="Expand studio"
+          className="p-4 transition-colors"
+          title="Expand outputs"
+          style={{ color: 'var(--color-text-tertiary)' }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-tertiary)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
-          <PanelRightClose size={20} className="text-[#9aa0a6] rotate-180" />
+          <PanelRightClose size={20} className="rotate-180" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className={`w-[340px] bg-[#1e1f20] border-l border-[#3c4043] flex flex-col h-full ${className}`}>
+    <div
+      className={`w-[320px] border-l flex flex-col h-full ${className}`}
+      style={{
+        background: 'var(--color-bg-secondary)',
+        borderColor: 'var(--color-border-primary)',
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#3c4043]">
-        <span className="text-[15px] font-medium text-[#e8eaed]">Studio</span>
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b"
+        style={{ borderColor: 'var(--color-border-primary)' }}
+      >
+        <span
+          className="text-[15px] font-medium"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          Outputs
+        </span>
         <button
           onClick={onToggleCollapse}
-          className="p-1.5 rounded hover:bg-[#28292a] text-[#9aa0a6] hover:text-[#e8eaed] transition-colors"
+          className="p-1.5 rounded transition-colors"
+          style={{ color: 'var(--color-text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+            e.currentTarget.style.color = 'var(--color-text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'var(--color-text-tertiary)';
+          }}
         >
           <PanelRightClose size={18} />
         </button>
       </div>
 
-      {/* Language Banner */}
-      <div className="px-4 py-3 border-b border-[#3c4043]">
-        <div className="px-3 py-2 bg-[#28292a] rounded-lg">
-          <p className="text-[12px] text-[#9aa0a6] leading-relaxed">
-            Create an Audio Overview in: <span className="text-[#e8eaed]">हिन्दी</span>, <span className="text-[#e8eaed]">বাংলা</span>, <span className="text-[#e8eaed]">ગુજરાતી</span>, <span className="text-[#e8eaed]">ಕನ್ನಡ</span>, <span className="text-[#e8eaed]">മലയാളം</span>, <span className="text-[#e8eaed]">मराठी</span>, <span className="text-[#e8eaed]">ਪੰਜਾਬੀ</span>, <span className="text-[#e8eaed]">தமிழ்</span>, <span className="text-[#e8eaed]">తెలుగు</span>
-          </p>
-        </div>
-      </div>
-
-      {/* Action Tiles Grid */}
+      {/* Generate Report CTA */}
       <div className="px-4 py-4">
-        <div className="grid grid-cols-3 gap-2">
-          {STUDIO_ACTIONS.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.id}
-                onClick={() => handleAction(action.id)}
-                disabled={!hasSourcesSelected}
-                className="relative flex flex-col items-center justify-center gap-1.5 p-3 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] hover:border-[#5f6368] rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group min-h-[72px]"
-              >
-                <Icon size={20} className="text-[#9aa0a6] group-hover:text-[#e8eaed] transition-colors" />
-                <span className="text-[11px] text-[#9aa0a6] group-hover:text-[#e8eaed] transition-colors text-center leading-tight">
-                  {action.label}
-                </span>
-                
-                {/* Beta Badge */}
-                {action.beta && (
-                  <span className="absolute top-1.5 right-1.5 px-1 py-0.5 bg-[#3c4043] rounded text-[9px] text-[#9aa0a6] font-medium">
-                    BETA
-                  </span>
-                )}
-                
-                {/* Edit Icon */}
-                {action.hasEdit && (
-                  <div className="absolute top-1.5 left-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Pencil size={12} className="text-[#9aa0a6]" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <button
+          onClick={onGenerateReport}
+          disabled={!hasSourcesSelected}
+          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-[14px] font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+          style={{
+            background: hasSourcesSelected
+              ? 'linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary))'
+              : 'var(--color-bg-tertiary)',
+            color: hasSourcesSelected ? 'var(--color-bg-primary)' : 'var(--color-text-tertiary)',
+            boxShadow: hasSourcesSelected ? 'var(--shadow-glow)' : 'none',
+          }}
+          onMouseEnter={(e) => {
+            if (hasSourcesSelected) {
+              e.currentTarget.style.boxShadow = 'var(--shadow-glow-strong)';
+              e.currentTarget.style.transform = 'translateY(-1px)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = hasSourcesSelected ? 'var(--shadow-glow)' : 'none';
+            e.currentTarget.style.transform = 'translateY(0)';
+          }}
+        >
+          <FileText size={18} />
+          Generate Research Report
+        </button>
+        {!hasSourcesSelected && (
+          <p
+            className="text-[11px] text-center mt-2"
+            style={{ color: 'var(--color-text-muted)' }}
+          >
+            Select sources to generate a report
+          </p>
+        )}
       </div>
 
-      {/* Output Area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
+      {/* Outputs List */}
+      <div className="flex-1 overflow-y-auto px-4">
         {outputs.length === 0 ? (
-          <>
-            <Sparkles size={28} className="text-[#8ab4f8] mb-3" />
-            <p className="text-[13px] text-[#8ab4f8] font-medium mb-2">
-              Studio output will be saved here.
+          <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div
+              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+              style={{ background: 'var(--color-bg-tertiary)' }}
+            >
+              <Sparkles size={24} style={{ color: 'var(--color-brand-secondary)' }} />
+            </div>
+            <p
+              className="text-[13px] font-medium mb-1.5"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              No outputs yet
             </p>
-            <p className="text-[12px] text-[#9aa0a6] leading-relaxed">
-              After adding sources, click to add Audio Overview, study guide, mind map and more!
+            <p
+              className="text-[12px] leading-relaxed"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              Generate a research report from your selected sources to get started.
             </p>
-          </>
+          </div>
         ) : (
-          <div className="w-full space-y-2">
+          <div className="space-y-2 pb-4">
             {outputs.map((output) => (
               <div
                 key={output.id}
-                className="flex items-center gap-3 p-3 bg-[#28292a] rounded-lg border border-[#3c4043]"
+                className="card-base p-3 flex items-center gap-3 transition-all"
+                style={output.status === 'generating' ? { borderColor: 'var(--color-border-accent)' } : {}}
               >
-                <FileText size={18} className="text-[#8ab4f8]" />
-                <div className="flex-1 text-left">
-                  <p className="text-[13px] text-[#e8eaed] truncate">{output.title}</p>
-                  <p className="text-[11px] text-[#9aa0a6]">
-                    {new Date(output.createdAt).toLocaleDateString()}
-                  </p>
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                  style={{ background: 'var(--color-bg-tertiary)' }}
+                >
+                  {output.status === 'generating' ? (
+                    <Loader2 size={18} className="animate-spin" style={{ color: 'var(--color-brand-secondary)' }} />
+                  ) : (
+                    <FileText size={18} style={{ color: 'var(--color-brand-secondary)' }} />
+                  )}
                 </div>
+                <div className="flex-1 min-w-0">
+                  <p
+                    className="text-[13px] truncate"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {output.title}
+                  </p>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <CalendarDays size={11} style={{ color: 'var(--color-text-muted)' }} />
+                    <p
+                      className="text-[11px]"
+                      style={{ color: 'var(--color-text-muted)' }}
+                    >
+                      {new Date(output.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                {output.status === 'ready' && output.downloadUrl && onDownloadOutput && (
+                  <button
+                    onClick={() => onDownloadOutput(output.id)}
+                    className="p-1.5 rounded-lg transition-colors"
+                    style={{ color: 'var(--color-text-tertiary)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                      e.currentTarget.style.color = 'var(--color-brand-secondary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                    }}
+                    title="Download report"
+                  >
+                    <Download size={16} />
+                  </button>
+                )}
+                {output.status === 'failed' && (
+                  <span
+                    className="text-[11px] px-2 py-0.5 rounded-full"
+                    style={{
+                      color: 'var(--color-error)',
+                      background: 'var(--color-error-bg)',
+                    }}
+                  >
+                    Failed
+                  </span>
+                )}
               </div>
             ))}
           </div>
         )}
-      </div>
-
-      {/* Add Note Button */}
-      <div className="px-4 pb-4">
-        <button
-          onClick={onAddNote}
-          className="ml-auto flex items-center gap-2 px-4 py-2 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] rounded-full text-[13px] text-[#e8eaed] transition-colors float-right"
-        >
-          <Plus size={16} />
-          <span>Add note</span>
-        </button>
       </div>
     </div>
   );

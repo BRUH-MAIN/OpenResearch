@@ -4,37 +4,33 @@ import React from 'react';
 import { useToastStore, ToastType } from '@/lib/toast';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from 'lucide-react';
 
-const toastStyles: Record<ToastType, { 
-  bg: string; 
-  border: string; 
-  iconBg: string;
-  icon: React.ReactNode 
-}> = {
-  success: {
-    bg: 'bg-[#1a1a1a]/95',
-    border: 'border-[#22c55e]/50',
-    iconBg: 'bg-[#22c55e]/20',
-    icon: <CheckCircle size={18} className="text-[#4ade80]" />,
-  },
-  error: {
-    bg: 'bg-[#1a1a1a]/95',
-    border: 'border-[#ef4444]/50',
-    iconBg: 'bg-[#ef4444]/20',
-    icon: <AlertCircle size={18} className="text-[#f87171]" />,
-  },
-  info: {
-    bg: 'bg-[#1a1a1a]/95',
-    border: 'border-[#3b82f6]/50',
-    iconBg: 'bg-[#3b82f6]/20',
-    icon: <Info size={18} className="text-[#60a5fa]" />,
-  },
-  warning: {
-    bg: 'bg-[#1a1a1a]/95',
-    border: 'border-[#f59e0b]/50',
-    iconBg: 'bg-[#f59e0b]/20',
-    icon: <AlertTriangle size={18} className="text-[#fbbf24]" />,
-  },
-};
+function ToastIcon({ type }: { type: ToastType }) {
+  const iconStyle = { color: `var(--color-${type === 'error' ? 'error' : type === 'success' ? 'success' : type === 'warning' ? 'warning' : 'info'})` };
+  switch (type) {
+    case 'success': return <CheckCircle size={18} style={iconStyle} />;
+    case 'error': return <AlertCircle size={18} style={iconStyle} />;
+    case 'warning': return <AlertTriangle size={18} style={iconStyle} />;
+    case 'info': return <Info size={18} style={iconStyle} />;
+  }
+}
+
+function getToastBorderColor(type: ToastType): string {
+  switch (type) {
+    case 'success': return 'var(--color-success)';
+    case 'error': return 'var(--color-error)';
+    case 'warning': return 'var(--color-warning)';
+    case 'info': return 'var(--color-info)';
+  }
+}
+
+function getToastIconBg(type: ToastType): string {
+  switch (type) {
+    case 'success': return 'var(--color-success-bg)';
+    case 'error': return 'var(--color-error-bg)';
+    case 'warning': return 'var(--color-warning-bg)';
+    case 'info': return 'var(--color-info-bg)';
+  }
+}
 
 export function ToastContainer() {
   const { toasts, removeToast } = useToastStore();
@@ -42,44 +38,38 @@ export function ToastContainer() {
   if (toasts.length === 0) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[800] flex flex-col gap-3 max-w-md">
-      {toasts.map((toast) => {
-        const style = toastStyles[toast.type];
-        return (
-          <div
-            key={toast.id}
-            className={`
-              ${style.bg} ${style.border} 
-              border rounded-xl p-4
-              shadow-xl shadow-black/30
-              backdrop-blur-xl
-              animate-slide-in
-              flex items-start gap-3
-              min-w-[320px]
-            `}
-          >
-            <div className={`${style.iconBg} p-2 rounded-lg flex-shrink-0`}>
-              {style.icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-white text-sm font-medium leading-relaxed">
-                {toast.message}
-              </p>
-            </div>
-            <button
-              onClick={() => removeToast(toast.id)}
-              className="
-                flex-shrink-0 p-1 rounded-lg
-                text-[#71717a] hover:text-white 
-                hover:bg-[#2a2a2a]
-                transition-colors
-              "
-            >
-              <X size={16} />
-            </button>
+    <div className="fixed bottom-6 right-6 flex flex-col gap-3 max-w-md" style={{ zIndex: 'var(--z-toast)' }}>
+      {toasts.map((toast) => (
+        <div
+          key={toast.id}
+          className="glass-strong rounded-xl p-4 shadow-xl animate-slide-in flex items-start gap-3 min-w-[320px]"
+          style={{ border: `1px solid ${getToastBorderColor(toast.type)}` }}
+        >
+          <div className="p-2 rounded-lg flex-shrink-0" style={{ background: getToastIconBg(toast.type) }}>
+            <ToastIcon type={toast.type} />
           </div>
-        );
-      })}
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium leading-relaxed" style={{ color: 'var(--color-text-primary)' }}>
+              {toast.message}
+            </p>
+          </div>
+          <button
+            onClick={() => removeToast(toast.id)}
+            className="flex-shrink-0 p-1 rounded-lg transition-colors"
+            style={{ color: 'var(--color-text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--color-text-primary)';
+              e.currentTarget.style.background = 'var(--color-bg-hover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--color-text-tertiary)';
+              e.currentTarget.style.background = 'transparent';
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+      ))}
     </div>
   );
 }

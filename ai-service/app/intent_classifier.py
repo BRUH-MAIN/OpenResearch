@@ -145,13 +145,13 @@ def _ensure_initialized() -> None:
     global _initialized, _intent_embeddings
     if _initialized:
         return
-    if not embedding_service.is_initialized:
+    if not embedding_service.is_configured:
         return
     start = time.time()
     for intent, phrases in INTENT_PHRASES.items():
         embeddings = []
         for phrase in phrases:
-            emb = embedding_service.generate_embedding_sync(phrase)
+            emb = embedding_service._sync_embed(phrase)
             if emb is not None:
                 embeddings.append(np.array(emb))
         _intent_embeddings[intent] = embeddings
@@ -203,7 +203,7 @@ def classify_intent(prompt: str) -> tuple[Optional[str], float, Optional[str]]:
     if not cleaned:
         return None, 0.0, None
 
-    query_emb = embedding_service.generate_embedding_sync(cleaned)
+    query_emb = embedding_service._sync_embed(cleaned)
     if query_emb is None:
         return None, 0.0, None
 
