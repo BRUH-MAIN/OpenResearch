@@ -30,26 +30,6 @@ interface TabGroupProps {
   className?: string;
 }
 
-/**
- * TabGroup - Consistent tab navigation
- * 
- * Design system:
- * - Active tab: #14FFEC text with #14FFEC/10 background
- * - Inactive tab: #a0a0a0 text
- * - Hover: #0D7377/10 background
- * 
- * Usage:
- * ```tsx
- * <TabGroup
- *   tabs={[
- *     { id: 'all', label: 'All Papers', count: 42 },
- *     { id: 'starred', label: 'Starred', icon: <Star /> },
- *   ]}
- *   activeTab={activeTab}
- *   onChange={setActiveTab}
- * />
- * ```
- */
 export function TabGroup({
   tabs,
   activeTab,
@@ -64,41 +44,66 @@ export function TabGroup({
     lg: 'px-5 py-2.5 text-base',
   };
 
-  const getVariantClasses = (isActive: boolean, isDisabled: boolean) => {
-    if (isDisabled) {
-      return 'text-[#5a5a5a] cursor-not-allowed';
-    }
-
-    switch (variant) {
-      case 'pills':
-        return isActive
-          ? 'bg-[#14FFEC]/10 text-[#14FFEC] rounded-full'
-          : 'text-[#a0a0a0] hover:bg-[#0D7377]/10 hover:text-white rounded-full';
-
-      case 'underline':
-        return isActive
-          ? 'text-[#14FFEC] border-b-2 border-[#14FFEC]'
-          : 'text-[#a0a0a0] hover:text-white border-b-2 border-transparent';
-
-      default:
-        return isActive
-          ? 'bg-[#14FFEC]/10 text-[#14FFEC] rounded-lg'
-          : 'text-[#a0a0a0] hover:bg-[#0D7377]/10 hover:text-white rounded-lg';
-    }
-  };
-
   return (
     <div
-      className={`
-        flex items-center gap-1
-        ${variant === 'underline' ? 'border-b border-[#2a2a2a]' : ''}
-        ${className}
-      `}
+      className={`flex items-center gap-1 ${className}`}
+      style={{
+        borderBottom: variant === 'underline' ? '1px solid var(--color-border-primary)' : 'none',
+      }}
       role="tablist"
     >
       {tabs.map((tab) => {
         const isActive = tab.id === activeTab;
         const isDisabled = tab.disabled ?? false;
+
+        let style: React.CSSProperties = {};
+
+        if (isDisabled) {
+          style = { color: 'var(--color-text-muted)', cursor: 'not-allowed' };
+        } else {
+          switch (variant) {
+            case 'pills':
+              if (isActive) {
+                style = {
+                  background: 'rgba(20, 255, 236, 0.1)',
+                  color: 'var(--color-brand-secondary)',
+                  borderRadius: '9999px',
+                };
+              } else {
+                style = {
+                  color: 'var(--color-text-secondary)',
+                  borderRadius: '9999px',
+                };
+              }
+              break;
+            case 'underline':
+              if (isActive) {
+                style = {
+                  color: 'var(--color-brand-secondary)',
+                  borderBottom: '2px solid var(--color-brand-secondary)',
+                };
+              } else {
+                style = {
+                  color: 'var(--color-text-secondary)',
+                  borderBottom: '2px solid transparent',
+                };
+              }
+              break;
+            default:
+              if (isActive) {
+                style = {
+                  background: 'rgba(20, 255, 236, 0.1)',
+                  color: 'var(--color-brand-secondary)',
+                  borderRadius: 'var(--radius-lg)',
+                };
+              } else {
+                style = {
+                  color: 'var(--color-text-secondary)',
+                  borderRadius: 'var(--radius-lg)',
+                };
+              }
+          }
+        }
 
         return (
           <button
@@ -108,11 +113,28 @@ export function TabGroup({
             aria-disabled={isDisabled}
             tabIndex={isDisabled ? -1 : 0}
             onClick={() => !isDisabled && onChange(tab.id)}
-            className={`
-              flex items-center gap-2 font-medium transition-all
-              ${sizeClasses[size]}
-              ${getVariantClasses(isActive, isDisabled)}
-            `}
+            className={`flex items-center gap-2 font-medium transition-all ${sizeClasses[size]}`}
+            style={style}
+            onMouseEnter={(e) => {
+              if (!isActive && !isDisabled) {
+                if (variant === 'underline') {
+                  e.currentTarget.style.color = 'var(--color-text-primary)';
+                } else {
+                  e.currentTarget.style.background = 'var(--color-bg-hover)';
+                  e.currentTarget.style.color = 'var(--color-text-primary)';
+                }
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive && !isDisabled) {
+                if (variant === 'underline') {
+                  e.currentTarget.style.color = 'var(--color-text-secondary)';
+                } else {
+                  e.currentTarget.style.background = 'transparent';
+                  e.currentTarget.style.color = 'var(--color-text-secondary)';
+                }
+              }
+            }}
           >
             {tab.icon && (
               <span className="w-4 h-4">{tab.icon}</span>
@@ -120,13 +142,11 @@ export function TabGroup({
             <span>{tab.label}</span>
             {tab.count !== undefined && (
               <span
-                className={`
-                  px-1.5 py-0.5 text-xs rounded-full
-                  ${isActive
-                    ? 'bg-[#14FFEC]/20 text-[#14FFEC]'
-                    : 'bg-[#2a2a2a] text-[#a0a0a0]'
-                  }
-                `}
+                className="px-1.5 py-0.5 text-xs rounded-full"
+                style={{
+                  background: isActive ? 'rgba(20, 255, 236, 0.2)' : 'var(--color-bg-tertiary)',
+                  color: isActive ? 'var(--color-brand-secondary)' : 'var(--color-text-tertiary)',
+                }}
               >
                 {tab.count}
               </span>

@@ -26,7 +26,7 @@ export default function ProfilePage() {
         setIsLoading(false);
         return;
       }
-      
+
       try {
         setIsLoading(true);
         setError(null);
@@ -42,7 +42,7 @@ export default function ProfilePage() {
         setIsLoading(false);
       }
     }
-    
+
     fetchData();
   }, [accessToken]);
 
@@ -58,7 +58,7 @@ export default function ProfilePage() {
 
   const handleSaveProfile = async () => {
     if (!accessToken) return;
-    
+
     try {
       setIsSaving(true);
       setError(null);
@@ -76,25 +76,25 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0f0f0f]">
+      <div className="min-h-screen bg-[var(--color-bg-primary)]">
         <Navbar />
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
-          <p className="text-[#71717a]">Loading profile...</p>
+          <p className="text-[var(--color-text-secondary)]">Loading profile...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]">
+    <div className="min-h-screen bg-[var(--color-bg-primary)]">
       <Navbar />
-      
+
       <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Error State */}
         {error && (
-          <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-xl p-4 mb-6">
-            <p className="text-[#f87171]">{error}</p>
+          <div className="bg-[var(--color-error-bg)] border border-[var(--color-error)]/30 rounded-xl p-4 mb-6">
+            <p className="text-[var(--color-error)]">{error}</p>
           </div>
         )}
 
@@ -110,24 +110,24 @@ export default function ProfilePage() {
                       type="text"
                       value={editedUser.name || ''}
                       onChange={(e) => setEditedUser({ ...editedUser, name: e.target.value })}
-                      className="text-3xl font-bold text-white border-b-2 border-[#14FFEC] focus:outline-none w-full bg-transparent"
+                      className="text-3xl font-bold text-[var(--color-text-primary)] border-b-2 border-[#14FFEC] focus:outline-none w-full bg-transparent"
                     />
                     <input
                       type="email"
                       value={editedUser.email || ''}
                       onChange={(e) => setEditedUser({ ...editedUser, email: e.target.value })}
-                      className="text-[#a1a1aa] border-b-2 border-[#14FFEC] focus:outline-none w-full bg-transparent"
+                      className="text-[var(--color-text-secondary)] border-b-2 border-[#14FFEC] focus:outline-none w-full bg-transparent"
                       disabled
                     />
                   </div>
                 ) : (
                   <>
-                    <h1 className="text-3xl font-bold text-white">{user.name}</h1>
-                    <div className="flex items-center text-[#a1a1aa] mt-2">
+                    <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">{user.name}</h1>
+                    <div className="flex items-center text-[var(--color-text-secondary)] mt-2">
                       <Mail size={16} className="mr-2" />
                       {user.email}
                     </div>
-                    <div className="flex items-center text-[#71717a] text-sm mt-2">
+                    <div className="flex items-center text-[var(--color-text-tertiary)] text-sm mt-2">
                       <Calendar size={16} className="mr-2" />
                       Joined {new Date(user.createdAt).toLocaleDateString()}
                     </div>
@@ -167,140 +167,140 @@ export default function ProfilePage() {
           </div>
         ) : (
           <>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <Card>
-            <CardBody className="p-6 text-center">
-              <div className="w-14 h-14 bg-[#0D7377]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <Users size={24} className="text-[#14FFEC]" />
-              </div>
-              <h3 className="text-3xl font-bold text-white">{userGroups.length}</h3>
-              <p className="text-[#71717a] mt-1">Groups Joined</p>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody className="p-6 text-center">
-              <div className="w-14 h-14 bg-[#0D7377]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                <BookMarked size={24} className="text-[#14FFEC]" />
-              </div>
-              <h3 className="text-3xl font-bold text-white">{savedPapers.length}</h3>
-              <p className="text-[#71717a] mt-1">Papers Saved</p>
-            </CardBody>
-          </Card>
-        </div>
-
-        {/* Research Interests */}
-        <Card className="mb-8">
-          <CardHeader>
-            <h2 className="text-xl font-bold text-white">Research Interests</h2>
-          </CardHeader>
-          <CardBody>
-            {isEditing ? (
-              <div>
-                <p className="text-sm text-[#71717a] mb-3">
-                  Add or remove interests (comma-separated)
-                </p>
-                <input
-                  type="text"
-                  value={(editedUser.interests || []).join(', ')}
-                  onChange={(e) => setEditedUser({
-                    ...editedUser,
-                    interests: e.target.value.split(',').map(i => i.trim()).filter(Boolean)
-                  })}
-                  className="w-full px-4 py-3 border border-[#2a2a2a] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] bg-[#0f0f0f] text-white transition-all hover:border-[#3a3a3a]"
-                />
-              </div>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {(user.interests || []).length > 0 ? (
-                  (user.interests || []).map((interest) => (
-                    <Badge key={interest} variant="primary" size="lg">
-                      {interest}
-                    </Badge>
-                  ))
-                ) : (
-                  <p className="text-[#71717a]">No interests added yet</p>
-                )}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Groups */}
-        <Card className="mb-8">
-          <CardHeader>
-            <h2 className="text-xl font-bold text-white">My Groups</h2>
-          </CardHeader>
-          <CardBody>
-            {userGroups.length === 0 ? (
-              <div className="text-center py-6">
-                <p className="text-[#71717a] mb-4">No groups joined yet</p>
-                <Link href="/home">
-                  <Button size="sm">Browse Groups</Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {userGroups.map((group) => (
-                  <Link
-                    key={group.id}
-                    href={`/group?id=${group.id}`}
-                    className="flex items-center justify-between p-4 bg-[#0f0f0f] rounded-xl hover:bg-[#1a1a1a] border border-[#2a2a2a] hover:border-[#0D7377]/50 transition-all"
-                  >
-                    <div className="flex items-center gap-4">
-                      <Avatar src={group.avatar} alt={group.name} size="md" />
-                      <div>
-                        <p className="font-medium text-white">{group.name}</p>
-                        <p className="text-sm text-[#71717a]">{group.memberCount} members</p>
-                      </div>
-                    </div>
-                    <Button size="sm" variant="ghost">
-                      View
-                    </Button>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
-
-        {/* Saved Papers */}
-        <Card>
-          <CardHeader>
-            <h2 className="text-xl font-bold text-white">Saved Papers</h2>
-          </CardHeader>
-          <CardBody>
-            {savedPapers.length === 0 ? (
-              <div className="text-center py-6">
-                <p className="text-[#71717a] mb-4">No papers saved yet</p>
-                <Link href="/paper">
-                  <Button size="sm">Explore Papers</Button>
-                </Link>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {savedPapers.map((paper) => (
-                  <div
-                    key={paper.id}
-                    className="p-4 bg-[#0f0f0f] rounded-xl border border-[#2a2a2a] hover:border-[#0D7377]/50 transition-all"
-                  >
-                    <h4 className="font-semibold text-white mb-2">{paper.title}</h4>
-                    <p className="text-sm text-[#71717a] mb-3">
-                      {paper.authors.slice(0, 3).join(', ')}
-                      {paper.authors.length > 3 && ' et al.'}
-                    </p>
-                    <div className="flex flex-wrap gap-2">
-                      {(paper.tags || []).slice(0, 3).map(tag => (
-                        <Badge key={tag} variant="secondary" size="sm">
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+              <Card>
+                <CardBody className="p-6 text-center">
+                  <div className="w-14 h-14 bg-[#0D7377]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Users size={24} className="text-[#14FFEC]" />
                   </div>
-                ))}
-              </div>
-            )}
-          </CardBody>
-        </Card>
+                  <h3 className="text-3xl font-bold text-[var(--color-text-primary)]">{userGroups.length}</h3>
+                  <p className="text-[var(--color-text-tertiary)] mt-1">Groups Joined</p>
+                </CardBody>
+              </Card>
+              <Card>
+                <CardBody className="p-6 text-center">
+                  <div className="w-14 h-14 bg-[#0D7377]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <BookMarked size={24} className="text-[#14FFEC]" />
+                  </div>
+                  <h3 className="text-3xl font-bold text-[var(--color-text-primary)]">{savedPapers.length}</h3>
+                  <p className="text-[var(--color-text-tertiary)] mt-1">Papers Saved</p>
+                </CardBody>
+              </Card>
+            </div>
+
+            {/* Research Interests */}
+            <Card className="mb-8">
+              <CardHeader>
+                <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Research Interests</h2>
+              </CardHeader>
+              <CardBody>
+                {isEditing ? (
+                  <div>
+                    <p className="text-sm text-[var(--color-text-tertiary)] mb-3">
+                      Add or remove interests (comma-separated)
+                    </p>
+                    <input
+                      type="text"
+                      value={(editedUser.interests || []).join(', ')}
+                      onChange={(e) => setEditedUser({
+                        ...editedUser,
+                        interests: e.target.value.split(',').map(i => i.trim()).filter(Boolean)
+                      })}
+                      className="w-full px-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] transition-all hover:border-[var(--color-border-hover)]"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap gap-2">
+                    {(user.interests || []).length > 0 ? (
+                      (user.interests || []).map((interest) => (
+                        <Badge key={interest} variant="primary" size="lg">
+                          {interest}
+                        </Badge>
+                      ))
+                    ) : (
+                      <p className="text-[var(--color-text-tertiary)]">No interests added yet</p>
+                    )}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* Groups */}
+            <Card className="mb-8">
+              <CardHeader>
+                <h2 className="text-xl font-bold text-[var(--color-text-primary)]">My Groups</h2>
+              </CardHeader>
+              <CardBody>
+                {userGroups.length === 0 ? (
+                  <div className="text-center py-6">
+                    <p className="text-[var(--color-text-tertiary)] mb-4">No groups joined yet</p>
+                    <Link href="/home">
+                      <Button size="sm">Browse Groups</Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {userGroups.map((group) => (
+                      <Link
+                        key={group.id}
+                        href={`/group?id=${group.id}`}
+                        className="flex items-center justify-between p-4 bg-[var(--color-bg-primary)] rounded-xl hover:bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] hover:border-[#0D7377]/50 transition-all"
+                      >
+                        <div className="flex items-center gap-4">
+                          <Avatar src={group.avatar} alt={group.name} size="md" />
+                          <div>
+                            <p className="font-medium text-[var(--color-text-primary)]">{group.name}</p>
+                            <p className="text-sm text-[var(--color-text-tertiary)]">{group.memberCount} members</p>
+                          </div>
+                        </div>
+                        <Button size="sm" variant="ghost">
+                          View
+                        </Button>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
+
+            {/* Saved Papers */}
+            <Card>
+              <CardHeader>
+                <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Saved Papers</h2>
+              </CardHeader>
+              <CardBody>
+                {savedPapers.length === 0 ? (
+                  <div className="text-center py-6">
+                    <p className="text-[var(--color-text-tertiary)] mb-4">No papers saved yet</p>
+                    <Link href="/paper">
+                      <Button size="sm">Explore Papers</Button>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {savedPapers.map((paper) => (
+                      <div
+                        key={paper.id}
+                        className="p-4 bg-[var(--color-bg-primary)] rounded-xl border border-[var(--color-border-primary)] hover:border-[#0D7377]/50 transition-all"
+                      >
+                        <h4 className="font-semibold text-[var(--color-text-primary)] mb-2">{paper.title}</h4>
+                        <p className="text-sm text-[var(--color-text-tertiary)] mb-3">
+                          {paper.authors.slice(0, 3).join(', ')}
+                          {paper.authors.length > 3 && ' et al.'}
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {(paper.tags || []).slice(0, 3).map(tag => (
+                            <Badge key={tag} variant="secondary" size="sm">
+                              {tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardBody>
+            </Card>
           </>
         )}
       </main>

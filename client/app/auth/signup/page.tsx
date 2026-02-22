@@ -21,29 +21,29 @@ export default function SignUpPage() {
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!formData.name) {
       newErrors.name = 'Name is required';
     } else if (formData.name.length < 2) {
       newErrors.name = 'Name must be at least 2 characters';
     }
-    
+
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Email is invalid';
     }
-    
+
     if (!formData.password) {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 6) {
       newErrors.password = 'Password must be at least 6 characters';
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords do not match';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -51,9 +51,9 @@ export default function SignUpPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError('');
-    
+
     if (!validateForm()) return;
-    
+
     try {
       await register(formData.name, formData.email, formData.password);
       toast.success('Account created successfully!');
@@ -71,11 +71,11 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center px-4 py-8 relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center px-4 py-8 relative overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#0D7377]/10 rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#14FFEC]/5 rounded-full blur-3xl" />
-      
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#0D7377]/10 rounded-full blur-3xl opacity-50 dark:opacity-100" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#14FFEC]/5 rounded-full blur-3xl opacity-50 dark:opacity-100" />
+
       <div className="max-w-md w-full relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
@@ -83,16 +83,16 @@ export default function SignUpPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-[#0D7377] to-[#14FFEC] rounded-xl flex items-center justify-center shadow-lg shadow-[#0D7377]/30">
               <span className="text-white font-bold text-xl">OR</span>
             </div>
-            <span className="text-2xl font-bold text-white">OpenResearch</span>
+            <span className="text-2xl font-bold text-[var(--color-text-primary)]">OpenResearch</span>
           </Link>
-          <h1 className="mt-8 text-3xl font-bold text-white">Create Account</h1>
-          <p className="mt-2 text-[#71717a]">Start your research journey today</p>
+          <h1 className="mt-8 text-3xl font-bold text-[var(--color-text-primary)]">Create Account</h1>
+          <p className="mt-2 text-[var(--color-text-secondary)]">Start your research journey today</p>
         </div>
 
         {/* Sign Up Form */}
-        <div className="bg-[#1a1a1a] rounded-2xl shadow-xl p-8 border border-[#2a2a2a]">
+        <div className="bg-[var(--color-bg-secondary)] rounded-2xl shadow-xl p-8 border border-[var(--color-border-primary)]">
           {apiError && (
-            <div className="mb-6 p-4 bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-xl text-[#f87171] text-sm">
+            <div className="mb-6 p-4 bg-[var(--color-error-bg)] border border-[var(--color-error)]/30 rounded-xl text-[var(--color-error)] text-sm">
               {apiError}
             </div>
           )}
@@ -105,7 +105,7 @@ export default function SignUpPage() {
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               error={errors.name}
             />
-            
+
             <Input
               label="Email"
               type="email"
@@ -114,7 +114,7 @@ export default function SignUpPage() {
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               error={errors.email}
             />
-            
+
             <Input
               label="Password"
               type="password"
@@ -123,7 +123,7 @@ export default function SignUpPage() {
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               error={errors.password}
             />
-            
+
             <Input
               label="Confirm Password"
               type="password"
@@ -132,21 +132,21 @@ export default function SignUpPage() {
               onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
               error={errors.confirmPassword}
             />
-            
+
             <div className="flex items-start">
               <input
                 type="checkbox"
-                className="mt-1 w-4 h-4 rounded border-[#3a3a3a] text-[#0D7377] focus:ring-[#14FFEC] focus:ring-offset-0 bg-[#1a1a1a]"
+                className="mt-1 w-4 h-4 rounded border-[var(--color-border-primary)] text-[#0D7377] focus:ring-[#14FFEC] focus:ring-offset-0 bg-[var(--color-bg-tertiary)]"
                 required
               />
-              <span className="ml-3 text-sm text-[#a1a1aa]">
+              <span className="ml-3 text-sm text-[var(--color-text-secondary)]">
                 I agree to the{' '}
-                <a href="#" className="text-[#14FFEC] hover:text-[#0D7377] transition-colors">Terms of Service</a>
+                <a href="#" className="text-[var(--color-accent-primary)] hover:text-[#0D7377] transition-colors">Terms of Service</a>
                 {' '}and{' '}
-                <a href="#" className="text-[#14FFEC] hover:text-[#0D7377] transition-colors">Privacy Policy</a>
+                <a href="#" className="text-[var(--color-accent-primary)] hover:text-[#0D7377] transition-colors">Privacy Policy</a>
               </span>
             </div>
-            
+
             <Button
               type="submit"
               className="w-full"
@@ -159,10 +159,10 @@ export default function SignUpPage() {
           {/* Divider */}
           <div className="mt-8 relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#2a2a2a]"></div>
+              <div className="w-full border-t border-[var(--color-border-primary)]"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-[#1a1a1a] text-[#71717a]">Or continue with</span>
+              <span className="px-4 bg-[var(--color-bg-secondary)] text-[var(--color-text-tertiary)]">Or continue with</span>
             </div>
           </div>
 
@@ -195,9 +195,9 @@ export default function SignUpPage() {
           </Button>
 
           {/* Sign In Link */}
-          <p className="mt-8 text-center text-sm text-[#71717a]">
+          <p className="mt-8 text-center text-sm text-[var(--color-text-tertiary)]">
             Already have an account?{' '}
-            <Link href="/auth/signin" className="text-[#14FFEC] hover:text-[#0D7377] font-medium transition-colors">
+            <Link href="/auth/signin" className="text-[var(--color-accent-primary)] hover:text-[#0D7377] font-medium transition-colors">
               Sign in
             </Link>
           </p>

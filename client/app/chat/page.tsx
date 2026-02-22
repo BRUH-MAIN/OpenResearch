@@ -3,7 +3,16 @@
 import React, { useState, useRef, useEffect, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Loader2, Bot, MoreVertical, Copy, ThumbsUp, ThumbsDown, BookmarkPlus, Plus } from 'lucide-react';
+import {
+  Loader2,
+  Bot,
+  Copy,
+  Plus,
+  Wifi,
+  WifiOff,
+  AlertTriangle,
+  ChevronDown,
+} from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { api, Session, GroupPaper, AgenticTaskType, AgenticRunResponse } from '@/lib/api';
 import { useSocket } from '@/lib/socket';
@@ -16,10 +25,9 @@ import {
   ResearchMessage,
   Source,
   StudioOutput,
-  Citation,
 } from '@/components/research';
 
-// Default suggested questions matching NotebookLM style
+// Default suggested questions
 const DEFAULT_QUESTIONS = [
   'How did Transformers overcome the limitations of recurrent neural networks?',
   'What are the core components of the original Transformer architecture?',
@@ -52,6 +60,7 @@ function ChatPageContent() {
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(false);
   const [showAddSourceModal, setShowAddSourceModal] = useState(false);
+  const [showAgenticDropdown, setShowAgenticDropdown] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Sources State
@@ -67,12 +76,15 @@ function ChatPageContent() {
   const {
     isConnected,
     messages,
+    typingUsers,
+    aiError,
     sendMessage,
     startTyping,
     stopTyping,
     initMessages,
     appendMessage,
     updateMessage,
+    clearAIError,
   } = useSocket(sessionId);
 
   // Fetch session, messages, and group papers
@@ -339,7 +351,7 @@ function ChatPageContent() {
       id: pendingMessageId,
       sessionId,
       userId: 'ai',
-      content: 'Deep Research is running...\n\nI will share a comprehensive report shortly.',
+      content: 'Deep Research is running…\n\nI will share a comprehensive report shortly.',
       type: 'ai',
       createdAt: new Date().toISOString(),
       userName: 'Research Assistant',
@@ -396,9 +408,9 @@ function ChatPageContent() {
       const result = await api.generateGroupReport(accessToken, session.groupId);
       setStudioOutputs((prev) => [{
         id: result.reportId,
-        type: 'report',
+        type: 'report' as const,
         title: result.title,
-        status: result.status === 'completed' ? 'ready' : 'generating',
+        status: result.status === 'completed' ? 'ready' as const : 'generating' as const,
         createdAt: result.createdAt,
         downloadUrl: result.downloadUrl || undefined,
       }, ...prev]);
@@ -417,10 +429,6 @@ function ChatPageContent() {
     addToast(`Feedback recorded`, 'success');
   }, [addToast]);
 
-  const handleSaveToNotes = useCallback((messageId: string) => {
-    addToast('Saved to notes', 'success');
-  }, [addToast]);
-
   const handleSelectQuestion = useCallback((question: string) => {
     setInputMessage(question);
   }, []);
@@ -430,10 +438,19 @@ function ChatPageContent() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#131314] flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--color-bg-primary)' }}
+      >
         <div className="text-center">
-          <Loader2 size={40} className="text-[#8ab4f8] animate-spin mx-auto mb-4" />
-          <p className="text-[#9aa0a6] text-[14px]">Loading research session...</p>
+          <Loader2
+            size={40}
+            className="animate-spin mx-auto mb-4"
+            style={{ color: 'var(--color-brand-secondary)' }}
+          />
+          <p className="text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
+            Loading research session…
+          </p>
         </div>
       </div>
     );
@@ -442,14 +459,28 @@ function ChatPageContent() {
   // Error state
   if (error || !session || !sessionId) {
     return (
-      <div className="min-h-screen bg-[#131314] flex items-center justify-center">
+      <div
+        className="min-h-screen flex items-center justify-center"
+        style={{ background: 'var(--color-bg-primary)' }}
+      >
         <div className="text-center max-w-md">
           {error && (
-            <div className="bg-[#f28b82]/10 border border-[#f28b82]/30 rounded-xl p-4 mb-6">
-              <p className="text-[#f28b82] text-[14px]">{error}</p>
+            <div
+              className="rounded-xl p-4 mb-6"
+              style={{
+                background: 'var(--color-error-bg)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+              }}
+            >
+              <p className="text-[14px]" style={{ color: 'var(--color-error)' }}>{error}</p>
             </div>
           )}
-          <h2 className="text-[20px] font-medium text-[#e8eaed] mb-4">Session not found</h2>
+          <h2
+            className="text-[20px] font-medium mb-4"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            Session not found
+          </h2>
           <Link href="/home">
             <Button>Back to Groups</Button>
           </Link>
@@ -458,26 +489,70 @@ function ChatPageContent() {
     );
   }
 
-  // Generate AI summary from first AI message or default
-  const aiSummary = messages.find((m) => m.type === 'ai')?.content || 
+  // AI summary from first message or default
+  const aiSummary = messages.find((m) => m.type === 'ai')?.content ||
     `This research session contains ${enabledSourcesCount} sources. Start by asking a question about your research materials or use the suggested prompts below.`;
 
+  const selectedAgenticTask = AGENTIC_TASKS.find((t) => t.value === agenticTask);
+
   return (
-    <div className="h-screen bg-[#131314] flex flex-col overflow-hidden">
+    <div
+      className="h-screen flex flex-col overflow-hidden"
+      style={{ background: 'var(--color-bg-primary)' }}
+    >
       {/* Top Header Bar */}
-      <header className="flex items-center justify-between px-4 py-2 bg-[#1e1f20] border-b border-[#3c4043]">
+      <header
+        className="flex items-center justify-between px-4 py-2 border-b"
+        style={{
+          background: 'var(--color-bg-secondary)',
+          borderColor: 'var(--color-border-primary)',
+        }}
+      >
         <div className="flex items-center gap-3">
           <Link href="/home" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-[#8ab4f8]/20 flex items-center justify-center">
-              <Bot size={18} className="text-[#8ab4f8]" />
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center"
+              style={{ background: 'rgba(13, 115, 119, 0.2)' }}
+            >
+              <Bot size={18} style={{ color: 'var(--color-brand-secondary)' }} />
             </div>
           </Link>
-          <span className="text-[14px] text-[#e8eaed] font-medium truncate max-w-[400px]">
+          <span
+            className="text-[14px] font-medium truncate max-w-[400px]"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
             {session.title}
           </span>
         </div>
-        
-        <div className="flex items-center gap-2" />
+
+        {/* Connection Status */}
+        <div className="flex items-center gap-3">
+          {aiError && (
+            <button
+              onClick={clearAIError}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] transition-colors"
+              style={{
+                background: 'var(--color-warning-bg)',
+                color: 'var(--color-warning)',
+                border: '1px solid rgba(245, 158, 11, 0.3)',
+              }}
+              title="Click to dismiss"
+            >
+              <AlertTriangle size={12} />
+              <span className="max-w-[200px] truncate">{aiError.message}</span>
+            </button>
+          )}
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]"
+            style={{
+              background: isConnected ? 'var(--color-success-bg)' : 'var(--color-error-bg)',
+              color: isConnected ? 'var(--color-success)' : 'var(--color-error)',
+            }}
+          >
+            {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+            <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
+          </div>
+        </div>
       </header>
 
       {/* Main Three-Column Layout */}
@@ -489,72 +564,100 @@ function ChatPageContent() {
           onToggleAll={handleToggleAll}
           onAddSource={() => setShowAddSourceModal(true)}
           onDeepResearch={handleDeepResearch}
-          onWebSearch={(query: string) => addToast(`Searching for: ${query}`, 'info')}
           isDeepResearching={isDeepResearching}
           isCollapsed={leftPanelCollapsed}
           onToggleCollapse={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
         />
 
         {/* Center Panel - Chat */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#131314]">
+        <div
+          className="flex-1 flex flex-col min-w-0"
+          style={{ background: 'var(--color-bg-primary)' }}
+        >
           {/* Chat Header */}
-          <div className="flex items-center justify-between px-6 py-3 border-b border-[#3c4043]">
-            <span className="text-[15px] font-medium text-[#e8eaed]">Chat</span>
-            <div className="flex items-center gap-1">
-              <button className="p-2 rounded-full hover:bg-[#28292a] text-[#9aa0a6] hover:text-[#e8eaed] transition-colors">
-                <MoreVertical size={18} />
-              </button>
+          <div
+            className="flex items-center justify-between px-6 py-3 border-b"
+            style={{ borderColor: 'var(--color-border-primary)' }}
+          >
+            <span
+              className="text-[15px] font-medium"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              Chat
+            </span>
+            <div className="flex items-center gap-2">
+              {enabledSourcesCount > 0 && (
+                <span
+                  className="text-[11px] px-2 py-0.5 rounded-full"
+                  style={{
+                    background: 'rgba(13, 115, 119, 0.15)',
+                    color: 'var(--color-brand-secondary)',
+                  }}
+                >
+                  {enabledSourcesCount} source{enabledSourcesCount !== 1 ? 's' : ''} active
+                </span>
+              )}
             </div>
           </div>
 
           {/* Chat Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto research-panel-scroll">
             <div className="max-w-3xl mx-auto px-6 py-8">
-              {/* Initial AI Response Card (when no messages or showing welcome) */}
+              {/* Welcome State */}
               {messages.length === 0 ? (
                 <>
                   {/* AI Avatar */}
                   <div className="mb-6">
-                    <div className="w-14 h-14 rounded-2xl bg-[#28292a] flex items-center justify-center">
-                      <Bot size={32} className="text-[#ea4335]" />
+                    <div
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                      style={{ background: 'var(--color-bg-tertiary)' }}
+                    >
+                      <Bot size={32} style={{ color: 'var(--color-brand-primary)' }} />
                     </div>
                   </div>
 
                   {/* Title */}
-                  <h1 className="text-[32px] font-normal text-[#e8eaed] leading-tight mb-3">
+                  <h1
+                    className="text-[32px] font-normal leading-tight mb-3"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
                     {session.title}
                   </h1>
 
                   {/* Sources Count */}
-                  <p className="text-[14px] text-[#9aa0a6] mb-5">
+                  <p className="text-[14px] mb-5" style={{ color: 'var(--color-text-secondary)' }}>
                     {enabledSourcesCount} sources
                   </p>
 
                   {/* Summary */}
-                  <p className="text-[15px] text-[#9aa0a6] leading-relaxed mb-6">
+                  <p
+                    className="text-[15px] leading-relaxed mb-6"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
                     {aiSummary}
                   </p>
 
-                  {/* Action Buttons */}
+                  {/* Copy Button */}
                   <div className="flex items-center gap-1 mb-10">
                     <button
-                      onClick={() => handleSaveToNotes('welcome')}
-                      className="flex items-center gap-2 px-4 py-2.5 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] rounded-full text-[13px] text-[#e8eaed] transition-colors"
-                    >
-                      <BookmarkPlus size={16} />
-                      <span>Save to note</span>
-                    </button>
-                    <button
                       onClick={() => handleCopy(aiSummary)}
-                      className="p-2.5 hover:bg-[#28292a] rounded-full text-[#9aa0a6] hover:text-[#e8eaed] transition-colors"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-full text-[13px] transition-all"
+                      style={{
+                        background: 'var(--color-bg-tertiary)',
+                        border: '1px solid var(--color-border-primary)',
+                        color: 'var(--color-text-primary)',
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-border-secondary)';
+                        e.currentTarget.style.background = 'var(--color-bg-elevated)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                        e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                      }}
                     >
-                      <Copy size={18} />
-                    </button>
-                    <button className="p-2.5 hover:bg-[#28292a] rounded-full text-[#9aa0a6] hover:text-[#e8eaed] transition-colors">
-                      <ThumbsUp size={18} />
-                    </button>
-                    <button className="p-2.5 hover:bg-[#28292a] rounded-full text-[#9aa0a6] hover:text-[#e8eaed] transition-colors">
-                      <ThumbsDown size={18} />
+                      <Copy size={16} />
+                      <span>Copy summary</span>
                     </button>
                   </div>
 
@@ -564,7 +667,8 @@ function ChatPageContent() {
                       <button
                         key={index}
                         onClick={() => handleSelectQuestion(question)}
-                        className="w-full text-left px-5 py-4 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] hover:border-[#5f6368] rounded-2xl text-[14px] text-[#e8eaed] transition-all leading-relaxed"
+                        className="w-full text-left px-5 py-4 rounded-2xl text-[14px] leading-relaxed transition-all card-base card-interactive"
+                        style={{ color: 'var(--color-text-primary)' }}
                       >
                         {question}
                       </button>
@@ -589,11 +693,40 @@ function ChatPageContent() {
                         isCurrentUser={msg.userId === user?.id}
                         onFeedback={msg.type === 'ai' ? handleFeedback : undefined}
                         onCopy={handleCopy}
-                        onSaveToNotes={msg.type === 'ai' ? handleSaveToNotes : undefined}
-                        className={isAgenticPending ? 'animate-pulse' : ''}
+                        className={isAgenticPending ? 'ai-thinking-animation' : ''}
                       />
                     );
                   })}
+
+                  {/* Typing Indicator */}
+                  {typingUsers.length > 0 && (
+                    <div
+                      className="flex items-center gap-3 py-3 px-4 animate-fade-in"
+                    >
+                      <div className="flex items-center gap-1">
+                        <div
+                          className="w-1.5 h-1.5 rounded-full animate-pulse"
+                          style={{ background: 'var(--color-brand-secondary)', animationDelay: '0ms' }}
+                        />
+                        <div
+                          className="w-1.5 h-1.5 rounded-full animate-pulse"
+                          style={{ background: 'var(--color-brand-secondary)', animationDelay: '200ms' }}
+                        />
+                        <div
+                          className="w-1.5 h-1.5 rounded-full animate-pulse"
+                          style={{ background: 'var(--color-brand-secondary)', animationDelay: '400ms' }}
+                        />
+                      </div>
+                      <span
+                        className="text-[12px]"
+                        style={{ color: 'var(--color-text-muted)' }}
+                      >
+                        {typingUsers.map((u) => u.userName).join(', ')}{' '}
+                        {typingUsers.length === 1 ? 'is' : 'are'} typing…
+                      </span>
+                    </div>
+                  )}
+
                   <div ref={messagesEndRef} />
                 </div>
               )}
@@ -601,94 +734,188 @@ function ChatPageContent() {
           </div>
 
           {/* Chat Input */}
-          <div className="px-6 py-4 border-t border-[#3c4043]">
+          <div
+            className="px-6 py-4 border-t"
+            style={{ borderColor: 'var(--color-border-primary)' }}
+          >
             <div className="max-w-3xl mx-auto">
               {/* Agentic Controls */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setAgenticMode((prev) => !prev)}
-                    className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] border transition-colors ${
+                    className="flex items-center gap-2 px-3 py-1.5 rounded-full text-[12px] border transition-all"
+                    style={
                       agenticMode
-                        ? 'bg-[#8ab4f8]/20 text-[#8ab4f8] border-[#8ab4f8]/40'
-                        : 'bg-[#28292a] text-[#9aa0a6] border-[#3c4043]'
-                    }`}
+                        ? {
+                          background: 'rgba(13, 115, 119, 0.2)',
+                          color: 'var(--color-brand-secondary)',
+                          borderColor: 'rgba(20, 255, 236, 0.4)',
+                          boxShadow: '0 0 8px rgba(20, 255, 236, 0.1)',
+                        }
+                        : {
+                          background: 'var(--color-bg-tertiary)',
+                          color: 'var(--color-text-secondary)',
+                          borderColor: 'var(--color-border-primary)',
+                        }
+                    }
                   >
                     <Bot size={14} />
                     {agenticMode ? 'Agentic On' : 'Agentic Off'}
                   </button>
 
                   {agenticMode && (
-                    <select
-                      value={agenticTask}
-                      onChange={(e) => setAgenticTask(e.target.value as AgenticTaskType)}
-                      className="bg-[#28292a] border border-[#3c4043] text-[#e8eaed] text-[12px] rounded-full px-3 py-1.5"
-                    >
-                      {AGENTIC_TASKS.map((task) => (
-                        <option key={task.value} value={task.value}>
-                          {task.label}
-                        </option>
-                      ))}
-                    </select>
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowAgenticDropdown(!showAgenticDropdown)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] border transition-all"
+                        style={{
+                          background: 'var(--color-bg-tertiary)',
+                          borderColor: 'var(--color-border-primary)',
+                          color: 'var(--color-text-primary)',
+                        }}
+                      >
+                        {selectedAgenticTask?.label}
+                        <ChevronDown size={12} />
+                      </button>
+
+                      {showAgenticDropdown && (
+                        <div
+                          className="absolute bottom-full left-0 mb-2 w-64 rounded-xl overflow-hidden animate-scale-in"
+                          style={{
+                            background: 'var(--color-bg-secondary)',
+                            border: '1px solid var(--color-border-secondary)',
+                            boxShadow: 'var(--shadow-xl)',
+                            zIndex: 'var(--z-dropdown)',
+                          }}
+                        >
+                          {AGENTIC_TASKS.map((task) => (
+                            <button
+                              key={task.value}
+                              onClick={() => {
+                                setAgenticTask(task.value);
+                                setShowAgenticDropdown(false);
+                              }}
+                              className="w-full text-left px-4 py-2.5 transition-colors"
+                              style={{
+                                color: task.value === agenticTask
+                                  ? 'var(--color-brand-secondary)'
+                                  : 'var(--color-text-primary)',
+                                background: task.value === agenticTask
+                                  ? 'rgba(13, 115, 119, 0.1)'
+                                  : 'transparent',
+                              }}
+                              onMouseEnter={(e) => {
+                                if (task.value !== agenticTask) {
+                                  e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (task.value !== agenticTask) {
+                                  e.currentTarget.style.background = 'transparent';
+                                }
+                              }}
+                            >
+                              <div className="text-[13px] font-medium">{task.label}</div>
+                              <div
+                                className="text-[11px] mt-0.5"
+                                style={{ color: 'var(--color-text-muted)' }}
+                              >
+                                {task.description}
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
 
                 {agenticMode && (
-                  <span className="text-[11px] text-[#5f6368]">
+                  <span
+                    className="text-[11px]"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
                     Tip: /agent &lt;task&gt; &lt;prompt&gt;
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-3 px-5 py-3 bg-[#28292a] border border-[#3c4043] rounded-full focus-within:border-[#8ab4f8] transition-colors">
+              <div
+                className="flex items-center gap-3 px-5 py-3 rounded-full transition-all"
+                style={{
+                  background: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-brand-secondary)';
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(20, 255, 236, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
                 <input
                   type="text"
                   value={inputMessage}
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder={agenticMode ? 'Describe your research task…' : 'Start typing...'}
+                  placeholder={agenticMode ? 'Describe your research task…' : 'Start typing…'}
                   disabled={(!isConnected && !agenticMode) || isAgenticRunning}
-                  className="flex-1 bg-transparent text-[14px] text-[#e8eaed] placeholder:text-[#9aa0a6] focus:outline-none disabled:opacity-50"
+                  className="flex-1 bg-transparent text-[14px] focus:outline-none disabled:opacity-50"
+                  style={{
+                    color: 'var(--color-text-primary)',
+                  }}
                 />
-                
+
                 {/* Sources Badge */}
-                <span className="px-3 py-1 bg-[#3c4043] rounded-full text-[12px] text-[#9aa0a6] whitespace-nowrap">
+                <span
+                  className="px-3 py-1 rounded-full text-[12px] whitespace-nowrap"
+                  style={{
+                    background: 'var(--color-bg-tertiary)',
+                    color: 'var(--color-text-tertiary)',
+                  }}
+                >
                   {enabledSourcesCount} sources
                 </span>
-                
+
                 {/* Send Button */}
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || ((!isConnected && !agenticMode)) || isAgenticRunning}
-                  className="p-2 bg-[#8ab4f8] hover:bg-[#aecbfa] rounded-full text-[#1e1f20] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="p-2 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  style={{
+                    background: inputMessage.trim()
+                      ? 'linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary))'
+                      : 'var(--color-bg-tertiary)',
+                    color: inputMessage.trim()
+                      ? 'var(--color-bg-primary)'
+                      : 'var(--color-text-muted)',
+                    boxShadow: inputMessage.trim() ? '0 0 12px rgba(20, 255, 236, 0.2)' : 'none',
+                  }}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </button>
               </div>
-              
+
               {/* Disclaimer */}
-              <p className="text-[11px] text-[#5f6368] text-center mt-3">
+              <p
+                className="text-[11px] text-center mt-3"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
                 OpenResearch can be inaccurate; please double-check its responses.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Right Panel - Studio */}
+        {/* Right Panel - Outputs */}
         <StudioPanel
           outputs={studioOutputs}
-          onGenerateAudio={() => addToast('Audio overview coming soon', 'info')}
-          onGenerateVideo={() => addToast('Video summary coming soon', 'info')}
-          onGenerateMindmap={() => addToast('Mind map coming soon', 'info')}
           onGenerateReport={handleGenerateReport}
-          onGenerateFlashcards={() => addToast('Flashcards coming soon', 'info')}
-          onGenerateQuiz={() => addToast('Quiz coming soon', 'info')}
-          onGenerateInfographic={() => addToast('Infographic coming soon', 'info')}
-          onGenerateSlides={() => addToast('Slide deck coming soon', 'info')}
-          onGenerateTable={() => addToast('Data table coming soon', 'info')}
-          onAddNote={() => addToast('Add note coming soon', 'info')}
           isCollapsed={rightPanelCollapsed}
           onToggleCollapse={() => setRightPanelCollapsed(!rightPanelCollapsed)}
           hasSourcesSelected={enabledSourcesCount > 0}
@@ -702,19 +929,41 @@ function ChatPageContent() {
         title="Add Sources"
       >
         <div className="space-y-4">
-          <p className="text-[14px] text-[#9aa0a6]">
+          <p className="text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
             Add papers from your group collection or import new sources.
           </p>
           <div className="flex flex-col gap-3">
             <Link href={`/group-papers?groupId=${session.groupId}`} onClick={() => setShowAddSourceModal(false)}>
-              <button className="w-full flex items-center gap-3 px-4 py-3 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] rounded-xl text-[14px] text-[#e8eaed] transition-colors text-left">
-                <Bot size={20} className="text-[#8ab4f8]" />
+              <button
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] text-left transition-all card-base"
+                style={{ color: 'var(--color-text-primary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-border-accent)';
+                  e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                  e.currentTarget.style.background = 'var(--color-bg-secondary)';
+                }}
+              >
+                <Bot size={20} style={{ color: 'var(--color-brand-secondary)' }} />
                 Browse Group Papers
               </button>
             </Link>
             <Link href="/discover" onClick={() => setShowAddSourceModal(false)}>
-              <button className="w-full flex items-center gap-3 px-4 py-3 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] rounded-xl text-[14px] text-[#e8eaed] transition-colors text-left">
-                <Plus size={20} className="text-[#81c995]" />
+              <button
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-[14px] text-left transition-all card-base"
+                style={{ color: 'var(--color-text-primary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-border-accent)';
+                  e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                  e.currentTarget.style.background = 'var(--color-bg-secondary)';
+                }}
+              >
+                <Plus size={20} style={{ color: 'var(--color-success)' }} />
                 Discover New Papers
               </button>
             </Link>
@@ -729,10 +978,19 @@ export default function ChatPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#131314] flex items-center justify-center">
+        <div
+          className="min-h-screen flex items-center justify-center"
+          style={{ background: 'var(--color-bg-primary)' }}
+        >
           <div className="text-center">
-            <Loader2 size={40} className="text-[#8ab4f8] animate-spin mx-auto mb-4" />
-            <p className="text-[#9aa0a6] text-[14px]">Loading...</p>
+            <Loader2
+              size={40}
+              className="animate-spin mx-auto mb-4"
+              style={{ color: 'var(--color-brand-secondary)' }}
+            />
+            <p className="text-[14px]" style={{ color: 'var(--color-text-secondary)' }}>
+              Loading…
+            </p>
           </div>
         </div>
       }

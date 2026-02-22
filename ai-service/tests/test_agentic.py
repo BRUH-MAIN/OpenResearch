@@ -5,7 +5,7 @@ import pytest
 from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
 from tenacity import RetryError
 
-from app.agentic import AgenticService, AgentState, MULTI_STEP_CHAINS
+from app.agentic import AgenticService, AgentState
 
 
 # ---------------------------------------------------------------------------
@@ -36,11 +36,11 @@ def initialized_service(service, mock_llm):
     service._api_key = "test-key"
     service._initialized = True
 
-    # Build the graph (needs LangGraph imports to be available)
+    # Build the agent (needs deepagents imports to be available)
     try:
-        service._graph = service._build_graph()
+        service._build_agent()
     except Exception:
-        pytest.skip("LangGraph dependencies not available")
+        pytest.skip("DeepAgents dependencies not available")
 
     return service
 
@@ -104,62 +104,7 @@ class TestInitialization:
         assert result is False
 
 
-# ---------------------------------------------------------------------------
-# Routing Tests
-# ---------------------------------------------------------------------------
 
-class TestRouting:
-
-    def test_route_task_single_step(self, initialized_service):
-        state: AgentState = {"task_type": "fact_check", "remaining_steps": []}
-        result = initialized_service._route_task(state)
-        assert result == "fact_check"
-
-    def test_route_task_multi_step_chain(self, initialized_service):
-        state: AgentState = {"task_type": "gap_analysis", "remaining_steps": []}
-        result = initialized_service._route_task(state)
-        # gap_analysis chain: paper_retrieval → literature_survey → gap_analysis
-        assert result == "paper_retrieval"
-
-    def test_route_task_default(self, initialized_service):
-        state: AgentState = {"task_type": "", "remaining_steps": []}
-        result = initialized_service._route_task(state)
-        assert result == "literature_survey"
-
-    def test_route_node_sets_remaining_steps_for_chain(self, initialized_service):
-        state: AgentState = {"task_type": "gap_analysis", "remaining_steps": []}
-        result = initialized_service._route_node(state)
-        # _route_node stores chain[1:] because chain[0] is consumed by _route_task
-        assert result["remaining_steps"] == ["literature_survey", "gap_analysis"]
-
-    def test_route_node_empty_remaining_for_single_step(self, initialized_service):
-        state: AgentState = {"task_type": "fact_check", "remaining_steps": []}
-        result = initialized_service._route_node(state)
-        assert result["remaining_steps"] == []
-
-    def test_route_task_does_not_mutate_state(self, initialized_service):
-        """_route_task is a conditional edge and must not mutate state."""
-        state: AgentState = {"task_type": "gap_analysis", "remaining_steps": ["lit", "gap"]}
-        initialized_service._route_task(state)
-        # remaining_steps must be unchanged
-        assert state["remaining_steps"] == ["lit", "gap"]
-
-    def test_should_continue_with_remaining(self, initialized_service):
-        state: AgentState = {"remaining_steps": ["gap_analysis"]}
-        result = initialized_service._should_continue(state)
-        assert result == "gap_analysis"
-        assert state["remaining_steps"] == []
-
-    def test_should_continue_empty(self, initialized_service):
-        from langgraph.graph import END
-        state: AgentState = {"remaining_steps": []}
-        result = initialized_service._should_continue(state)
-        assert result == END
-
-    def test_multi_step_chains_exist(self):
-        assert "gap_analysis" in MULTI_STEP_CHAINS
-        assert "paper_retrieval" in MULTI_STEP_CHAINS["gap_analysis"]
-        assert "literature_survey" in MULTI_STEP_CHAINS["gap_analysis"]
 
 
 # ---------------------------------------------------------------------------
@@ -245,155 +190,106 @@ class TestFormatMemoryContext:
 # Agent Node Tests
 # ---------------------------------------------------------------------------
 
-class TestAgentNodes:
-
     @pytest.mark.asyncio
     @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
     @patch("app.agentic.mcp_client")
-    async def test_paper_retrieval_agent(self, mock_mcp, mock_vs, mock_db, initialized_service):
+    async def test_paper_retrieval_tool(self, mock_mcp, mock_db, initialized_service):
         mock_mcp.is_configured.return_value = False
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(
             return_value=[{"title": "Test Paper", "abstract": "Test abstract"}]
         )
-        mock_db.store_ai_artifact = AsyncMock(return_value=None)
-        mock_vs.is_connected = False
 
-        state = _make_state(prompt="find papers on NLP", query="find papers on NLP")
-        result = await initialized_service._paper_retrieval_agent(state)
-        assert "papers" in result
-        assert len(result["papers"]) >= 1
-        assert "result" in result
+        result = await initialized_service._tool_retrieve_papers(
+            query="find papers on NLP", config={"configurable": {"group_id": "test-group"
+        }})
+        assert "Retrieved 1 papers" in result
 
     @pytest.mark.asyncio
     @patch("app.agentic.mem0_adapter")
     @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_literature_survey_agent(self, mock_vs, mock_db, mock_mem0, initialized_service):
+    async def test_literature_survey_tool(self, mock_db, mock_mem0, initialized_service):
         mock_mem0.search = AsyncMock(return_value=[])
         mock_mem0.add = AsyncMock()
         mock_db.is_connected = True
-        mock_db.get_group_papers = AsyncMock(return_value=[])
-        mock_db.store_ai_artifact = AsyncMock(return_value="art-1")
-        mock_vs.is_connected = False
+        mock_db.get_group_papers = AsyncMock(return_value=[{"title": "Test Paper", "abstract": "Deep learning..."}])
 
-        state = _make_state(
-            prompt="review deep learning for NLP",
-            papers=[{"title": "Test Paper", "abstract": "Deep learning..."}],
-        )
-        result = await initialized_service._literature_survey_agent(state)
-        assert "literature_review" in result
-        assert result["literature_review"] == "mock LLM response"
+        result = await initialized_service._tool_survey_literature(
+             query="review deep learning for NLP", config={"configurable": {"group_id": "test-group", "user_id": "user-1"
+        }})
+        assert result == "mock LLM response"
 
     @pytest.mark.asyncio
     @patch("app.agentic.mem0_adapter")
     @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_gap_analysis_uses_prior_review(self, mock_vs, mock_db, mock_mem0, initialized_service):
-        """Gap analysis should use the literature_review from a previous step."""
+    async def test_gap_analysis_tool(self, mock_db, mock_mem0, initialized_service):
         mock_mem0.add = AsyncMock()
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
-        mock_db.store_ai_artifact = AsyncMock(return_value="art-2")
-        mock_vs.is_connected = False
 
-        state = _make_state(
-            prompt="identify gaps",
-            literature_review="Prior survey findings...",
-        )
-        result = await initialized_service._gap_analysis_agent(state)
-        assert "research_gaps" in result
+        result = await initialized_service._tool_analyze_gaps(
+             literature_review_context="Prior survey findings...", config={"configurable": {"group_id": "test-group"
+        }})
+        assert result == "mock LLM response"
 
     @pytest.mark.asyncio
-    @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_fact_check_agent(self, mock_vs, mock_db, mock_mem0, initialized_service):
-        mock_mem0.search = AsyncMock(return_value=[])
-        mock_db.is_connected = True
-        mock_db.store_ai_artifact = AsyncMock(return_value=None)
-        mock_vs.is_connected = False
-
-        state = _make_state(prompt="verify that transformers outperform RNNs")
-        result = await initialized_service._fact_check_agent(state)
-        assert "fact_check" in result
-        assert result["fact_check"] == {"analysis": "mock LLM response"}
-        assert "result" in result
+    async def test_fact_check_tool(self, initialized_service):
+        with patch.object(initialized_service, "_load_memory", AsyncMock(return_value=[])):
+            result = await initialized_service._tool_fact_check(
+                 claim="verify that transformers outperform RNNs", config={"configurable": {"group_id": "g", "user_id": "u"
+            }})
+            assert result == "mock LLM response"
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_novelty_assessment_agent(self, mock_vs, mock_db, initialized_service):
+    async def test_novelty_assessment_tool(self, mock_db, initialized_service):
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
-        mock_db.store_ai_artifact = AsyncMock(return_value=None)
-        mock_vs.is_connected = False
 
-        state = _make_state(prompt="is attention-free transformers novel?")
-        result = await initialized_service._novelty_assessment_agent(state)
-        assert "novelty" in result
-        assert result["novelty"] == {"analysis": "mock LLM response"}
+        result = await initialized_service._tool_assess_novelty(
+             idea="is attention-free transformers novel?", config={"configurable": {"group_id": "g"
+        }})
+        assert result == "mock LLM response"
 
     @pytest.mark.asyncio
     @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_research_mentor_agent(self, mock_vs, mock_db, mock_mem0, initialized_service):
-        mock_mem0.search = AsyncMock(return_value=[])
+    async def test_research_mentor_tool(self, mock_mem0, initialized_service):
         mock_mem0.add = AsyncMock()
-        mock_db.is_connected = True
-        mock_db.store_ai_artifact = AsyncMock(return_value=None)
-        mock_vs.is_connected = False
-
-        state = _make_state(prompt="how should I approach NLP research?")
-        result = await initialized_service._research_mentor_agent(state)
-        assert "mentor_advice" in result
-        assert result["mentor_advice"] == "mock LLM response"
+        with patch.object(initialized_service, "_load_memory", AsyncMock(return_value=[])):
+            result = await initialized_service._tool_provide_mentoring(
+                 query="how should I approach NLP research?", config={"configurable": {"group_id": "g", "user_id": "u"
+            }})
+            assert result == "mock LLM response"
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_paper_writing_agent(self, mock_vs, mock_db, initialized_service):
+    async def test_paper_writing_tool(self, mock_db, initialized_service):
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
-        mock_db.store_ai_artifact = AsyncMock(return_value=None)
-        mock_vs.is_connected = False
 
-        state = _make_state(prompt="write a paper on NLP")
-        result = await initialized_service._paper_writing_agent(state)
-        assert "paper_draft" in result
-        assert result["paper_draft"] == "mock LLM response"
+        result = await initialized_service._tool_write_paper_draft(
+             paper_request="write a paper on NLP", config={"configurable": {"group_id": "g"
+        }})
+        assert result == "mock LLM response"
 
     @pytest.mark.asyncio
     @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_research_planning_agent(self, mock_vs, mock_db, mock_mem0, initialized_service):
-        mock_mem0.search = AsyncMock(return_value=[])
+    async def test_research_planning_tool(self, mock_mem0, initialized_service):
         mock_mem0.add = AsyncMock()
-        mock_db.is_connected = True
-        mock_db.store_ai_artifact = AsyncMock(return_value=None)
-        mock_vs.is_connected = False
-
-        state = _make_state(prompt="plan my NLP research")
-        result = await initialized_service._research_planning_agent(state)
-        assert "research_plan" in result
-        assert result["result"] == {"research_plan": "mock LLM response"}
+        with patch.object(initialized_service, "_load_memory", AsyncMock(return_value=[])):
+            result = await initialized_service._tool_plan_research(
+                 request="plan my NLP research", config={"configurable": {"group_id": "g", "user_id": "u"
+            }})
+            assert result == "mock LLM response"
 
     @pytest.mark.asyncio
-    @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.mcp_client")
-    async def test_run_task_routes_correctly(self, mock_mcp, mock_mem0, mock_vs, mock_db, initialized_service):
-        mock_mcp.is_configured.return_value = False
-        mock_mem0.search = AsyncMock(return_value=[])
-        mock_mem0.add = AsyncMock()
-        mock_vs.is_connected = False
-        mock_db.is_connected = True
-        mock_db.get_group_papers = AsyncMock(return_value=[])
-        mock_db.store_ai_artifact = AsyncMock(return_value=None)
+    @patch("app.agentic.classify_intent")
+    async def test_run_task_routes_correctly(self, mock_classify, initialized_service):
+        # The primary deep agent is a mock
+        initialized_service._agent = AsyncMock()
+        initialized_service._agent.ainvoke.return_value = {
+            "messages": [MagicMock(content="mock generated response")]
+        }
 
         result = await initialized_service.run_task("fact_check", {
             "prompt": "@ai verify this claim",
@@ -403,61 +299,11 @@ class TestAgentNodes:
 
         assert result["task_type"] == "fact_check"
         assert "result" in result
+        assert result["result"]["final_response"] == "mock generated response"
         assert "latency_ms" in result
 
 
-# ---------------------------------------------------------------------------
-# Deep Research Agent Tests
-# ---------------------------------------------------------------------------
 
-class TestDeepResearchAgent:
-
-    @pytest.mark.asyncio
-    @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    @patch("app.agentic.get_settings")
-    async def test_deep_research_full(self, mock_settings, mock_vs, mock_db, initialized_service):
-        settings = MagicMock()
-        settings.research_model = "mock-model"
-        settings.compression_model = "mock-model"
-        settings.final_report_model = "mock-model"
-        settings.max_source_summaries = 2
-        settings.summarization_model = "mock-model"
-        mock_settings.return_value = settings
-
-        mock_db.is_connected = True
-        mock_db.store_ai_artifact = AsyncMock(return_value="art-deep")
-        mock_vs.is_connected = False
-
-        # Mock _collect_sources and LLM to control flow
-        initialized_service._collect_sources = AsyncMock(return_value=[
-            {"title": "Source 1", "content": "Content about AI", "url": "http://example.com/1", "source_type": "tavily"},
-            {"title": "Source 2", "content": "Content about ML", "url": "http://example.com/2", "source_type": "mcp"},
-        ])
-
-        # The LLM is called 4+ times: plan, summarize x2, compress, report
-        responses = [
-            '["query 1", "query 2"]',  # plan
-            "summary bullet 1",  # summarize source 1
-            "summary bullet 2",  # summarize source 2
-            "compressed notes",  # compress
-            "final deep research report",  # report
-        ]
-        call_idx = 0
-        async def mock_ainvoke(*args, **kwargs):
-            nonlocal call_idx
-            content = responses[min(call_idx, len(responses) - 1)]
-            call_idx += 1
-            return MagicMock(content=content)
-        initialized_service._llm.ainvoke = mock_ainvoke
-
-        state = _make_state(prompt="@ai deep research on transformers")
-        result = await initialized_service._deep_research_agent(state)
-
-        assert "deep_research" in result
-        assert "sources" in result
-        assert "research_notes" in result
-        assert result.get("errors") is None or len(result.get("errors", [])) == 0
 
 
 # ---------------------------------------------------------------------------
@@ -468,125 +314,96 @@ class TestErrorBoundaries:
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
     @patch("app.agentic.mcp_client")
-    async def test_paper_retrieval_error_boundary(self, mock_mcp, mock_vs, mock_db, initialized_service):
+    async def test_paper_retrieval_error_boundary(self, mock_mcp, mock_db, initialized_service):
         """When the LLM or DB raises, paper_retrieval should not crash."""
         mock_mcp.is_configured.return_value = False
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(side_effect=RuntimeError("DB down"))
-        mock_vs.is_connected = False
 
-        state = _make_state()
-        result = await initialized_service._paper_retrieval_agent(state)
-        assert "errors" in result
-        assert any("paper_retrieval" in e for e in result["errors"])
+        result = await initialized_service._tool_retrieve_papers(
+             query="find papers", config={"configurable": {"group_id": "g"
+        }})
+        assert "Error retrieving papers:" in result
 
     @pytest.mark.asyncio
     @patch("app.agentic.mem0_adapter")
     @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_literature_survey_error_boundary(self, mock_vs, mock_db, mock_mem0, initialized_service):
+    async def test_literature_survey_error_boundary(self, mock_db, mock_mem0, initialized_service):
         mock_mem0.search = AsyncMock(return_value=[])
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
-        mock_vs.is_connected = False
         # Force LLM to raise
         initialized_service._llm.ainvoke = AsyncMock(side_effect=RuntimeError("LLM fail"))
 
-        state = _make_state()
-        result = await initialized_service._literature_survey_agent(state)
-        assert "errors" in result
-        assert any("literature_survey" in e for e in result["errors"])
+        result = await initialized_service._tool_survey_literature(
+             query="find papers", config={"configurable": {"group_id": "g", "user_id": "u"
+        }})
+        assert "Error surveying literature" in result
 
     @pytest.mark.asyncio
-    @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_fact_check_error_boundary(self, mock_vs, mock_db, mock_mem0, initialized_service):
-        mock_mem0.search = AsyncMock(side_effect=RuntimeError("memory fail"))
-        mock_db.is_connected = False
-        mock_vs.is_connected = False
-
-        state = _make_state()
-        result = await initialized_service._fact_check_agent(state)
-        assert "errors" in result
-        assert any("fact_check" in e for e in result["errors"])
+    async def test_fact_check_error_boundary(self, initialized_service):
+        with patch.object(initialized_service, "_load_memory", AsyncMock(side_effect=RuntimeError("memory fail"))):
+            result = await initialized_service._tool_fact_check(
+                 claim="test claim", config={"configurable": {"group_id": "g", "user_id": "u"
+            }})
+            assert "Error fact checking:" in result
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_novelty_error_boundary(self, mock_vs, mock_db, initialized_service):
+    async def test_novelty_error_boundary(self, mock_db, initialized_service):
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
-        mock_vs.is_connected = False
         initialized_service._llm.ainvoke = AsyncMock(side_effect=RuntimeError("boom"))
 
-        state = _make_state()
-        result = await initialized_service._novelty_assessment_agent(state)
-        assert "errors" in result
-        assert any("novelty_assessment" in e for e in result["errors"])
+        result = await initialized_service._tool_assess_novelty(
+             idea="test idea", config={"configurable": {"group_id": "g"
+        }})
+        assert "Error assessing novelty:" in result
 
     @pytest.mark.asyncio
-    @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_research_mentor_error_boundary(self, mock_vs, mock_db, mock_mem0, initialized_service):
-        mock_mem0.search = AsyncMock(return_value=[])
-        mock_db.is_connected = False
-        mock_vs.is_connected = False
+    async def test_research_mentor_error_boundary(self, initialized_service):
         initialized_service._llm.ainvoke = AsyncMock(side_effect=ValueError("bad model"))
-
-        state = _make_state()
-        result = await initialized_service._research_mentor_agent(state)
-        assert "errors" in result
-        assert any("research_mentor" in e for e in result["errors"])
+        with patch.object(initialized_service, "_load_memory", AsyncMock(return_value=[])):
+            result = await initialized_service._tool_provide_mentoring(
+                 query="test query", config={"configurable": {"group_id": "g", "user_id": "u"
+            }})
+            assert "Error providing mentoring:" in result
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_paper_writing_error_boundary(self, mock_vs, mock_db, initialized_service):
+    async def test_paper_writing_error_boundary(self, mock_db, initialized_service):
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
-        mock_vs.is_connected = False
         initialized_service._llm.ainvoke = AsyncMock(side_effect=TimeoutError("slow"))
 
-        state = _make_state()
-        result = await initialized_service._paper_writing_agent(state)
-        assert "errors" in result
-        assert any("paper_writing" in e for e in result["errors"])
+        result = await initialized_service._tool_write_paper_draft(
+             paper_request="write a paper on NLP", config={"configurable": {"group_id": "g"
+        }})
+        assert "Error writing paper draft:" in result
 
     @pytest.mark.asyncio
-    @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_research_planning_error_boundary(self, mock_vs, mock_db, mock_mem0, initialized_service):
-        mock_mem0.search = AsyncMock(return_value=[])
-        mock_db.is_connected = False
-        mock_vs.is_connected = False
+    async def test_research_planning_error_boundary(self, initialized_service):
         initialized_service._llm.ainvoke = AsyncMock(side_effect=RuntimeError("model crashed"))
 
-        state = _make_state()
-        result = await initialized_service._research_planning_agent(state)
-        assert "errors" in result
-        assert any("research_planning" in e for e in result["errors"])
+        with patch.object(initialized_service, "_load_memory", AsyncMock(return_value=[])):
+            result = await initialized_service._tool_plan_research(
+                 request="plan my NLP research", config={"configurable": {"group_id": "g", "user_id": "u"
+            }})
+            assert "Error planning research:" in result
 
     @pytest.mark.asyncio
     @patch("app.agentic.get_settings")
-    @patch("app.agentic.database")
-    @patch("app.agentic.vector_store")
-    async def test_deep_research_error_boundary(self, mock_vs, mock_db, mock_settings, initialized_service):
+    async def test_deep_research_error_boundary(self, mock_settings, initialized_service):
         settings = MagicMock()
         settings.research_model = "mock-model"
         mock_settings.return_value = settings
-        mock_db.is_connected = False
-        mock_vs.is_connected = False
         initialized_service._llm.ainvoke = AsyncMock(side_effect=RuntimeError("API down"))
 
-        state = _make_state()
-        result = await initialized_service._deep_research_agent(state)
-        assert "errors" in result
-        assert any("deep_research" in e for e in result["errors"])
+        result = await initialized_service._tool_deep_research(
+             query="deep research NLP", config={"configurable": {"group_id": "g"
+        }})
+        assert "Error in deep research:" in result
 
 
 # ---------------------------------------------------------------------------

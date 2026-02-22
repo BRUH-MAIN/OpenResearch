@@ -1,3 +1,5 @@
+'use client';
+
 import React from 'react';
 
 interface BadgeProps {
@@ -8,45 +10,90 @@ interface BadgeProps {
   className?: string;
 }
 
-export function Badge({ 
-  children, 
-  variant = 'primary', 
+export function Badge({
+  children,
+  variant = 'primary',
   size = 'md',
   dot = false,
-  className = '' 
+  className = ''
 }: BadgeProps) {
-  const baseStyles = 'inline-flex items-center font-medium rounded-full transition-colors';
-  
-  const variants = {
-    primary: 'bg-[#0D7377]/20 text-[#14FFEC] border border-[#0D7377]/40',
-    secondary: 'bg-[#242424] text-[#a1a1aa] border border-[#3a3a3a]',
-    success: 'bg-[#22c55e]/15 text-[#4ade80] border border-[#22c55e]/30',
-    warning: 'bg-[#f59e0b]/15 text-[#fbbf24] border border-[#f59e0b]/30',
-    danger: 'bg-[#ef4444]/15 text-[#f87171] border border-[#ef4444]/30',
-    info: 'bg-[#3b82f6]/15 text-[#60a5fa] border border-[#3b82f6]/30',
-    outline: 'bg-transparent text-[#a1a1aa] border border-[#3a3a3a] hover:border-[#0D7377]/60 hover:text-[#14FFEC]',
-  };
-
   const sizes = {
     sm: 'px-2 py-0.5 text-xs gap-1',
     md: 'px-2.5 py-1 text-xs gap-1.5',
     lg: 'px-3 py-1.5 text-sm gap-2',
   };
 
-  const dotColors = {
-    primary: 'bg-[#14FFEC]',
-    secondary: 'bg-[#71717a]',
-    success: 'bg-[#22c55e]',
-    warning: 'bg-[#f59e0b]',
-    danger: 'bg-[#ef4444]',
-    info: 'bg-[#3b82f6]',
-    outline: 'bg-[#71717a]',
+  const getVariantStyles = (variant: string) => {
+    switch (variant) {
+      case 'primary':
+        return {
+          background: 'rgba(13, 115, 119, 0.15)',
+          color: 'var(--color-brand-secondary)',
+          border: '1px solid rgba(13, 115, 119, 0.3)',
+        };
+      case 'secondary':
+        return {
+          background: 'var(--color-bg-tertiary)',
+          color: 'var(--color-text-secondary)',
+          border: '1px solid var(--color-border-secondary)',
+        };
+      case 'success':
+        return {
+          background: 'var(--color-success-bg)',
+          color: 'var(--color-success)',
+          border: '1px solid rgba(34, 197, 94, 0.2)',
+        };
+      case 'warning':
+        return {
+          background: 'var(--color-warning-bg)',
+          color: 'var(--color-warning)',
+          border: '1px solid rgba(245, 158, 11, 0.2)',
+        };
+      case 'danger':
+        return {
+          background: 'var(--color-error-bg)',
+          color: 'var(--color-error)',
+          border: '1px solid rgba(239, 68, 68, 0.2)',
+        };
+      case 'info':
+        return {
+          background: 'var(--color-info-bg)',
+          color: 'var(--color-info)',
+          border: '1px solid rgba(59, 130, 246, 0.2)',
+        };
+      case 'outline':
+        return {
+          background: 'transparent',
+          color: 'var(--color-text-secondary)',
+          border: '1px solid var(--color-border-secondary)',
+        };
+      default:
+        return {};
+    }
   };
-  
+
+  const getDotColor = (variant: string) => {
+    switch (variant) {
+      case 'primary': return 'var(--color-brand-secondary)';
+      case 'secondary': return 'var(--color-text-muted)';
+      case 'success': return 'var(--color-success)';
+      case 'warning': return 'var(--color-warning)';
+      case 'danger': return 'var(--color-error)';
+      case 'info': return 'var(--color-info)';
+      default: return 'var(--color-text-muted)';
+    }
+  };
+
   return (
-    <span className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}>
+    <span
+      className={`inline-flex items-center font-medium rounded-full transition-colors ${sizes[size]} ${className}`}
+      style={getVariantStyles(variant)}
+    >
       {dot && (
-        <span className={`w-1.5 h-1.5 rounded-full ${dotColors[variant]} animate-pulse`} />
+        <span
+          className="w-1.5 h-1.5 rounded-full animate-pulse"
+          style={{ background: getDotColor(variant) }}
+        />
       )}
       {children}
     </span>
@@ -61,10 +108,10 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status, showLabel = true, className = '' }: StatusBadgeProps) {
   const statusConfig = {
-    online: { color: 'bg-[#22c55e]', label: 'Online', variant: 'success' as const },
-    offline: { color: 'bg-[#71717a]', label: 'Offline', variant: 'secondary' as const },
-    busy: { color: 'bg-[#ef4444]', label: 'Busy', variant: 'danger' as const },
-    away: { color: 'bg-[#f59e0b]', label: 'Away', variant: 'warning' as const },
+    online: { label: 'Online', variant: 'success' as const },
+    offline: { label: 'Offline', variant: 'secondary' as const },
+    busy: { label: 'Busy', variant: 'danger' as const },
+    away: { label: 'Away', variant: 'warning' as const },
   };
 
   const config = statusConfig[status];

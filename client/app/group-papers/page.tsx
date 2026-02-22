@@ -110,9 +110,9 @@ function GroupPapersPageContent() {
       setIsAsking(true);
       setQaResponse(null);
       const response = await api.summarizePaper(accessToken, groupId, selectedPaper.paperId);
-      setQaResponse({ 
+      setQaResponse({
         summary: response.summary,
-        keyPoints: response.key_points 
+        keyPoints: response.key_points
       });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to generate summary');
@@ -156,7 +156,7 @@ function GroupPapersPageContent() {
 
   if (!accessToken) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Sign in to view group papers</h1>
@@ -170,7 +170,7 @@ function GroupPapersPageContent() {
 
   if (!groupId) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">No group selected</h1>
@@ -184,18 +184,18 @@ function GroupPapersPageContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
         <Navbar />
         <div className="flex flex-col justify-center items-center h-[60vh]">
-          <Loader2 className="w-10 h-10 animate-spin text-[#14FFEC] mb-4" />
-          <p className="text-[#71717a] text-sm">Loading papers...</p>
+          <Loader2 className="w-10 h-10 animate-spin text-[var(--color-accent-primary)] mb-4" />
+          <p className="text-[var(--color-text-secondary)] text-sm">Loading papers...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -207,13 +207,13 @@ function GroupPapersPageContent() {
                 Back to Group
               </Button>
             </Link>
-            <div className="h-6 w-px bg-[#2a2a2a]" />
+            <div className="h-6 w-px bg-[var(--color-border-primary)]" />
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <BookOpen className="w-6 h-6 text-[#14FFEC]" />
+                <BookOpen className="w-6 h-6 text-[var(--color-accent-primary)]" />
                 {group?.name} Papers
               </h1>
-              <p className="text-sm text-[#71717a]">
+              <p className="text-sm text-[var(--color-text-secondary)]">
                 {papers.length} paper{papers.length !== 1 ? 's' : ''} • Ask questions or get summaries
               </p>
             </div>
@@ -229,13 +229,13 @@ function GroupPapersPageContent() {
         {/* Search */}
         <div className="mb-6">
           <div className="relative max-w-md">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#52525b] w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
             <input
               type="text"
               placeholder="Search papers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white placeholder-[#52525b] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[#3a3a3a]"
+              className="w-full pl-12 pr-4 py-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
             />
           </div>
         </div>
@@ -244,13 +244,13 @@ function GroupPapersPageContent() {
         {filteredPapers.length === 0 ? (
           <Card>
             <CardBody className="py-16 text-center">
-              <div className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center mx-auto mb-6">
-                <BookOpen className="w-8 h-8 text-[#52525b]" />
+              <div className="w-16 h-16 rounded-2xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] flex items-center justify-center mx-auto mb-6">
+                <BookOpen className="w-8 h-8 text-[var(--color-text-tertiary)]" />
               </div>
-              <h3 className="text-xl font-semibold mb-2 text-white">
+              <h3 className="text-xl font-semibold mb-2 text-[var(--color-text-primary)]">
                 {searchQuery ? 'No papers match your search' : 'No papers in this group yet'}
               </h3>
-              <p className="text-[#71717a] mb-6 max-w-sm mx-auto">
+              <p className="text-[var(--color-text-secondary)] mb-6 max-w-sm mx-auto">
                 {searchQuery
                   ? 'Try a different search term'
                   : 'Add papers from the Discover page to start collaborating'}
@@ -272,12 +272,12 @@ function GroupPapersPageContent() {
                 <CardBody>
                   <div className="flex gap-4">
                     <div className="flex-1">
-                      <h3 className="font-semibold text-white text-lg mb-1">{paper.title}</h3>
-                      <p className="text-sm text-[#71717a] mb-2">
+                      <h3 className="font-semibold text-[var(--color-text-primary)] text-lg mb-1">{paper.title}</h3>
+                      <p className="text-sm text-[var(--color-text-secondary)] mb-2">
                         {paper.authors?.slice(0, 3).join(', ')}
                         {paper.authors?.length > 3 && ` +${paper.authors.length - 3} more`}
                       </p>
-                      <p className="text-sm text-[#a1a1aa] line-clamp-2 mb-3">{paper.abstract}</p>
+                      <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2 mb-3">{paper.abstract}</p>
 
                       {/* Tags */}
                       <div className="flex flex-wrap gap-1 mb-3">
@@ -290,8 +290,8 @@ function GroupPapersPageContent() {
 
                       {/* Notes */}
                       {paper.notes && (
-                        <div className="bg-[#0D7377]/10 border border-[#0D7377]/30 rounded-lg px-3 py-2 mb-3">
-                          <p className="text-xs text-[#14FFEC] italic">
+                        <div className="bg-[var(--color-accent-primary)]/10 border border-[var(--color-accent-primary)]/30 rounded-lg px-3 py-2 mb-3">
+                          <p className="text-xs text-[var(--color-accent-primary)] italic">
                             Note: {paper.notes}
                           </p>
                         </div>
@@ -347,24 +347,24 @@ function GroupPapersPageContent() {
         {/* Q&A Modal */}
         {selectedPaper && qaMode && (
           <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[500] p-4 animate-fade-in">
-            <div className="relative w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl shadow-2xl animate-scale-in">
-              <div className="px-6 py-5 border-b border-[#2a2a2a] flex-shrink-0">
+            <div className="relative w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-2xl shadow-2xl animate-scale-in">
+              <div className="px-6 py-5 border-b border-[var(--color-border-primary)] flex-shrink-0">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-xl font-semibold flex items-center gap-2 text-white">
+                    <h2 className="text-xl font-semibold flex items-center gap-2 text-[var(--color-text-primary)]">
                       {qaMode === 'question' ? (
                         <>
-                          <MessageSquare className="w-5 h-5 text-[#14FFEC]" />
+                          <MessageSquare className="w-5 h-5 text-[var(--color-accent-primary)]" />
                           Ask a Question
                         </>
                       ) : (
                         <>
-                          <FileText className="w-5 h-5 text-[#14FFEC]" />
+                          <FileText className="w-5 h-5 text-[var(--color-accent-primary)]" />
                           Paper Summary
                         </>
                       )}
                     </h2>
-                    <p className="text-sm text-[#71717a] line-clamp-1 mt-1">
+                    <p className="text-sm text-[var(--color-text-secondary)] line-clamp-1 mt-1">
                       {selectedPaper.title}
                     </p>
                   </div>
@@ -377,8 +377,8 @@ function GroupPapersPageContent() {
                 {/* Question Input (for question mode) */}
                 {qaMode === 'question' && (
                   <div className="mb-4">
-                    <label className="block text-sm font-medium text-[#e4e4e7] mb-2">
-                      Your Question <span className="text-[#71717a]">(will be sent with @ai trigger)</span>
+                    <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                      Your Question <span className="text-[var(--color-text-tertiary)]">(will be sent with @ai trigger)</span>
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -393,7 +393,7 @@ function GroupPapersPageContent() {
                           }
                         }}
                         disabled={isAsking}
-                        className="flex-1 px-4 py-2.5 bg-[#0f0f0f] border border-[#2a2a2a] rounded-xl text-white placeholder-[#52525b] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[#3a3a3a] disabled:opacity-50"
+                        className="flex-1 px-4 py-2.5 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)] disabled:opacity-50"
                       />
                       <Button
                         onClick={handleAskQuestion}
@@ -412,7 +412,7 @@ function GroupPapersPageContent() {
                 {/* Loading State */}
                 {isAsking && (
                   <div className="flex items-center justify-center py-8">
-                    <div className="flex items-center gap-3 text-[#14FFEC]">
+                    <div className="flex items-center gap-3 text-[var(--color-accent-primary)]">
                       <Loader2 className="w-6 h-6 animate-spin" />
                       <span>{qaMode === 'question' ? 'AI is analyzing...' : 'Generating summary...'}</span>
                     </div>
@@ -430,18 +430,18 @@ function GroupPapersPageContent() {
                     </div>
 
                     {qaResponse.answer && (
-                      <p className="text-[#e4e4e7] whitespace-pre-wrap leading-relaxed">{qaResponse.answer}</p>
+                      <p className="text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed">{qaResponse.answer}</p>
                     )}
 
                     {qaResponse.summary && (
                       <div>
-                        <p className="text-[#e4e4e7] whitespace-pre-wrap leading-relaxed mb-4">{qaResponse.summary}</p>
+                        <p className="text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed mb-4">{qaResponse.summary}</p>
                         {qaResponse.keyPoints && qaResponse.keyPoints.length > 0 && (
                           <div className="mt-4 pt-4 border-t border-[#0D7377]/30">
                             <h4 className="text-sm font-medium text-[#14FFEC] mb-3">Key Points:</h4>
                             <ul className="space-y-2">
                               {qaResponse.keyPoints.map((point, i) => (
-                                <li key={i} className="flex items-start gap-2 text-sm text-[#e4e4e7]">
+                                <li key={i} className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
                                   <span className="text-[#14FFEC] mt-1">•</span>
                                   {point}
                                 </li>
@@ -457,7 +457,7 @@ function GroupPapersPageContent() {
                 {/* Suggested Questions (for question mode) */}
                 {qaMode === 'question' && !qaResponse && !isAsking && (
                   <div className="mt-4">
-                    <p className="text-sm text-[#71717a] mb-3">Suggested questions:</p>
+                    <p className="text-sm text-[var(--color-text-secondary)] mb-3">Suggested questions:</p>
                     <div className="flex flex-wrap gap-2">
                       {[
                         'What are the main findings?',
@@ -468,7 +468,7 @@ function GroupPapersPageContent() {
                         <button
                           key={q}
                           onClick={() => setQuestion(q)}
-                          className="px-3 py-1.5 text-sm bg-[#242424] text-[#a1a1aa] rounded-full hover:bg-[#2a2a2a] hover:text-white transition-colors"
+                          className="px-3 py-1.5 text-sm bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] rounded-full hover:bg-[var(--color-bg-hover)] hover:text-white transition-colors"
                         >
                           {q}
                         </button>
@@ -489,9 +489,9 @@ export default function GroupPapersPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-[#14FFEC] mb-4" />
-          <p className="text-[#71717a] text-sm">Loading...</p>
+        <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] flex flex-col items-center justify-center">
+          <Loader2 className="w-10 h-10 animate-spin text-[var(--color-accent-primary)] mb-4" />
+          <p className="text-[var(--color-text-secondary)] text-sm">Loading...</p>
         </div>
       }
     >

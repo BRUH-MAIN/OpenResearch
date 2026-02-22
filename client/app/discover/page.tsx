@@ -131,12 +131,12 @@ export default function DiscoverPage() {
     activeTab === 'trending'
       ? filteredPapers(trendingPapers)
       : activeTab === 'forYou'
-      ? filteredPapers(personalRecommendations)
-      : filteredPapers(groupRecommendations);
+        ? filteredPapers(personalRecommendations)
+        : filteredPapers(groupRecommendations);
 
   if (!accessToken) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Sign in to discover papers</h1>
@@ -149,7 +149,7 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -160,7 +160,7 @@ export default function DiscoverPage() {
             </div>
             Discover Papers
           </h1>
-          <p className="text-[#71717a]">
+          <p className="text-[var(--color-text-secondary)]">
             Find relevant research papers recommended by AI based on your interests and group context
           </p>
         </div>
@@ -169,33 +169,30 @@ export default function DiscoverPage() {
         <div className="flex gap-2 mb-6">
           <button
             onClick={() => setActiveTab('trending')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
-              activeTab === 'trending'
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${activeTab === 'trending'
                 ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                : 'bg-[#1a1a1a] text-[#a1a1aa] hover:bg-[#242424] hover:text-white border border-[#2a2a2a]'
-            }`}
+                : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-primary)]'
+              }`}
           >
             <TrendingUp className="w-4 h-4" />
             Trending
           </button>
           <button
             onClick={() => setActiveTab('forYou')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
-              activeTab === 'forYou'
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${activeTab === 'forYou'
                 ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                : 'bg-[#1a1a1a] text-[#a1a1aa] hover:bg-[#242424] hover:text-white border border-[#2a2a2a]'
-            }`}
+                : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-primary)]'
+              }`}
           >
             <Sparkles className="w-4 h-4" />
             For You
           </button>
           <button
             onClick={() => setActiveTab('forGroup')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
-              activeTab === 'forGroup'
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${activeTab === 'forGroup'
                 ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                : 'bg-[#1a1a1a] text-[#a1a1aa] hover:bg-[#242424] hover:text-white border border-[#2a2a2a]'
-            }`}
+                : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-primary)]'
+              }`}
           >
             <Users className="w-4 h-4" />
             For Group
@@ -205,11 +202,11 @@ export default function DiscoverPage() {
         {/* Group Selector (for group tab) */}
         {activeTab === 'forGroup' && (
           <div className="mb-6 flex gap-4 items-center">
-            <Filter className="w-5 h-5 text-[#71717a]" />
+            <Filter className="w-5 h-5 text-[var(--color-text-tertiary)]" />
             <select
               value={selectedGroupId}
               onChange={(e) => setSelectedGroupId(e.target.value)}
-              className="bg-[#1a1a1a] text-white border border-[#2a2a2a] rounded-xl px-4 py-2.5 focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[#3a3a3a]"
+              className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
             >
               {groups.map((g) => (
                 <option key={g.id} value={g.id}>
@@ -223,13 +220,13 @@ export default function DiscoverPage() {
         {/* Search */}
         <div className="mb-6">
           <div className="relative max-w-md">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#52525b] w-5 h-5" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
             <input
               type="text"
               placeholder="Search papers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white placeholder-[#52525b] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[#3a3a3a]"
+              className="w-full pl-12 pr-4 py-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
             />
           </div>
         </div>
@@ -238,17 +235,17 @@ export default function DiscoverPage() {
         {isLoading ? (
           <div className="flex flex-col justify-center items-center py-20">
             <Loader2 className="w-10 h-10 animate-spin text-[#14FFEC] mb-4" />
-            <p className="text-[#71717a] text-sm">Loading papers...</p>
+            <p className="text-[var(--color-text-secondary)] text-sm">Loading papers...</p>
           </div>
         ) : currentPapers.length === 0 ? (
           <div className="flex flex-col items-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center mb-6">
-              <BookOpen className="w-8 h-8 text-[#52525b]" />
+            <div className="w-16 h-16 rounded-2xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] flex items-center justify-center mb-6">
+              <BookOpen className="w-8 h-8 text-[var(--color-text-tertiary)]" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">
               {searchQuery ? 'No papers found' : 'No recommendations yet'}
             </h3>
-            <p className="text-[#71717a] text-center max-w-sm">
+            <p className="text-[var(--color-text-secondary)] text-center max-w-sm">
               {searchQuery ? 'Try adjusting your search query' : 'Check back later for personalized recommendations'}
             </p>
           </div>
@@ -284,17 +281,17 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
     <Card hover>
       <CardHeader>
         <div className="flex justify-between items-start gap-2">
-          <h3 className="font-semibold text-white line-clamp-2">{paper.title}</h3>
+          <h3 className="font-semibold text-[var(--color-text-primary)] line-clamp-2">{paper.title}</h3>
           {(paper.score || paper.trendScore) && (
             <Badge variant="primary" className="shrink-0">
               {Math.round((paper.score || paper.trendScore || 0) * 100)}%
             </Badge>
           )}
         </div>
-        <p className="text-sm text-[#71717a] mt-1">{paper.authors.slice(0, 3).join(', ')}</p>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{paper.authors.slice(0, 3).join(', ')}</p>
       </CardHeader>
       <CardBody className="pt-0">
-        <p className="text-sm text-[#a1a1aa] line-clamp-3 mb-3">{paper.abstract}</p>
+        <p className="text-sm text-[var(--color-text-secondary)] line-clamp-3 mb-3">{paper.abstract}</p>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1 mb-3">
@@ -342,7 +339,7 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
             </Button>
 
             {showGroupMenu && (
-              <div className="absolute bottom-full left-0 mb-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-xl py-2 min-w-[150px] z-10">
+              <div className="absolute bottom-full left-0 mb-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-xl shadow-xl py-2 min-w-[150px] z-10">
                 {groups.map((group) => (
                   <button
                     key={group.id}
@@ -350,7 +347,7 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
                       onAddToGroup(paper.id, group.id);
                       setShowGroupMenu(false);
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-[#e4e4e7] hover:bg-[#242424] transition-colors"
+                    className="block w-full text-left px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] transition-colors"
                   >
                     {group.name}
                   </button>

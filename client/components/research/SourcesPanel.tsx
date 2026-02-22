@@ -1,16 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   FileText,
   Plus,
-  Search,
-  ChevronDown,
   Check,
   Sparkles,
-  Globe,
-  ArrowRight,
   File,
+  Globe,
   BookOpen,
   PanelLeftClose,
   Loader2,
@@ -33,7 +30,6 @@ interface SourcesPanelProps {
   onToggleAll: (enabled: boolean) => void;
   onAddSource: () => void;
   onDeepResearch: () => void;
-  onWebSearch: (query: string) => void;
   isDeepResearching?: boolean;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
@@ -46,63 +42,94 @@ export function SourcesPanel({
   onToggleAll,
   onAddSource,
   onDeepResearch,
-  onWebSearch,
   isDeepResearching = false,
   isCollapsed = false,
   onToggleCollapse,
   className = '',
 }: SourcesPanelProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-
   const allSelected = sources.length > 0 && sources.every((s) => s.enabled);
-
-  const handleSearch = () => {
-    if (searchQuery.trim()) {
-      onWebSearch(searchQuery.trim());
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch();
-    }
-  };
+  const enabledCount = sources.filter((s) => s.enabled).length;
 
   const getSourceIcon = (type: Source['type']) => {
     switch (type) {
       case 'pdf':
-        return <File size={16} className="text-[#ea4335]" />;
+        return <File size={16} style={{ color: 'var(--color-error)' }} />;
       case 'web':
-        return <Globe size={16} className="text-[#8ab4f8]" />;
+        return <Globe size={16} style={{ color: 'var(--color-info)' }} />;
       case 'paper':
-        return <BookOpen size={16} className="text-[#81c995]" />;
+        return <BookOpen size={16} style={{ color: 'var(--color-success)' }} />;
       default:
-        return <FileText size={16} className="text-[#9aa0a6]" />;
+        return <FileText size={16} style={{ color: 'var(--color-text-tertiary)' }} />;
     }
   };
 
   if (isCollapsed) {
     return (
-      <div className={`w-[52px] bg-[#1e1f20] border-r border-[#3c4043] flex flex-col ${className}`}>
+      <div
+        className={`w-[52px] border-r flex flex-col ${className}`}
+        style={{
+          background: 'var(--color-bg-secondary)',
+          borderColor: 'var(--color-border-primary)',
+        }}
+      >
         <button
           onClick={onToggleCollapse}
-          className="p-4 hover:bg-[#28292a] transition-colors"
+          className="p-4 transition-colors"
           title="Expand sources"
+          style={{ color: 'var(--color-text-tertiary)' }}
+          onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-tertiary)'}
+          onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
         >
-          <PanelLeftClose size={20} className="text-[#9aa0a6] rotate-180" />
+          <PanelLeftClose size={20} className="rotate-180" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className={`w-[360px] bg-[#1e1f20] border-r border-[#3c4043] flex flex-col h-full ${className}`}>
+    <div
+      className={`w-[340px] border-r flex flex-col h-full ${className}`}
+      style={{
+        background: 'var(--color-bg-secondary)',
+        borderColor: 'var(--color-border-primary)',
+      }}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#3c4043]">
-        <span className="text-[15px] font-medium text-[#e8eaed]">Sources</span>
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b"
+        style={{ borderColor: 'var(--color-border-primary)' }}
+      >
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[15px] font-medium"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            Sources
+          </span>
+          {sources.length > 0 && (
+            <span
+              className="text-[11px] px-1.5 py-0.5 rounded-full"
+              style={{
+                background: 'var(--color-bg-tertiary)',
+                color: 'var(--color-text-tertiary)',
+              }}
+            >
+              {enabledCount}/{sources.length}
+            </span>
+          )}
+        </div>
         <button
           onClick={onToggleCollapse}
-          className="p-1.5 rounded hover:bg-[#28292a] text-[#9aa0a6] hover:text-[#e8eaed] transition-colors"
+          className="p-1.5 rounded transition-colors"
+          style={{ color: 'var(--color-text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+            e.currentTarget.style.color = 'var(--color-text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'var(--color-text-tertiary)';
+          }}
         >
           <PanelLeftClose size={18} />
         </button>
@@ -112,7 +139,21 @@ export function SourcesPanel({
       <div className="px-4 pt-4">
         <button
           onClick={onAddSource}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-[#5f6368] hover:border-[#8ab4f8] hover:bg-[#28292a] rounded-full text-[14px] text-[#e8eaed] transition-all"
+          className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-full text-[14px] border transition-all"
+          style={{
+            borderColor: 'var(--color-border-secondary)',
+            color: 'var(--color-text-primary)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-brand-secondary)';
+            e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+            e.currentTarget.style.boxShadow = '0 0 12px rgba(20, 255, 236, 0.1)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.borderColor = 'var(--color-border-secondary)';
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
         >
           <Plus size={18} />
           <span>Add sources</span>
@@ -124,80 +165,89 @@ export function SourcesPanel({
         <button
           onClick={onDeepResearch}
           disabled={isDeepResearching}
-          className={`w-full flex items-center gap-2.5 px-4 py-3 bg-[#0d3d3d] hover:bg-[#134545] border border-[#1a5c5c] rounded-xl transition-colors text-left ${
-            isDeepResearching ? 'animate-pulse cursor-not-allowed opacity-80' : ''
-          }`}
+          className={`w-full flex items-center gap-2.5 px-4 py-3 rounded-xl transition-all text-left ${isDeepResearching ? 'animate-pulse cursor-not-allowed opacity-80' : ''
+            }`}
+          style={{
+            background: 'rgba(13, 115, 119, 0.15)',
+            border: '1px solid rgba(13, 115, 119, 0.3)',
+          }}
+          onMouseEnter={(e) => {
+            if (!isDeepResearching) {
+              e.currentTarget.style.background = 'rgba(13, 115, 119, 0.25)';
+              e.currentTarget.style.borderColor = 'rgba(20, 255, 236, 0.4)';
+            }
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'rgba(13, 115, 119, 0.15)';
+            e.currentTarget.style.borderColor = 'rgba(13, 115, 119, 0.3)';
+          }}
         >
           {isDeepResearching ? (
-            <Loader2 size={18} className="text-[#81c995] shrink-0 animate-spin" />
+            <Loader2
+              size={18}
+              className="shrink-0 animate-spin"
+              style={{ color: 'var(--color-brand-secondary)' }}
+            />
           ) : (
-            <Sparkles size={18} className="text-[#81c995] shrink-0" />
+            <Sparkles
+              size={18}
+              className="shrink-0"
+              style={{ color: 'var(--color-brand-secondary)' }}
+            />
           )}
-          <span className="text-[13px] text-[#81c995] leading-snug">
+          <span
+            className="text-[13px] leading-snug"
+            style={{ color: 'var(--color-brand-secondary)' }}
+          >
             {isDeepResearching ? (
-              <span>Deep Research is running...</span>
+              <span>Deep Research running…</span>
             ) : (
               <>
-                Try <span className="font-semibold">Deep Research</span> for an in-depth report and new sources!
+                Try <span className="font-semibold">Deep Research</span> for an in-depth report
               </>
             )}
           </span>
         </button>
       </div>
 
-      {/* Web Search */}
-      <div className="px-4 pt-4">
-        <div className="relative">
-          <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#9aa0a6]" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Search the web for new sources"
-            className="w-full bg-[#28292a] border border-[#3c4043] rounded-full pl-11 pr-4 py-2.5 text-[14px] text-[#e8eaed] placeholder:text-[#9aa0a6] focus:outline-none focus:border-[#8ab4f8] transition-colors"
-          />
-        </div>
-
-        {/* Search Options Row */}
-        <div className="flex items-center gap-2 mt-3">
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] rounded-full text-[13px] text-[#e8eaed] transition-colors">
-            <Globe size={14} />
-            <span>Web</span>
-            <ChevronDown size={12} className="ml-0.5" />
-          </button>
-          <button className="flex items-center gap-1.5 px-3 py-1.5 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] rounded-full text-[13px] text-[#e8eaed] transition-colors">
-            <Sparkles size={14} />
-            <span>Fast research</span>
-            <ChevronDown size={12} className="ml-0.5" />
-          </button>
-          <button
-            onClick={handleSearch}
-            className="ml-auto p-2 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] rounded-full text-[#9aa0a6] hover:text-[#e8eaed] transition-colors"
-          >
-            <ArrowRight size={16} />
-          </button>
-        </div>
-      </div>
-
       {/* Select All */}
-      <div className="flex items-center justify-between px-4 pt-5 pb-2">
+      <div
+        className="flex items-center justify-between px-4 pt-5 pb-2"
+      >
         <button
           onClick={() => onToggleAll(!allSelected)}
-          className="flex items-center gap-2 text-[13px] text-[#8ab4f8] hover:text-[#aecbfa] transition-colors"
+          className="flex items-center gap-2 text-[13px] transition-colors"
+          style={{ color: 'var(--color-brand-secondary)' }}
+          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
         >
-          <span>Select all sources</span>
+          <span>{allSelected ? 'Deselect all' : 'Select all sources'}</span>
         </button>
-        {allSelected && <Check size={16} className="text-[#8ab4f8]" />}
+        {allSelected && <Check size={16} style={{ color: 'var(--color-brand-secondary)' }} />}
       </div>
 
       {/* Sources List */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto research-panel-scroll">
         {sources.length === 0 ? (
           <div className="px-4 py-12 text-center">
-            <FileText size={36} className="mx-auto text-[#5f6368] mb-3" />
-            <p className="text-[13px] text-[#9aa0a6]">No sources added yet</p>
-            <p className="text-[12px] text-[#5f6368] mt-1">Add papers or search the web</p>
+            <div
+              className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
+              style={{ background: 'var(--color-bg-tertiary)' }}
+            >
+              <FileText size={24} style={{ color: 'var(--color-text-muted)' }} />
+            </div>
+            <p
+              className="text-[13px]"
+              style={{ color: 'var(--color-text-secondary)' }}
+            >
+              No sources added yet
+            </p>
+            <p
+              className="text-[12px] mt-1"
+              style={{ color: 'var(--color-text-muted)' }}
+            >
+              Add papers from your group collection
+            </p>
           </div>
         ) : (
           <div className="px-2 pb-4">
@@ -205,7 +255,7 @@ export function SourcesPanel({
               <button
                 key={source.id}
                 onClick={() => onToggleSource(source.id)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#28292a] transition-colors group text-left"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all group text-left source-item-hover"
               >
                 {/* Icon */}
                 <div className="shrink-0 w-5 h-5 flex items-center justify-center">
@@ -213,19 +263,34 @@ export function SourcesPanel({
                 </div>
 
                 {/* Title */}
-                <span className="flex-1 text-[13px] text-[#e8eaed] truncate leading-snug">
+                <span
+                  className="flex-1 text-[13px] truncate leading-snug"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
                   {source.title}
                 </span>
 
                 {/* Checkbox */}
                 <div
-                  className={`shrink-0 w-5 h-5 rounded flex items-center justify-center transition-colors ${
+                  className="shrink-0 w-5 h-5 rounded flex items-center justify-center transition-all"
+                  style={
                     source.enabled
-                      ? 'bg-[#8ab4f8]'
-                      : 'border-2 border-[#5f6368] group-hover:border-[#9aa0a6]'
-                  }`}
+                      ? {
+                        background: 'var(--color-brand-primary)',
+                        boxShadow: '0 0 8px rgba(13, 115, 119, 0.4)',
+                      }
+                      : {
+                        border: '2px solid var(--color-border-secondary)',
+                      }
+                  }
                 >
-                  {source.enabled && <Check size={14} className="text-[#1e1f20]" strokeWidth={3} />}
+                  {source.enabled && (
+                    <Check
+                      size={14}
+                      strokeWidth={3}
+                      style={{ color: 'var(--color-text-primary)' }}
+                    />
+                  )}
                 </div>
               </button>
             ))}

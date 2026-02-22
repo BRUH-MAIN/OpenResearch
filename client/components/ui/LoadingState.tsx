@@ -20,25 +20,6 @@ const sizeClasses = {
   lg: 'w-12 h-12',
 };
 
-/**
- * LoadingState - Consistent loading spinner
- * 
- * Design system:
- * - Spinner color: #14FFEC (teal accent)
- * - Message color: #a0a0a0 (muted)
- * 
- * Usage:
- * ```tsx
- * // Full page loading
- * <LoadingState fullPage message="Loading papers..." />
- * 
- * // Inline loading
- * <LoadingState size="sm" />
- * 
- * // In a button
- * <Button disabled><LoadingState size="sm" /> Saving...</Button>
- * ```
- */
 export function LoadingState({
   message,
   size = 'md',
@@ -47,7 +28,8 @@ export function LoadingState({
 }: LoadingStateProps) {
   const spinner = (
     <Loader2
-      className={`${sizeClasses[size]} text-[#14FFEC] animate-spin`}
+      className={`${sizeClasses[size]} animate-spin`}
+      style={{ color: 'var(--color-brand-secondary)' }}
     />
   );
 
@@ -58,7 +40,9 @@ export function LoadingState({
       >
         {spinner}
         {message && (
-          <p className="mt-4 text-[#a0a0a0]">{message}</p>
+          <p className="mt-4" style={{ color: 'var(--color-text-secondary)' }}>
+            {message}
+          </p>
         )}
       </div>
     );
@@ -68,16 +52,14 @@ export function LoadingState({
     <div className={`flex items-center gap-2 ${className}`}>
       {spinner}
       {message && (
-        <span className="text-[#a0a0a0] text-sm">{message}</span>
+        <span className="text-sm" style={{ color: 'var(--color-text-secondary)' }}>
+          {message}
+        </span>
       )}
     </div>
   );
 }
 
-/**
- * LoadingSpinner - Simple standalone spinner
- * For use in buttons or tight spaces
- */
 export function LoadingSpinner({
   size = 'sm',
   className = '',
@@ -87,7 +69,8 @@ export function LoadingSpinner({
 }) {
   return (
     <Loader2
-      className={`${sizeClasses[size]} text-[#14FFEC] animate-spin ${className}`}
+      className={`${sizeClasses[size]} animate-spin ${className}`}
+      style={{ color: 'var(--color-brand-secondary)' }}
     />
   );
 }

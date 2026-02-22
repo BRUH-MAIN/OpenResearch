@@ -258,7 +258,7 @@ export function validateAiTrigger(content: string, fieldName: string = 'prompt')
 class AIClient {
   private timeout: number;
 
-  constructor(timeout: number = 30000) {
+  constructor(timeout: number = 120000) {
     this.timeout = timeout;
   }
 
@@ -296,11 +296,11 @@ class AIClient {
       return response.json() as Promise<T>;
     } catch (error: unknown) {
       clearTimeout(timeoutId);
-      
+
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('AI service request timed out');
       }
-      
+
       throw error;
     }
   }
@@ -331,14 +331,14 @@ class AIClient {
    */
   async chat(request: ChatRequest): Promise<ChatResponse> {
     logger.info(`AI chat request for session: ${request.session_id || 'none'}`);
-    
+
     const response = await this.request<ChatResponse>('/chat', {
       method: 'POST',
       body: JSON.stringify(request),
     });
 
     logger.info(`AI chat response in ${response.latency_ms}ms, ${response.context_messages_used} messages used`);
-    
+
     return response;
   }
 
@@ -347,14 +347,14 @@ class AIClient {
    */
   async summarize(request: SummarizeRequest): Promise<SummaryResponse> {
     logger.info(`AI summarize request for session: ${request.session_id}`);
-    
+
     const response = await this.request<SummaryResponse>('/summarize', {
       method: 'POST',
       body: JSON.stringify(request),
     });
 
     logger.info(`AI summary generated in ${response.latency_ms}ms`);
-    
+
     return response;
   }
 
@@ -364,9 +364,9 @@ class AIClient {
   async groupAIChat(request: GroupAIChatRequest): Promise<GroupAIChatResponse> {
     // Validate @ai trigger
     validateAiTrigger(request.prompt);
-    
+
     logger.info(`Group AI chat for group: ${request.group_id}, session: ${request.session_id || 'none'}`);
-    
+
     const response = await this.request<GroupAIChatResponse>(
       `/groups/${request.group_id}/ai-chat`,
       {
@@ -376,7 +376,7 @@ class AIClient {
     );
 
     logger.info(`Group AI response in ${response.latency_ms}ms, ${response.sources.length} sources`);
-    
+
     return response;
   }
 
@@ -386,16 +386,16 @@ class AIClient {
   async paperQuestion(request: PaperQuestionRequest): Promise<PaperAnswerResponse> {
     // Validate @ai trigger
     validateAiTrigger(request.question, 'question');
-    
+
     logger.info(`Paper Q&A for paper: ${request.paper_id}, group: ${request.group_id}`);
-    
+
     const response = await this.request<PaperAnswerResponse>('/papers/question', {
       method: 'POST',
       body: JSON.stringify(request),
     });
 
     logger.info(`Paper answer generated in ${response.latency_ms}ms`);
-    
+
     return response;
   }
 
@@ -406,16 +406,16 @@ class AIClient {
     // Ensure trigger is set
     const trigger = request.trigger || '@ai summarize';
     validateAiTrigger(trigger, 'trigger');
-    
+
     logger.info(`Paper summarize for paper: ${request.paper_id}, group: ${request.group_id}`);
-    
+
     const response = await this.request<PaperSummaryResponse>('/papers/summarize', {
       method: 'POST',
       body: JSON.stringify({ ...request, trigger }),
     });
 
     logger.info(`Paper summary generated in ${response.latency_ms}ms`);
-    
+
     return response;
   }
 
@@ -424,7 +424,7 @@ class AIClient {
    */
   async addPaperToGroup(request: AddPaperToGroupRequest): Promise<AddPaperResponse> {
     logger.info(`Adding paper ${request.paper_id} to group ${request.group_id}`);
-    
+
     const response = await this.request<AddPaperResponse>(
       `/groups/${request.group_id}/papers`,
       {
@@ -434,7 +434,7 @@ class AIClient {
     );
 
     logger.info(`Paper added with ${response.vectors_created} vectors`);
-    
+
     return response;
   }
 
@@ -443,14 +443,14 @@ class AIClient {
    */
   async searchVectors(request: VectorSearchRequest): Promise<VectorSearchResponse> {
     logger.info(`Vector search in group: ${request.group_id}`);
-    
+
     const response = await this.request<VectorSearchResponse>('/vectors/search', {
       method: 'POST',
       body: JSON.stringify(request),
     });
 
     logger.info(`Vector search returned ${response.total} results in ${response.latency_ms}ms`);
-    
+
     return response;
   }
 
@@ -458,8 +458,6 @@ class AIClient {
    * Run an agentic research task (LangGraph orchestration)
    */
   async runAgenticTask(request: AgenticRunRequest): Promise<AgenticRunResponse> {
-    validateAiTrigger(request.prompt, 'prompt');
-
     logger.info(`Agentic task: ${request.task_type}`);
 
     const response = await this.request<AgenticRunResponse>('/agentic/run', {
@@ -492,7 +490,7 @@ class AIClient {
    */
   async getRecommendations(request: RecommendationsRequest): Promise<RecommendationsResponse> {
     logger.info(`Getting recommendations for group: ${request.group_id}`);
-    
+
     // AI service doesn't have this endpoint yet - throw to trigger fallback
     throw new Error('AI recommendations endpoint not implemented');
   }
@@ -504,9 +502,9 @@ class AIClient {
     if (request.prompt) {
       validateAiTrigger(request.prompt);
     }
-    
+
     logger.info(`Generating report for group: ${request.group_id}`);
-    
+
     const response = await this.request<ReportResponse>(
       `/reports/group/${request.group_id}/generate`,
       {
@@ -516,7 +514,7 @@ class AIClient {
     );
 
     logger.info(`Report generated: ${response.filename} (${response.file_size} bytes)`);
-    
+
     return response;
   }
 
@@ -593,7 +591,7 @@ class AIClient {
 
     // Fallback to legacy chat
     const question = trimmed.replace(/@ai/gi, '').trim();
-    
+
     if (!question) {
       throw new Error('Please provide a question after @ai');
     }

@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
 import { Button, Modal } from '@/components/ui';
-import { Loader2, FileText, PlusCircle } from 'lucide-react';
+import { Loader2, FileText, PlusCircle, Bot, Copy, Wifi, WifiOff } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { api, Session, GroupPaper } from '@/lib/api';
 import { useSocket } from '@/lib/socket';
@@ -15,9 +15,6 @@ import {
   SourcesPanel,
   StudioPanel,
   ResearchMessage,
-  ChatHeader,
-  AIResponseCard,
-  ChatInput,
   Source,
   StudioOutput,
   Citation,
@@ -42,7 +39,6 @@ function ResearchChatContent() {
   // Sources State (from group papers)
   const [sources, setSources] = useState<Source[]>([]);
   const [studioOutputs, setStudioOutputs] = useState<StudioOutput[]>([]);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [isDeepResearching, setIsDeepResearching] = useState(false);
   const [deepResearchMessageId, setDeepResearchMessageId] = useState<string | null>(null);
 
@@ -150,6 +146,13 @@ function ResearchChatContent() {
     }
   }, [inputMessage, isConnected, sendMessage, stopTyping]);
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage();
+    }
+  };
+
   // Source handlers
   const handleToggleSource = useCallback((id: string) => {
     setSources((prev) =>
@@ -157,26 +160,24 @@ function ResearchChatContent() {
     );
   }, []);
 
-  const handleRemoveSource = useCallback((id: string) => {
-    setSources((prev) => prev.filter((s) => s.id !== id));
-    addToast('Source removed', 'success');
-  }, [addToast]);
+  const handleToggleAll = useCallback((enabled: boolean) => {
+    setSources((prev) => prev.map((s) => ({ ...s, enabled })));
+  }, []);
 
   // Studio handlers
   const handleGenerateReport = useCallback(async () => {
     if (!accessToken || !session?.groupId) return;
-    
-    setIsGenerating(true);
+
     setRightPanelCollapsed(false);
-    
+
     try {
       const result = await api.generateGroupReport(accessToken, session.groupId);
       setStudioOutputs((prev) => [
         {
           id: result.reportId,
-          type: 'report',
+          type: 'report' as const,
           title: result.title,
-          status: result.status === 'completed' ? 'ready' : 'generating',
+          status: result.status === 'completed' ? 'ready' as const : 'generating' as const,
           createdAt: result.createdAt,
           downloadUrl: result.downloadUrl || undefined,
         },
@@ -185,26 +186,8 @@ function ResearchChatContent() {
       addToast('Report generated successfully', 'success');
     } catch (err) {
       addToast(err instanceof Error ? err.message : 'Failed to generate report', 'error');
-    } finally {
-      setIsGenerating(false);
     }
   }, [accessToken, session?.groupId, addToast]);
-
-  const handleGenerateFlashcards = useCallback(() => {
-    addToast('Flashcard generation coming soon', 'info');
-  }, [addToast]);
-
-  const handleGenerateMindmap = useCallback(() => {
-    addToast('Mind map generation coming soon', 'info');
-  }, [addToast]);
-
-  const handleGenerateAudio = useCallback(() => {
-    addToast('Audio overview coming soon', 'info');
-  }, [addToast]);
-
-  const handleGenerateSlides = useCallback(() => {
-    addToast('Slide deck generation coming soon', 'info');
-  }, [addToast]);
 
   const handleDeepResearch = useCallback(async () => {
     if (!accessToken || !sessionId || !session?.groupId) {
@@ -226,7 +209,7 @@ function ResearchChatContent() {
       id: pendingMessageId,
       sessionId,
       userId: 'ai',
-      content: 'Deep Research is running...\n\nI will share a comprehensive report shortly.',
+      content: 'Deep Research is running…\n\nI will share a comprehensive report shortly.',
       type: 'ai',
       createdAt: new Date().toISOString(),
       userName: 'Research Assistant',
@@ -283,15 +266,7 @@ function ResearchChatContent() {
     [addToast]
   );
 
-  const handleSaveToNotes = useCallback(
-    (messageId: string) => {
-      addToast('Saved to notes', 'success');
-    },
-    [addToast]
-  );
-
   const handleCitationClick = useCallback((citation: Citation) => {
-    // Find and highlight the source
     const sourceElement = document.getElementById(`source-${citation.sourceId}`);
     if (sourceElement) {
       sourceElement.scrollIntoView({ behavior: 'smooth' });
@@ -305,18 +280,14 @@ function ResearchChatContent() {
     []
   );
 
-  const handleToggleAll = useCallback((enabled: boolean) => {
-    setSources((prev) => prev.map((s) => ({ ...s, enabled })));
-  }, []);
-
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#0f0f0f] flex flex-col">
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg-primary)' }}>
         <Navbar />
         <div className="flex-1 flex flex-col items-center justify-center">
-          <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
-          <p className="text-[#71717a]">Loading research session...</p>
+          <Loader2 size={48} className="animate-spin mb-4" style={{ color: 'var(--color-brand-secondary)' }} />
+          <p style={{ color: 'var(--color-text-muted)' }}>Loading research session…</p>
         </div>
       </div>
     );
@@ -325,15 +296,26 @@ function ResearchChatContent() {
   // Error state
   if (error || !session || !sessionId) {
     return (
-      <div className="min-h-screen bg-[#0f0f0f] flex flex-col">
+      <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg-primary)' }}>
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 py-20 text-center">
           {error && (
-            <div className="bg-[#ef4444]/10 border border-[#ef4444]/30 rounded-xl p-4 mb-6 inline-block">
-              <p className="text-[#f87171]">{error}</p>
+            <div
+              className="rounded-xl p-4 mb-6 inline-block"
+              style={{
+                background: 'var(--color-error-bg)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+              }}
+            >
+              <p style={{ color: 'var(--color-error)' }}>{error}</p>
             </div>
           )}
-          <h2 className="text-2xl font-bold text-white">Session not found</h2>
+          <h2
+            className="text-2xl font-bold"
+            style={{ color: 'var(--color-text-primary)' }}
+          >
+            Session not found
+          </h2>
           <Link href="/home">
             <Button className="mt-6">Back to Groups</Button>
           </Link>
@@ -343,12 +325,10 @@ function ResearchChatContent() {
   }
 
   const enabledSources = sources.filter((s) => s.enabled);
-
-  // Check if we have no messages (empty state)
   const showEmptyState = messages.length === 0;
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f] flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg-primary)' }}>
       <Navbar />
 
       {/* Main Three-Column Layout */}
@@ -360,7 +340,6 @@ function ResearchChatContent() {
           onToggleAll={handleToggleAll}
           onAddSource={() => setShowAddSourceModal(true)}
           onDeepResearch={handleDeepResearch}
-          onWebSearch={(query: string) => addToast(`Searching for: ${query}`, 'info')}
           isDeepResearching={isDeepResearching}
           isCollapsed={leftPanelCollapsed}
           onToggleCollapse={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
@@ -369,31 +348,80 @@ function ResearchChatContent() {
         {/* Center - Chat Panel */}
         <div className="flex-1 flex flex-col min-w-0">
           {/* Chat Header */}
-          <ChatHeader />
+          <div
+            className="flex items-center justify-between px-6 py-3 border-b"
+            style={{ borderColor: 'var(--color-border-primary)' }}
+          >
+            <span
+              className="text-[15px] font-medium"
+              style={{ color: 'var(--color-text-primary)' }}
+            >
+              Chat
+            </span>
+            <div className="flex items-center gap-2">
+              <div
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]"
+                style={{
+                  background: isConnected ? 'var(--color-success-bg)' : 'var(--color-error-bg)',
+                  color: isConnected ? 'var(--color-success)' : 'var(--color-error)',
+                }}
+              >
+                {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
+                <span>{isConnected ? 'Connected' : 'Disconnected'}</span>
+              </div>
+            </div>
+          </div>
 
           {/* Main Content Area */}
           <div className="flex-1 overflow-y-auto research-panel-scroll">
             <div className="max-w-3xl mx-auto px-6 py-6">
-              {/* Empty State with AI Response Card */}
+              {/* Empty State */}
               {showEmptyState && (
-                <AIResponseCard
-                  title={session.title}
-                  sourcesCount={enabledSources.length}
-                  summary={`Ready to help you research "${session.title}". Add sources from your group papers or ask me anything about your research topic.`}
-                  suggestedQuestions={[
-                    'What are the key concepts in these papers?',
-                    'Compare the methodologies used',
-                    'Summarize the main findings',
-                  ]}
-                  onSaveToNote={() => addToast('Saved to notes', 'success')}
-                  onCopy={() => {
-                    navigator.clipboard.writeText('Research session started');
-                    addToast('Copied to clipboard', 'success');
-                  }}
-                  onThumbsUp={() => addToast('Thanks for the feedback!', 'success')}
-                  onThumbsDown={() => addToast('We will try to improve', 'info')}
-                  onSelectQuestion={handleSelectPrompt}
-                />
+                <div className="py-8">
+                  <div className="mb-6">
+                    <div
+                      className="w-14 h-14 rounded-2xl flex items-center justify-center"
+                      style={{ background: 'var(--color-bg-tertiary)' }}
+                    >
+                      <Bot size={32} style={{ color: 'var(--color-brand-primary)' }} />
+                    </div>
+                  </div>
+                  <h1
+                    className="text-[28px] font-normal leading-tight mb-3"
+                    style={{ color: 'var(--color-text-primary)' }}
+                  >
+                    {session.title}
+                  </h1>
+                  <p
+                    className="text-[14px] mb-5"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    {enabledSources.length} sources · Ready to research
+                  </p>
+                  <p
+                    className="text-[15px] leading-relaxed mb-8"
+                    style={{ color: 'var(--color-text-secondary)' }}
+                  >
+                    Add sources from your group papers or ask me anything about your research topic.
+                  </p>
+
+                  <div className="space-y-2.5">
+                    {[
+                      'What are the key concepts in these papers?',
+                      'Compare the methodologies used',
+                      'Summarize the main findings',
+                    ].map((question, index) => (
+                      <button
+                        key={index}
+                        onClick={() => handleSelectPrompt(question)}
+                        className="w-full text-left px-5 py-4 rounded-2xl text-[14px] leading-relaxed transition-all card-base card-interactive"
+                        style={{ color: 'var(--color-text-primary)' }}
+                      >
+                        {question}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               )}
 
               {/* Messages */}
@@ -414,19 +442,37 @@ function ResearchChatContent() {
                     isCurrentUser={isCurrentUser}
                     onFeedback={isAI ? handleFeedback : undefined}
                     onCopy={handleCopy}
-                    onSaveToNotes={isAI ? handleSaveToNotes : undefined}
                     onCitationClick={handleCitationClick}
-                    className={isAgenticPending ? 'animate-pulse' : ''}
+                    className={isAgenticPending ? 'ai-thinking-animation' : ''}
                   />
                 );
               })}
 
               {/* Typing indicator */}
               {typingUsers.length > 0 && !typingUsers.some((u) => u.userId === 'ai') && (
-                <div className="flex items-center gap-2 text-xs text-[#52525b] mb-4">
-                  <span>
+                <div
+                  className="flex items-center gap-3 py-3 px-4 animate-fade-in"
+                >
+                  <div className="flex items-center gap-1">
+                    <div
+                      className="w-1.5 h-1.5 rounded-full animate-pulse"
+                      style={{ background: 'var(--color-brand-secondary)', animationDelay: '0ms' }}
+                    />
+                    <div
+                      className="w-1.5 h-1.5 rounded-full animate-pulse"
+                      style={{ background: 'var(--color-brand-secondary)', animationDelay: '200ms' }}
+                    />
+                    <div
+                      className="w-1.5 h-1.5 rounded-full animate-pulse"
+                      style={{ background: 'var(--color-brand-secondary)', animationDelay: '400ms' }}
+                    />
+                  </div>
+                  <span
+                    className="text-[12px]"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
                     {typingUsers.map((u) => u.userName).join(', ')}{' '}
-                    {typingUsers.length === 1 ? 'is' : 'are'} typing
+                    {typingUsers.length === 1 ? 'is' : 'are'} typing…
                   </span>
                 </div>
               )}
@@ -436,39 +482,96 @@ function ResearchChatContent() {
           </div>
 
           {/* Input Area */}
-          <div className="px-6 py-4 border-t border-[#1f1f1f] bg-[#0f0f0f]">
+          <div
+            className="px-6 py-4 border-t"
+            style={{
+              borderColor: 'var(--color-border-primary)',
+              background: 'var(--color-bg-primary)',
+            }}
+          >
             <div className="max-w-3xl mx-auto">
               {!isConnected && (
-                <div className="flex items-center justify-center mb-3 text-[#f59e0b] text-sm bg-[#f59e0b]/10 px-4 py-2 rounded-xl">
+                <div
+                  className="flex items-center justify-center mb-3 text-sm px-4 py-2 rounded-xl"
+                  style={{
+                    color: 'var(--color-warning)',
+                    background: 'var(--color-warning-bg)',
+                  }}
+                >
                   <Loader2 size={16} className="animate-spin mr-2" />
-                  Connecting to session...
+                  Connecting to session…
                 </div>
               )}
-              <ChatInput
-                value={inputMessage}
-                onChange={handleInputChange}
-                onSend={handleSendMessage}
-                disabled={!isConnected}
-                sourcesCount={enabledSources.length}
-                placeholder="Ask a research question..."
-              />
+              <div
+                className="flex items-center gap-3 px-5 py-3 rounded-full transition-all"
+                style={{
+                  background: 'var(--color-bg-secondary)',
+                  border: '1px solid var(--color-border-primary)',
+                }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-brand-secondary)';
+                  e.currentTarget.style.boxShadow = '0 0 0 3px rgba(20, 255, 236, 0.1)';
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--color-border-primary)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => handleInputChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask a research question…"
+                  disabled={!isConnected}
+                  className="flex-1 bg-transparent text-[14px] focus:outline-none disabled:opacity-50"
+                  style={{ color: 'var(--color-text-primary)' }}
+                />
+
+                <span
+                  className="px-3 py-1 rounded-full text-[12px] whitespace-nowrap"
+                  style={{
+                    background: 'var(--color-bg-tertiary)',
+                    color: 'var(--color-text-tertiary)',
+                  }}
+                >
+                  {enabledSources.length} sources
+                </span>
+
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputMessage.trim() || !isConnected}
+                  className="p-2 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  style={{
+                    background: inputMessage.trim()
+                      ? 'linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary))'
+                      : 'var(--color-bg-tertiary)',
+                    color: inputMessage.trim()
+                      ? 'var(--color-bg-primary)'
+                      : 'var(--color-text-muted)',
+                    boxShadow: inputMessage.trim() ? '0 0 12px rgba(20, 255, 236, 0.2)' : 'none',
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+
+              <p
+                className="text-[11px] text-center mt-3"
+                style={{ color: 'var(--color-text-muted)' }}
+              >
+                OpenResearch can be inaccurate; please double-check its responses.
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Right Sidebar - Studio Panel */}
+        {/* Right Sidebar - Outputs Panel */}
         <StudioPanel
           outputs={studioOutputs}
-          onGenerateAudio={handleGenerateAudio}
-          onGenerateVideo={() => addToast('Video coming soon', 'info')}
-          onGenerateMindmap={handleGenerateMindmap}
           onGenerateReport={handleGenerateReport}
-          onGenerateFlashcards={handleGenerateFlashcards}
-          onGenerateQuiz={() => addToast('Quiz coming soon', 'info')}
-          onGenerateInfographic={() => addToast('Infographic coming soon', 'info')}
-          onGenerateSlides={handleGenerateSlides}
-          onGenerateTable={() => addToast('Table coming soon', 'info')}
-          onAddNote={() => addToast('Note added', 'success')}
           hasSourcesSelected={enabledSources.length > 0}
           isCollapsed={rightPanelCollapsed}
           onToggleCollapse={() => setRightPanelCollapsed(!rightPanelCollapsed)}
@@ -482,7 +585,7 @@ function ResearchChatContent() {
         title="Add Sources"
       >
         <div className="space-y-4">
-          <p className="text-sm text-[#71717a]">
+          <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>
             Add papers from your group collection or import new sources.
           </p>
           <div className="flex flex-col gap-2">
@@ -509,11 +612,11 @@ export default function ResearchChatPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-[#0f0f0f] flex flex-col">
+        <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg-primary)' }}>
           <Navbar />
           <div className="flex-1 flex flex-col items-center justify-center">
-            <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
-            <p className="text-[#71717a]">Loading...</p>
+            <Loader2 size={48} className="animate-spin mb-4" style={{ color: 'var(--color-brand-secondary)' }} />
+            <p style={{ color: 'var(--color-text-muted)' }}>Loading…</p>
           </div>
         </div>
       }
