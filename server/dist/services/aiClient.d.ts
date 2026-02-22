@@ -6,33 +6,6 @@
  *
  * CRITICAL: AI only responds when @ai trigger is present.
  */
-export interface ChatRequest {
-    question: string;
-    session_id?: string;
-    user_id?: string;
-    include_papers?: boolean;
-    max_context_messages?: number;
-}
-export interface ChatResponse {
-    answer: string;
-    sources: string[];
-    model: string;
-    latency_ms: number;
-    context_messages_used: number;
-    papers_used: number;
-}
-export interface SummarizeRequest {
-    session_id: string;
-    max_messages?: number;
-}
-export interface SummaryResponse {
-    summary: string;
-    key_points: string[];
-    participant_count: number;
-    message_count: number;
-    model: string;
-    latency_ms: number;
-}
 export interface GroupAIChatRequest {
     prompt: string;
     group_id: string;
@@ -127,22 +100,6 @@ export interface ReportResponse {
     summary?: string;
     created_at?: string;
 }
-export interface RecommendationsRequest {
-    group_id: string;
-    limit?: number;
-    exclude_paper_ids?: string[];
-}
-export interface RecommendationsResponse {
-    recommendations: Array<{
-        id: string;
-        title: string;
-        abstract?: string;
-        score: number;
-        reason: string;
-    }>;
-    total: number;
-    source: string;
-}
 export interface VectorSearchRequest {
     group_id: string;
     query: string;
@@ -163,9 +120,46 @@ export interface VectorSearchResponse {
     group_id: string;
     latency_ms: number;
 }
+export type AgenticTaskType = 'paper_retrieval' | 'literature_survey' | 'gap_analysis' | 'fact_check' | 'novelty_assessment' | 'research_mentor' | 'paper_writing' | 'research_planning' | 'deep_research';
+export interface AgenticRunRequest {
+    task_type: AgenticTaskType;
+    prompt: string;
+    group_id?: string;
+    user_id?: string;
+    session_id?: string;
+    paper_ids?: string[];
+    options?: Record<string, unknown>;
+}
+export interface AgenticRunResponse {
+    task_type: AgenticTaskType;
+    result: Record<string, unknown>;
+    artifacts: string[];
+    metadata: Record<string, unknown>;
+    latency_ms: number;
+}
+export interface IntentClassifyRequest {
+    prompt: string;
+}
+export interface IntentClassifyResponse {
+    task_type?: AgenticTaskType | null;
+    similarity: number;
+    threshold: number;
+    matched_phrase?: string | null;
+}
+export interface AgenticChatResponse {
+    id: string;
+    text: string;
+    metadata: Record<string, unknown>;
+    sources: Array<{
+        id: string;
+        type: string;
+        similarity?: number;
+    }>;
+    latency_ms: number;
+}
 export interface HealthResponse {
     status: string;
-    gemini_configured: boolean;
+    groq_configured: boolean;
     database_connected: boolean;
     vector_store_connected: boolean;
     timestamp: string;
@@ -198,14 +192,6 @@ declare class AIClient {
      */
     isAvailable(): Promise<boolean>;
     /**
-     * Legacy chat Q&A with session context
-     */
-    chat(request: ChatRequest): Promise<ChatResponse>;
-    /**
-     * Legacy summarize a session
-     */
-    summarize(request: SummarizeRequest): Promise<SummaryResponse>;
-    /**
      * Group AI Chat with @ai trigger (uses group-isolated RAG)
      */
     groupAIChat(request: GroupAIChatRequest): Promise<GroupAIChatResponse>;
@@ -226,10 +212,13 @@ declare class AIClient {
      */
     searchVectors(request: VectorSearchRequest): Promise<VectorSearchResponse>;
     /**
-     * Get AI-powered recommendations for a group
-     * Note: This endpoint may not be implemented in AI service - fallback logic handles this
+     * Run an agentic research task (LangGraph orchestration)
      */
-    getRecommendations(request: RecommendationsRequest): Promise<RecommendationsResponse>;
+    runAgenticTask(request: AgenticRunRequest): Promise<AgenticRunResponse>;
+    /**
+     * Classify an @ai prompt into an agentic task using embeddings
+     */
+    classifyAgenticIntent(request: IntentClassifyRequest): Promise<IntentClassifyResponse>;
     /**
      * Generate group report
      */
@@ -237,7 +226,7 @@ declare class AIClient {
     /**
      * Process an @ai message and return the AI response
      */
-    processAtAiMessage(content: string, sessionId: string, userId: string, groupId?: string): Promise<GroupAIChatResponse | ChatResponse | null>;
+    processAtAiMessage(content: string, sessionId: string, userId: string, groupId?: string): Promise<GroupAIChatResponse | null>;
 }
 export declare const aiClient: AIClient;
 export { AIClient };

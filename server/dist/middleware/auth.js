@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { db, users } from '../db/index.js';
 import { eq } from 'drizzle-orm';
+import crypto from 'crypto';
 export const authenticate = async (req, res, next) => {
     try {
         const authHeader = req.headers.authorization;
@@ -37,7 +38,7 @@ export const authenticate = async (req, res, next) => {
 export const generateTokens = (userId, email) => {
     // Add a unique jti (JWT ID) to ensure tokens are unique even when generated at the same second
     const jti = crypto.randomUUID();
-    const accessToken = jwt.sign({ userId, email }, process.env.JWT_SECRET, { expiresIn: '15m' });
+    const accessToken = jwt.sign({ userId, email }, process.env.JWT_SECRET, { expiresIn: '7d' });
     const refreshToken = jwt.sign({ userId, email, type: 'refresh', jti }, process.env.JWT_SECRET, { expiresIn: '7d' });
     return { accessToken, refreshToken };
 };

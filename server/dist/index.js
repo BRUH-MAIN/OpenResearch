@@ -24,6 +24,9 @@ import recommendationsRoutes from './routes/recommendations.js';
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
 import { initializeSocket } from './socket/index.js';
+// Swagger / OpenAPI
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger.js';
 // Utils
 import logger from './utils/logger.js';
 const app = express();
@@ -67,6 +70,11 @@ app.use(cookieParser());
 app.use('/api', apiLimiter);
 // Health check routes (no rate limiting)
 app.use('/health', healthRoutes);
+// Swagger UI (no rate limiting)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+    customCss: '.swagger-ui .topbar { display: none }',
+    customSiteTitle: 'OpenResearch API Docs',
+}));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/groups', groupRoutes);

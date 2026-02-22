@@ -1,8 +1,8 @@
 import { z } from 'zod';
 declare const envSchema: z.ZodObject<{
     NODE_ENV: z.ZodDefault<z.ZodEnum<{
-        development: "development";
         production: "production";
+        development: "development";
         test: "test";
     }>>;
     PORT: z.ZodPipe<z.ZodDefault<z.ZodString>, z.ZodTransform<number, string>>;

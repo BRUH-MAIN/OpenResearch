@@ -7,6 +7,7 @@
  * CRITICAL: AI only responds when @ai trigger is present.
  */
 import logger from '../utils/logger.js';
+import { setTimeout, clearTimeout } from 'timers';
 // Get AI service URL from environment (with fallback)
 function getAiServiceUrl() {
     return process.env.AI_SERVICE_URL || 'http://localhost:8000';
@@ -25,7 +26,7 @@ export function validateAiTrigger(content, fieldName = 'prompt') {
  */
 class AIClient {
     timeout;
-    constructor(timeout = 30000) {
+    constructor(timeout = 120000) {
         this.timeout = timeout;
     }
     get baseUrl() {
@@ -43,7 +44,7 @@ class AIClient {
                 signal: controller.signal,
                 headers: {
                     'Content-Type': 'application/json',
-                    ...options.headers,
+                    ...(options.headers || {}),
                 },
             });
             clearTimeout(timeoutId);
@@ -73,37 +74,13 @@ class AIClient {
     async isAvailable() {
         try {
             const health = await this.health();
-            return health.status === 'healthy' && health.gemini_configured;
+            return health.status === 'healthy' && health.groq_configured;
         }
         catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Unknown error';
             logger.warn(`AI service not available: ${errorMessage}`);
             return false;
         }
-    }
-    /**
-     * Legacy chat Q&A with session context
-     */
-    async chat(request) {
-        logger.info(`AI chat request for session: ${request.session_id || 'none'}`);
-        const response = await this.request('/chat', {
-            method: 'POST',
-            body: JSON.stringify(request),
-        });
-        logger.info(`AI chat response in ${response.latency_ms}ms, ${response.context_messages_used} messages used`);
-        return response;
-    }
-    /**
-     * Legacy summarize a session
-     */
-    async summarize(request) {
-        logger.info(`AI summarize request for session: ${request.session_id}`);
-        const response = await this.request('/summarize', {
-            method: 'POST',
-            body: JSON.stringify(request),
-        });
-        logger.info(`AI summary generated in ${response.latency_ms}ms`);
-        return response;
     }
     /**
      * Group AI Chat with @ai trigger (uses group-isolated RAG)
@@ -173,13 +150,27 @@ class AIClient {
         return response;
     }
     /**
-     * Get AI-powered recommendations for a group
-     * Note: This endpoint may not be implemented in AI service - fallback logic handles this
+     * Run an agentic research task (LangGraph orchestration)
      */
-    async getRecommendations(request) {
-        logger.info(`Getting recommendations for group: ${request.group_id}`);
-        // AI service doesn't have this endpoint yet - throw to trigger fallback
-        throw new Error('AI recommendations endpoint not implemented');
+    async runAgenticTask(request) {
+        logger.info(`Agentic task: ${request.task_type}`);
+        const response = await this.request('/agentic/run', {
+            method: 'POST',
+            body: JSON.stringify(request),
+        });
+        logger.info(`Agentic task completed in ${response.latency_ms}ms`);
+        return response;
+    }
+    /**
+     * Classify an @ai prompt into an agentic task using embeddings
+     */
+    async classifyAgenticIntent(request) {
+        validateAiTrigger(request.prompt, 'prompt');
+        const response = await this.request('/agentic/classify-intent', {
+            method: 'POST',
+            body: JSON.stringify(request),
+        });
+        return response;
     }
     /**
      * Generate group report
@@ -205,26 +196,14 @@ class AIClient {
         if (!trimmed.toLowerCase().includes('@ai')) {
             return null;
         }
-        // If groupId is provided, use group AI chat (with RAG)
-        if (groupId) {
-            return this.groupAIChat({
-                prompt: content,
-                group_id: groupId,
-                session_id: sessionId,
-                user_id: userId,
-            });
+        if (!groupId) {
+            throw new Error('AI chat is only supported within research groups');
         }
-        // Fallback to legacy chat
-        const question = trimmed.replace(/@ai/gi, '').trim();
-        if (!question) {
-            throw new Error('Please provide a question after @ai');
-        }
-        return this.chat({
-            question,
+        return this.groupAIChat({
+            prompt: content,
+            group_id: groupId,
             session_id: sessionId,
             user_id: userId,
-            include_papers: true,
-            max_context_messages: 30,
         });
     }
 }

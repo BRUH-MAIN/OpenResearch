@@ -3,6 +3,8 @@ import jwt from 'jsonwebtoken';
 import { db, messages, sessions, groupMembers, users } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { aiClient } from '../services/aiClient.js';
+import logger from '../utils/logger.js';
+const socketLogger = logger.child({ context: 'socket' });
 export function initializeSocket(httpServer) {
     const io = new SocketServer(httpServer, {
         cors: {
@@ -36,7 +38,7 @@ export function initializeSocket(httpServer) {
         }
     });
     io.on('connection', (socket) => {
-        console.log(`User connected: ${socket.userId}`);
+        socketLogger.info({ userId: socket.userId }, 'User connected');
         // Join session room
         socket.on('join:session', async (sessionId) => {
             try {
@@ -68,7 +70,7 @@ export function initializeSocket(httpServer) {
                 });
             }
             catch (error) {
-                console.error('Error joining session:', error);
+                socketLogger.error({ err: error }, 'Error joining session');
                 socket.emit('error', { message: 'Failed to join session' });
             }
         });
@@ -138,15 +140,25 @@ export function initializeSocket(httpServer) {
                 // Check for @ai mention and trigger AI response
                 if (content.toLowerCase().includes('@ai')) {
                     try {
+                        // Pre-check AI service health before making request
+                        const isAvailable = await aiClient.isAvailable();
+                        if (!isAvailable) {
+                            // Emit a user-friendly error without crashing
+                            socket.emit('ai:error', {
+                                message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
+                                code: 'AI_NOT_CONFIGURED',
+                                recoverable: true
+                            });
+                            return;
+                        }
                         // Get group ID from session for group-isolated RAG
                         const aiResponse = await aiClient.processAtAiMessage(content, sessionId, socket.userId, session.groupId // Pass groupId for group-isolated RAG
                         );
                         if (aiResponse) {
-                            // Determine answer field based on response type
-                            const answerText = 'text' in aiResponse ? aiResponse.text : aiResponse.answer;
-                            // Extract metadata safely - GroupAIChatResponse has metadata, ChatResponse doesn't
-                            const hasMetadata = 'metadata' in aiResponse && aiResponse.metadata;
-                            const metadataObj = hasMetadata ? aiResponse.metadata : {};
+                            // Now always a GroupAIChatResponse
+                            const answerText = aiResponse.text;
+                            // Extract metadata safely
+                            const metadataObj = aiResponse.metadata || {};
                             // Save AI response to database
                             const [aiMessage] = await db
                                 .insert(messages)
@@ -156,8 +168,8 @@ export function initializeSocket(httpServer) {
                                 content: answerText,
                                 type: 'ai',
                                 metadata: {
-                                    sources: 'sources' in aiResponse ? aiResponse.sources : [],
-                                    model: metadataObj.model || ('model' in aiResponse ? aiResponse.model : 'gemini'),
+                                    sources: aiResponse.sources || [],
+                                    model: metadataObj.model || 'groq',
                                     latency_ms: aiResponse.latency_ms,
                                     context_items_used: metadataObj.context_items_used || 0,
                                     vector_ids_used: metadataObj.vector_ids_used || [],
@@ -174,15 +186,20 @@ export function initializeSocket(httpServer) {
                         }
                     }
                     catch (aiError) {
-                        console.error('AI response error:', aiError);
-                        // Send error as AI message so user sees feedback
+                        socketLogger.error({ err: aiError }, 'AI response error');
+                        // Send structured error so client can handle gracefully
                         const errorMessage = aiError instanceof Error ? aiError.message : 'AI service unavailable';
-                        socket.emit('error', { message: `AI: ${errorMessage}` });
+                        const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
+                        socket.emit('ai:error', {
+                            message: isTimeout ? 'AI request timed out. Please try again.' : `AI Error: ${errorMessage}`,
+                            code: isTimeout ? 'AI_TIMEOUT' : 'AI_ERROR',
+                            recoverable: true
+                        });
                     }
                 }
             }
             catch (error) {
-                console.error('Error sending message:', error);
+                socketLogger.error({ err: error }, 'Error sending message');
                 socket.emit('error', { message: 'Failed to send message' });
             }
         });
@@ -192,9 +209,20 @@ export function initializeSocket(httpServer) {
                 const { paperId, question, groupId, sessionId } = data;
                 // Validate @ai trigger - CRITICAL
                 if (!question.toLowerCase().includes('@ai')) {
-                    socket.emit('error', {
+                    socket.emit('ai:error', {
                         message: 'Question must contain @ai trigger. AI only responds when triggered by @ai.',
-                        code: 'MISSING_AI_TRIGGER'
+                        code: 'MISSING_AI_TRIGGER',
+                        recoverable: true
+                    });
+                    return;
+                }
+                // Pre-check AI service availability
+                const isAvailable = await aiClient.isAvailable();
+                if (!isAvailable) {
+                    socket.emit('ai:error', {
+                        message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
+                        code: 'AI_NOT_CONFIGURED',
+                        recoverable: true
                     });
                     return;
                 }
@@ -250,15 +278,30 @@ export function initializeSocket(httpServer) {
                 }
             }
             catch (error) {
-                console.error('Paper question error:', error);
+                socketLogger.error({ err: error }, 'Paper question error');
                 const errorMessage = error instanceof Error ? error.message : 'Failed to process question';
-                socket.emit('error', { message: errorMessage });
+                const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
+                socket.emit('ai:error', {
+                    message: isTimeout ? 'AI request timed out. Please try again.' : errorMessage,
+                    code: isTimeout ? 'AI_TIMEOUT' : 'AI_ERROR',
+                    recoverable: true
+                });
             }
         });
         // Paper Summarize - requires @ai trigger
         socket.on('paper:summarize', async (data) => {
             try {
                 const { paperId, groupId, sessionId } = data;
+                // Pre-check AI service availability
+                const isAvailable = await aiClient.isAvailable();
+                if (!isAvailable) {
+                    socket.emit('ai:error', {
+                        message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
+                        code: 'AI_NOT_CONFIGURED',
+                        recoverable: true
+                    });
+                    return;
+                }
                 // Verify access to group
                 const [membership] = await db
                     .select()
@@ -310,9 +353,14 @@ export function initializeSocket(httpServer) {
                 }
             }
             catch (error) {
-                console.error('Paper summarize error:', error);
+                socketLogger.error({ err: error }, 'Paper summarize error');
                 const errorMessage = error instanceof Error ? error.message : 'Failed to summarize paper';
-                socket.emit('error', { message: errorMessage });
+                const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
+                socket.emit('ai:error', {
+                    message: isTimeout ? 'AI request timed out. Please try again.' : errorMessage,
+                    code: isTimeout ? 'AI_TIMEOUT' : 'AI_ERROR',
+                    recoverable: true
+                });
             }
         });
         // Typing indicators
@@ -329,7 +377,7 @@ export function initializeSocket(httpServer) {
         });
         // Disconnect
         socket.on('disconnect', () => {
-            console.log(`User disconnected: ${socket.userId}`);
+            socketLogger.info({ userId: socket.userId }, 'User disconnected');
         });
     });
     return io;

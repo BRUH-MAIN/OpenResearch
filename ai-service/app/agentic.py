@@ -1,4 +1,4 @@
-"""Agentic orchestration service using LangGraph, LangChain-Groq, and Mem0."""
+"""Agentic orchestration service using LangGraph and LangChain-Groq."""
 
 from __future__ import annotations
 
@@ -8,7 +8,6 @@ import time
 import json
 import re
 import uuid
-import httpx
 from typing import Any, Optional, TypedDict, Annotated
 
 logger = logging.getLogger(__name__)
@@ -47,8 +46,6 @@ from .tools.arxiv import search_arxiv
 # Default timeout for a single LLM call (seconds).
 _LLM_CALL_TIMEOUT = 60
 
-# Legacy multi-step chains removed in favor of DeepAgents dynamic subagent routing.
-
 
 class AgentState(TypedDict, total=False):
     messages: Annotated[list[AnyMessage], add_messages]
@@ -70,26 +67,22 @@ class AgentState(TypedDict, total=False):
     research_plan: Any
     sources: list[dict]
     research_notes: str
-    memory_context: list[dict]
     result: dict
     artifacts: list[str]
     metadata: dict
     errors: list[str]
-    # Multi-step tracking
     remaining_steps: list[str]
-    # Request tracing
     trace_id: str
 
 
 class AgenticService:
-    """Orchestrates agentic workflows using DeepAgents."""
+    """Orchestrates agentic workflows using LangGraph ReAct agents."""
 
     def __init__(self):
         self._llm: Any = None
         self._llm_cache: dict[str, Any] = {}
         self._initialized = False
         self._api_key: Optional[str] = None
-        self._initialized = False
 
     def initialize(self) -> bool:
         if not _LANGCHAIN_AVAILABLE:
@@ -113,7 +106,7 @@ class AgenticService:
         self._llm_cache = {settings.groq_model: self._llm}
 
         self._initialized = True
-        logger.info("Agentic service initialized (DeepAgents)")
+        logger.info("Agentic service initialized")
         return True
 
     @property
@@ -149,7 +142,7 @@ class AgenticService:
             "research_planning": [self._tool_plan_research],
             "deep_research": [self._tool_deep_research],
         }
-        
+
         selected_tools = task_tool_map.get(effective_task) or [self._tool_retrieve_papers, self._tool_survey_literature]
         agent_tools = [tool(t) for t in selected_tools]
 
@@ -158,8 +151,6 @@ class AgenticService:
             tools=agent_tools,
             prompt=primary_system_prompt,
         )
-
-
 
     # ------------------------------------------------------------------
     # LLM helpers (with retry & timeout)
@@ -226,15 +217,14 @@ class AgenticService:
                 model_name=model_name,
                 temperature=temperature,
             )
-            # Strip markdown code fences if present
             cleaned = re.sub(r"^```(?:json)?\s*", "", raw.strip())
             cleaned = re.sub(r"\s*```$", "", cleaned)
             try:
                 return json.loads(cleaned)
             except json.JSONDecodeError:
                 if attempt == 2:
-                    return raw  # Give up, return raw text
-                continue  # Retry
+                    return raw
+                continue
 
     def _parse_json_list(self, text: str) -> list[str]:
         """Parse a JSON array of strings from model output, with fallback heuristics."""
@@ -253,12 +243,14 @@ class AgenticService:
         return candidates
 
     # ------------------------------------------------------------------
-    # Source collection helpers
+    # Source collection (single unified method)
     # ------------------------------------------------------------------
 
-    async def _collect_sources(self, state: AgentState, queries: list[str]) -> list[dict]:
+    async def _collect_sources(self, queries: list[str], group_id: Optional[str] = None) -> list[dict]:
+        """Collect sources from arXiv and vector store for the given queries."""
         settings = get_settings()
         sources: list[dict] = []
+        max_results = 10
 
         def _add_source(item: dict, source_type: str) -> None:
             title = item.get("title") or item.get("name") or "Untitled"
@@ -271,50 +263,25 @@ class AgenticService:
                 "source_type": source_type,
             })
 
-        if settings.search_api in {"tavily", "hybrid"} and settings.tavily_api_key:
-            for query in queries[: settings.max_search_queries]:
-                try:
-                    async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
-                        response = await client.post(
-                            "https://api.tavily.com/search",
-                            json={
-                                "api_key": settings.tavily_api_key,
-                                "query": query,
-                                "max_results": settings.max_search_results,
-                                "search_depth": settings.tavily_search_depth,
-                                "include_answer": settings.tavily_include_answer,
-                            },
-                        )
-                    response.raise_for_status()
-                    data = response.json()
-                    results = data.get("results") or []
-                    for item in results:
-                        _add_source(item, "tavily")
-                except Exception as exc:
-                    logger.warning("Tavily search failed for query %r: %s", query, exc)
-                    continue
+        # arXiv search
+        for query in queries[:5]:
+            try:
+                response = await search_arxiv(query=query, limit=max_results)
+                results = response.get("papers", [])
+                for item in results:
+                    _add_source(item, "arxiv")
+            except Exception as exc:
+                logger.warning("Arxiv search failed for query %r: %s", query, exc)
+                continue
 
-        if settings.search_api in {"mcp", "hybrid"}:
-            for query in queries[: settings.max_search_queries]:
-                try:
-                    response = await search_arxiv(
-                        query=query, limit=settings.max_search_results
-                    )
-                    results = response.get("papers", [])
-                    for item in results:
-                        _add_source(item, "arxiv")
-                except Exception as exc:
-                    logger.warning("Arxiv native search failed for query %r: %s", query, exc)
-                    continue
-
-        if settings.search_api in {"vector_store", "hybrid"} and vector_store.is_connected:
-            group_id = state.get("group_id")
-            for query in queries[: settings.max_search_queries]:
+        # Vector store search
+        if vector_store.is_connected and group_id:
+            for query in queries[:5]:
                 try:
                     results = await vector_store.search_group_vectors(
                         group_id=group_id,
                         query=query,
-                        limit=settings.max_search_results,
+                        limit=max_results,
                         content_types=None,
                         paper_id=None,
                     )
@@ -324,16 +291,16 @@ class AgenticService:
                     logger.warning("Vector store search failed for query %r: %s", query, exc)
                     continue
 
+        # Fallback to group papers if no sources found
         if not sources:
-            papers = state.get("papers") or await self._get_group_papers(state.get("group_id"))
-            for paper in papers[: settings.max_search_results]:
+            papers = await self._get_group_papers(group_id)
+            for paper in papers[:max_results]:
                 _add_source(paper, "group_papers")
 
         return sources
 
     async def _summarize_sources(self, query: str, sources: list[dict]) -> str:
         """Summarize sources concurrently using asyncio.gather."""
-        settings = get_settings()
 
         async def _summarize_one(idx: int, source: dict) -> str:
             title = source.get("title", "Untitled")
@@ -354,7 +321,6 @@ class AgenticService:
                 summary = await self._call_llm(
                     system_prompt,
                     user_prompt,
-                    model_name=settings.summarization_model,
                     temperature=0.2,
                 )
                 return f"[S{idx}] {title}\n{summary.strip()}"
@@ -362,31 +328,17 @@ class AgenticService:
                 logger.warning("Failed to summarize source %d (%s): %s", idx, title, exc)
                 return f"[S{idx}] {title}\n(summary unavailable)"
 
+        max_summaries = 10
         tasks = [
             _summarize_one(idx, source)
-            for idx, source in enumerate(sources[: settings.max_source_summaries], start=1)
+            for idx, source in enumerate(sources[:max_summaries], start=1)
         ]
         summaries = await asyncio.gather(*tasks)
         return "\n\n".join(summaries)
 
     # ------------------------------------------------------------------
-    # Memory / artifact helpers
+    # Artifact helpers
     # ------------------------------------------------------------------
-
-    @staticmethod
-    def _format_memory_context(memory_context: list[dict]) -> str:
-        """Format a list of memory dicts into a readable string for prompts."""
-        if not memory_context:
-            return "No prior context available."
-        lines = []
-        for idx, mem in enumerate(memory_context, start=1):
-            text = mem.get("text") or mem.get("memory") or str(mem)
-            lines.append(f"- [{idx}] {text}")
-        return "\n".join(lines)
-
-    async def _load_memory(self, state: AgentState) -> list[dict]:
-        # Memory is now handled natively by LangGraph's messages array mapping.
-        return []
 
     async def _store_artifact(
         self,
@@ -442,7 +394,7 @@ class AgenticService:
     # ------------------------------------------------------------------
 
     async def _tool_retrieve_papers(self, query: str, config: RunnableConfig) -> str:
-        """Search for and retrieve relevant academic papers from the database and MCP integrations based on a query."""
+        """Search for and retrieve relevant academic papers from arXiv and the group database."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
             papers: list[dict] = []
@@ -451,7 +403,7 @@ class AgenticService:
                 mcp_response = await search_arxiv(query=query, limit=10)
                 papers = mcp_response.get("papers", [])
             except Exception as exc:
-                logger.warning("Agentic native paper retrieval failed: %s", exc)
+                logger.warning("Paper retrieval failed: %s", exc)
                 papers = []
 
             if not papers:
@@ -466,68 +418,57 @@ class AgenticService:
             return f"Error retrieving papers: {exc}"
 
     async def _tool_survey_literature(self, query: str, config: RunnableConfig) -> str:
-        """Synthesize retrieved papers into a structured literature review with themes, timeline, and key contributions."""
+        """Synthesize retrieved papers into a structured literature review."""
         group_id = config.get("configurable", {}).get("group_id")
-        user_id = config.get("configurable", {}).get("user_id")
         if not group_id:
             return "Error: group_id is required."
 
         try:
-            # 1. Database Check
             papers = await self._get_group_papers(group_id)
-            
-            # 2. Auto-Retrieval Fallback
+
             if len(papers) < 3:
-                logger.info(f"Only {len(papers)} papers found for group. Auto-retrieving more...")
+                logger.info("Only %d papers found, auto-retrieving more...", len(papers))
                 await self._tool_retrieve_papers(query, config)
                 papers = await self._get_group_papers(group_id)
 
             if not papers:
                 return "No papers available to survey even after retrieval attempt."
 
-            # 3. Agentic RAG Query Generation
-            query_gen_system = "You are an expert academic librarian. Break down the user's research topic into 3 to 5 highly specific search queries that will be used to retrieve relevant chunks from a vector database of research papers."
-            query_gen_user = f"Topic: {query}"
-            
+            # Generate sub-queries for RAG
+            query_gen_system = "You are an expert academic librarian. Break down the user's research topic into 3 to 5 highly specific search queries for retrieving relevant chunks from a vector database of research papers."
             sub_queries = await self._call_llm_json(
                 system_prompt=query_gen_system,
-                user_prompt=query_gen_user,
-                temperature=0.2
+                user_prompt=f"Topic: {query}",
+                temperature=0.2,
             )
-            
             if not isinstance(sub_queries, list):
                 sub_queries = [query]
 
-            # 4. Vector Searching
+            # Vector search for relevant chunks
             all_chunks = []
             seen_chunk_ids = set()
-            
+
             if vector_store.is_connected:
                 for sq in sub_queries:
                     results = await vector_store.search_group_vectors(
                         group_id=group_id,
                         query=str(sq),
-                        limit=5
+                        limit=5,
                     )
                     for res in results:
                         if res["id"] not in seen_chunk_ids:
                             seen_chunk_ids.add(res["id"])
                             all_chunks.append(res)
-            
-            # Format context from vector search
-            context_text = ""
+
             if all_chunks:
                 context_lines = []
-                for i, chunk in enumerate(all_chunks[:15]):  # limit to top 15 distinct chunks to save tokens
+                for i, chunk in enumerate(all_chunks[:15]):
                     context_lines.append(f"--- Excerpt {i+1} ---")
                     context_lines.append(f"Content: {chunk.get('content', '')}")
                 context_text = "\n".join(context_lines)
             else:
-                context_text = self._format_papers(papers) # fallback to full papers if vector store fails
+                context_text = self._format_papers(papers)
 
-            memory_context = await self._load_memory({"query": query, "user_id": user_id, "group_id": group_id})
-
-            # 5. Tabular Synthesis
             system_prompt = (
                 "You are an expert Academic Reviewer. Synthesize the provided paper excerpts into a comprehensive, deeply detailed structured literature review. "
                 "You MUST include a Markdown table comparing the key innovations, methods, or findings of the papers discussed. "
@@ -536,22 +477,18 @@ class AgenticService:
 
             user_prompt = (
                 f"User topic: {query}\n\n"
-                f"Memory context:\n{self._format_memory_context(memory_context)}\n\n"
                 f"Retrieved Research Excerpts:\n{context_text}\n\n"
                 "Please write the detailed literature review now, ensuring to include the comparative Markdown table."
             )
 
-            review = await self._call_llm(system_prompt, user_prompt, temperature=0.3)
-
-            return review
+            return await self._call_llm(system_prompt, user_prompt, temperature=0.3)
         except Exception as exc:
             logger.error("_tool_survey_literature failed: %s", exc, exc_info=True)
             return f"Error surveying literature: {exc}"
 
     async def _tool_analyze_gaps(self, literature_review_context: str, config: RunnableConfig) -> str:
-        """Identify research gaps, unresolved debates, and underexplored areas based on a given literature review."""
+        """Identify research gaps, unresolved debates, and underexplored areas."""
         group_id = config.get("configurable", {}).get("group_id")
-        user_id = config.get("configurable", {}).get("user_id")
         try:
             papers = await self._get_group_papers(group_id)
 
@@ -559,16 +496,13 @@ class AgenticService:
                 "You are the Gap Analysis Agent. Identify research gaps, unresolved debates, "
                 "and underexplored areas based on the literature review."
             )
-
             user_prompt = (
                 f"Literature review context:\n{literature_review_context}\n\n"
                 f"Papers:\n{self._format_papers(papers)}\n\n"
                 "Return a prioritized list of gaps with significance and suggested approaches."
             )
 
-            gaps_text = await self._call_llm(system_prompt, user_prompt)
-
-            return gaps_text
+            return await self._call_llm(system_prompt, user_prompt)
         except Exception as exc:
             logger.error("_tool_analyze_gaps failed: %s", exc, exc_info=True)
             return f"Error analyzing gaps: {exc}"
@@ -576,18 +510,16 @@ class AgenticService:
     async def _tool_fact_check(self, claim: str, config: RunnableConfig) -> str:
         """Verify claims against available context. Returns supported, contradicted, or unclear with evidence."""
         group_id = config.get("configurable", {}).get("group_id")
-        user_id = config.get("configurable", {}).get("user_id")
         try:
-            memory_context = await self._load_memory({"query": claim, "user_id": user_id, "group_id": group_id})
+            papers = await self._get_group_papers(group_id)
 
             system_prompt = (
                 "You are the Fact-Checking Agent. Verify claims against available context. "
                 "Return supported, contradicted, or unclear with evidence."
             )
-
             user_prompt = (
                 f"Claim to verify: {claim}\n\n"
-                f"Memory context:\n{self._format_memory_context(memory_context)}\n\n"
+                f"Available papers:\n{self._format_papers(papers)}\n\n"
                 "Provide a verification status and evidence summary."
             )
 
@@ -597,7 +529,7 @@ class AgenticService:
             return f"Error fact checking: {exc}"
 
     async def _tool_assess_novelty(self, idea: str, config: RunnableConfig) -> str:
-        """Compare an idea against existing papers and assess novelty with a score and suggestions to differentiate."""
+        """Compare an idea against existing papers and assess novelty."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
             papers = await self._get_group_papers(group_id)
@@ -606,7 +538,6 @@ class AgenticService:
                 "You are the Novelty Assessment Agent. Compare the idea against existing papers "
                 "and assess novelty with a score and suggestions to differentiate."
             )
-
             user_prompt = (
                 f"Idea: {idea}\n\n"
                 f"Related papers:\n{self._format_papers(papers)}\n\n"
@@ -619,32 +550,24 @@ class AgenticService:
             return f"Error assessing novelty: {exc}"
 
     async def _tool_provide_mentoring(self, query: str, config: RunnableConfig) -> str:
-        """Provide personalized guidance, methodology advice, and next steps for a given query."""
-        group_id = config.get("configurable", {}).get("group_id")
-        user_id = config.get("configurable", {}).get("user_id")
+        """Provide personalized guidance, methodology advice, and next steps."""
         try:
-            memory_context = await self._load_memory({"query": query, "user_id": user_id, "group_id": group_id})
-
             system_prompt = (
                 "You are the Research Mentor Agent. Provide personalized guidance, "
                 "methodology advice, and next steps."
             )
-
             user_prompt = (
                 f"User query: {query}\n\n"
-                f"User memory:\n{self._format_memory_context(memory_context)}\n\n"
                 "Provide actionable mentoring advice and suggested next steps."
             )
 
-            advice = await self._call_llm(system_prompt, user_prompt)
-
-            return advice
+            return await self._call_llm(system_prompt, user_prompt)
         except Exception as exc:
             logger.error("_tool_provide_mentoring failed: %s", exc, exc_info=True)
             return f"Error providing mentoring: {exc}"
 
     async def _tool_write_paper_draft(self, paper_request: str, config: RunnableConfig) -> str:
-        """Draft a structured paper outline and key sections aligned with academic standards based on a request and retrieved papers."""
+        """Draft a structured paper outline and key sections."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
             papers = await self._get_group_papers(group_id)
@@ -653,7 +576,6 @@ class AgenticService:
                 "You are the Paper Writing Agent. Draft a structured paper outline and "
                 "key sections aligned with academic standards."
             )
-
             user_prompt = (
                 f"Paper request: {paper_request}\n\n"
                 f"Reference papers:\n{self._format_papers(papers)}\n\n"
@@ -666,86 +588,68 @@ class AgenticService:
             return f"Error writing paper draft: {exc}"
 
     async def _tool_plan_research(self, request: str, config: RunnableConfig) -> str:
-        """Create a milestone-based plan with dependencies, timeline estimates, and resources for a given research request."""
-        group_id = config.get("configurable", {}).get("group_id")
-        user_id = config.get("configurable", {}).get("user_id")
+        """Create a milestone-based plan with dependencies, timeline estimates, and resources."""
         try:
-            memory_context = await self._load_memory({"query": request, "user_id": user_id, "group_id": group_id})
-
             system_prompt = (
                 "You are the Research Planning Agent. Create a milestone-based plan with "
                 "dependencies, timeline estimates, and resources."
             )
-
             user_prompt = (
                 f"Research plan request: {request}\n\n"
-                f"Context:\n{self._format_memory_context(memory_context)}\n\n"
                 "Provide a plan with milestones, timeline, and dependencies."
             )
 
-            plan = await self._call_llm(system_prompt, user_prompt)
-
-            return plan
+            return await self._call_llm(system_prompt, user_prompt)
         except Exception as exc:
             logger.error("_tool_plan_research failed: %s", exc, exc_info=True)
             return f"Error planning research: {exc}"
 
     async def _tool_deep_research(self, query: str, config: RunnableConfig) -> str:
-        """Conduct deep research into a query by generating sub-queries, gathering sources, synthesizing notes, and writing a comprehensive final report."""
+        """Conduct deep research by generating sub-queries, gathering sources, and writing a comprehensive report."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            settings = get_settings()
-
+            # Step 1: Generate search queries
             plan_system = (
                 "You are a research planner. Generate a focused set of search queries to answer the user question. "
                 "Return a JSON array of 3-6 concise search queries."
             )
-            plan_user = f"User question: {query}\nReturn JSON array only."
             plan_text = await self._call_llm(
                 plan_system,
-                plan_user,
-                model_name=settings.research_model,
+                f"User question: {query}\nReturn JSON array only.",
                 temperature=0.2,
             )
             queries = self._parse_json_list(plan_text)
             if not queries:
                 queries = [re.sub(r"@ai", "", query, flags=re.IGNORECASE).strip() or query]
 
-            # Collect sources dynamically using the internal state-less helper
-            sources = await self._collect_sources_internal(queries, group_id)
+            # Step 2: Collect sources
+            sources = await self._collect_sources(queries, group_id)
 
+            # Step 3: Summarize sources
             summaries = await self._summarize_sources(query, sources)
 
+            # Step 4: Synthesize notes
             compression_system = (
                 "You are a research synthesizer. Combine source summaries into coherent notes. "
                 "Keep citations like [S1], [S2] in the text."
             )
-            compression_user = (
-                f"Research question: {query}\n\n"
-                f"Source summaries:\n{summaries}\n\n"
-                "Produce structured notes with headings and citations."
-            )
             notes = await self._call_llm(
                 compression_system,
-                compression_user,
-                model_name=settings.compression_model,
+                f"Research question: {query}\n\nSource summaries:\n{summaries}\n\n"
+                "Produce structured notes with headings and citations.",
                 temperature=0.2,
             )
 
+            # Step 5: Write final report
             report_system = (
                 "You are the Deep Research Agent. Write a comprehensive report with citations, "
                 "clear sections, and actionable takeaways."
             )
-            report_user = (
-                f"Research question: {query}\n\n"
-                f"Research notes:\n{notes}\n\n"
-                "Write a report with: Executive Summary, Key Findings, Evidence & Analysis, "
-                "Open Questions, and Future Directions. Keep citations like [S1]."
-            )
             report = await self._call_llm(
                 report_system,
-                report_user,
-                model_name=settings.final_report_model,
+                f"Research question: {query}\n\nResearch notes:\n{notes}\n\n"
+                "Write a report with: Executive Summary, Key Findings, Evidence & Analysis, "
+                "Open Questions, and Future Directions. Keep citations like [S1].",
                 temperature=0.2,
             )
 
@@ -753,81 +657,6 @@ class AgenticService:
         except Exception as exc:
             logger.error("_tool_deep_research failed: %s", exc, exc_info=True)
             return f"Error in deep research: {exc}"
-
-    async def _collect_sources_internal(self, queries: list[str], group_id: Optional[str] = None) -> list[dict]:
-        """A helper method for deep research tool to collect sources independent of graph state."""
-        settings = get_settings()
-        sources: list[dict] = []
-
-        def _add_source(item: dict, source_type: str) -> None:
-            title = item.get("title") or item.get("name") or "Untitled"
-            content = item.get("abstract") or item.get("snippet") or item.get("content") or ""
-            url = item.get("url") or item.get("link") or item.get("pdf_url")
-            sources.append({
-                "title": title,
-                "content": content,
-                "url": url,
-                "source_type": source_type,
-            })
-
-        if settings.search_api in {"tavily", "hybrid"} and settings.tavily_api_key:
-            for query in queries[: settings.max_search_queries]:
-                try:
-                    async with httpx.AsyncClient(timeout=settings.request_timeout) as client:
-                        response = await client.post(
-                            "https://api.tavily.com/search",
-                            json={
-                                "api_key": settings.tavily_api_key,
-                                "query": query,
-                                "max_results": settings.max_search_results,
-                                "search_depth": settings.tavily_search_depth,
-                                "include_answer": settings.tavily_include_answer,
-                            },
-                        )
-                    response.raise_for_status()
-                    data = response.json()
-                    results = data.get("results") or []
-                    for item in results:
-                        _add_source(item, "tavily")
-                except Exception as exc:
-                    logger.warning("Tavily search failed for query %r: %s", query, exc)
-                    continue
-
-        if settings.search_api in {"mcp", "hybrid"}:
-            for query in queries[: settings.max_search_queries]:
-                try:
-                    response = await search_arxiv(
-                        query=query, limit=settings.max_search_results
-                    )
-                    results = response.get("papers", [])
-                    for item in results:
-                        _add_source(item, "arxiv")
-                except Exception as exc:
-                    logger.warning("Arxiv native search failed for query %r: %s", query, exc)
-                    continue
-
-        if settings.search_api in {"vector_store", "hybrid"} and vector_store.is_connected:
-            for query in queries[: settings.max_search_queries]:
-                try:
-                    results = await vector_store.search_group_vectors(
-                        group_id=group_id,
-                        query=query,
-                        limit=settings.max_search_results,
-                        content_types=None,
-                        paper_id=None,
-                    )
-                    for item in results:
-                        _add_source(item, "vector_store")
-                except Exception as exc:
-                    logger.warning("Vector store search failed for query %r: %s", query, exc)
-                    continue
-
-        if not sources:
-            papers = await self._get_group_papers(group_id)
-            for paper in papers[: settings.max_search_results]:
-                _add_source(paper, "group_papers")
-
-        return sources
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -842,7 +671,6 @@ class AgenticService:
 
         start_time = time.time()
         raw_prompt = request.get("prompt", "")
-        cleaned_query = raw_prompt.lower().replace("@ai", "").strip()
 
         # Auto-classify intent when task_type is missing or "auto"
         effective_task = task
@@ -886,7 +714,6 @@ class AgenticService:
         agent = self._get_agent_for_task(effective_task)
 
         try:
-            # Note: create_react_agent returns an agent that supports .invoke() or .ainvoke()
             final_state = await agent.ainvoke(
                 initial_input,
                 config={
@@ -896,18 +723,16 @@ class AgenticService:
                     }
                 }
             )
-            
-            # DeepAgents stores the conversation history in `messages`. 
-            # We extract the final AI message content as the result.
+
             messages = final_state.get("messages", [])
             final_response = "Task completed, but no response was generated."
             if messages and hasattr(messages[-1], "content"):
                 final_response = messages[-1].content
             elif messages and isinstance(messages[-1], dict):
                 final_response = messages[-1].get("content", final_response)
-                
+
             errors = []
-            
+
         except Exception as exc:
             logger.error("DeepAgent execution failed: %s", exc, exc_info=True)
             final_response = f"Execution failed: {exc}"
@@ -924,7 +749,7 @@ class AgenticService:
             "task_type": effective_task,
             "trace_id": trace_id,
             "result": {"final_response": final_response},
-            "artifacts": [], # Artifacts are now primarily handled via memory context inserts within tools 
+            "artifacts": [],
             "errors": errors,
             "metadata": request.get("options") or {},
             "latency_ms": latency_ms,

@@ -6,6 +6,9 @@ import { createError } from '../middleware/error.js';
 import { validateQuery } from '../middleware/validate.js';
 import { searchPapersSchema } from '../validation/schemas.js';
 import { searchLimiter } from '../middleware/rateLimiter.js';
+import { XMLParser } from 'fast-xml-parser';
+import { MOCK_ARXIV_PAPERS } from '../utils/mockPapers.js';
+import { setTimeout, clearTimeout } from 'timers';
 import logger from '../utils/logger.js';
 
 const papersLogger = logger.child({ context: 'papers' });
@@ -44,54 +47,40 @@ async function searchArxiv(query: string, limit: number = 10): Promise<any[]> {
 
     const xmlText = await response.text();
 
-    // Simple XML parsing for arXiv response
-    const entries: any[] = [];
-    const entryMatches = xmlText.match(/<entry>([\s\S]*?)<\/entry>/g) || [];
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: '@_',
+      textNodeName: '#text',
+      isArray: (name) => ['entry', 'author', 'category'].includes(name),
+    });
 
-    for (const entryXml of entryMatches) {
-      const getId = (xml: string) => {
-        const match = xml.match(/<id>(.*?)<\/id>/);
-        return match ? match[1] : '';
-      };
-      const getTitle = (xml: string) => {
-        const match = xml.match(/<title>([\s\S]*?)<\/title>/);
-        return match ? match[1].replace(/\s+/g, ' ').trim() : '';
-      };
-      const getSummary = (xml: string) => {
-        const match = xml.match(/<summary>([\s\S]*?)<\/summary>/);
-        return match ? match[1].replace(/\s+/g, ' ').trim() : '';
-      };
-      const getAuthors = (xml: string) => {
-        const matches = xml.match(/<author>[\s\S]*?<name>(.*?)<\/name>[\s\S]*?<\/author>/g) || [];
-        return matches.map(m => {
-          const nameMatch = m.match(/<name>(.*?)<\/name>/);
-          return nameMatch ? nameMatch[1] : '';
-        }).filter(Boolean);
-      };
-      const getPublished = (xml: string) => {
-        const match = xml.match(/<published>(.*?)<\/published>/);
-        return match ? match[1].split('T')[0] : null;
-      };
-      const getCategory = (xml: string) => {
-        const match = xml.match(/<arxiv:primary_category[^>]*term="([^"]+)"/);
-        return match ? [match[1]] : [];
-      };
+    const parsed = parser.parse(xmlText);
+    const apiEntries = parsed?.feed?.entry || [];
 
-      const id = getId(entryXml);
-      const arxivId = id.split('/abs/').pop()?.split('v')[0] || id;
+    const entries: any[] = apiEntries.map((entry: any) => {
+      const idStr = typeof entry.id === 'string' ? entry.id : entry.id?.['#text'] || '';
+      const arxivId = idStr.split('/abs/').pop()?.split('v')[0] || idStr;
 
-      entries.push({
+      const title = typeof entry.title === 'string' ? entry.title : entry.title?.['#text'] || '';
+      const abstract = typeof entry.summary === 'string' ? entry.summary : entry.summary?.['#text'] || '';
+
+      const authors = (entry.author || []).map((a: any) => a.name).filter(Boolean);
+      const tags = (entry.category || []).map((c: any) => c['@_term']).filter(Boolean);
+
+      const published = entry.published ? entry.published.split('T')[0] : null;
+
+      return {
         id: `arxiv-${arxivId}`,
-        title: getTitle(entryXml),
-        authors: getAuthors(entryXml),
-        abstract: getSummary(entryXml),
-        tags: getCategory(entryXml),
-        url: id,
-        publishedDate: getPublished(entryXml),
-        citations: 0, // arXiv doesn't provide citation count
+        title: title.replace(/\s+/g, ' ').trim(),
+        authors,
+        abstract: abstract.replace(/\s+/g, ' ').trim(),
+        tags,
+        url: idStr,
+        publishedDate: published,
+        citations: 0,
         source: 'arxiv',
-      });
-    }
+      };
+    });
 
     // If arXiv returned results, use them; otherwise fall back to mock
     if (entries.length > 0) {
@@ -112,96 +101,7 @@ async function searchArxiv(query: string, limit: number = 10): Promise<any[]> {
 
 // Fallback mock data for offline/unreachable scenarios - always returns results
 function getMockArxivResults(query: string, limit: number): any[] {
-  const mockPapers = [
-    {
-      id: 'arxiv-1706.03762',
-      title: 'Attention Is All You Need',
-      authors: ['Vaswani, A.', 'Shazeer, N.', 'Parmar, N.', 'Uszkoreit, J.'],
-      abstract: 'The dominant sequence transduction models are based on complex recurrent or convolutional neural networks in an encoder-decoder configuration. The best performing models also connect the encoder and decoder through an attention mechanism. We propose a new simple network architecture based solely on attention mechanisms, dispensing with recurrence and convolutions entirely.',
-      tags: ['cs.CL', 'machine learning', 'transformers', 'nlp'],
-      url: 'https://arxiv.org/abs/1706.03762',
-      publishedDate: '2017-06-12',
-      citations: 0,
-      source: 'arxiv',
-    },
-    {
-      id: 'arxiv-1810.04805',
-      title: 'BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding',
-      authors: ['Devlin, J.', 'Chang, M.', 'Lee, K.', 'Toutanova, K.'],
-      abstract: 'We introduce BERT, a new method of pre-training language representations which obtains state-of-the-art results on a wide array of Natural Language Processing (NLP) tasks. BERT is designed to pre-train deep bidirectional representations from unlabeled text by jointly conditioning on both left and right context in all layers.',
-      tags: ['cs.CL', 'nlp', 'language models', 'deep learning'],
-      url: 'https://arxiv.org/abs/1810.04805',
-      publishedDate: '2018-10-11',
-      citations: 0,
-      source: 'arxiv',
-    },
-    {
-      id: 'arxiv-1512.03385',
-      title: 'Deep Residual Learning for Image Recognition',
-      authors: ['He, K.', 'Zhang, X.', 'Ren, S.', 'Sun, J.'],
-      abstract: 'Deep neural networks are difficult to train. We present a residual learning framework to ease training of networks that are substantially deeper than those previously used. We explicitly reformulate the layers as learning residual functions with reference to the layer inputs, instead of learning unreferenced functions.',
-      tags: ['cs.CV', 'computer vision', 'deep learning', 'image recognition'],
-      url: 'https://arxiv.org/abs/1512.03385',
-      publishedDate: '2015-12-10',
-      citations: 0,
-      source: 'arxiv',
-    },
-    {
-      id: 'arxiv-1406.2661',
-      title: 'Generative Adversarial Networks',
-      authors: ['Goodfellow, I.', 'Pouget-Abadie, J.', 'Mirza, M.', 'Xu, B.'],
-      abstract: 'We propose a new framework for estimating generative models via an adversarial process, in which we simultaneously train two models: a generative model G that captures the data distribution, and a discriminative model D that estimates the probability that a sample came from the training data rather than G.',
-      tags: ['cs.LG', 'generative models', 'deep learning', 'gan'],
-      url: 'https://arxiv.org/abs/1406.2661',
-      publishedDate: '2014-06-10',
-      citations: 0,
-      source: 'arxiv',
-    },
-    {
-      id: 'arxiv-1505.04597',
-      title: 'U-Net: Convolutional Networks for Biomedical Image Segmentation',
-      authors: ['Ronneberger, O.', 'Fischer, P.', 'Brox, T.'],
-      abstract: 'There is large consent that successful training of deep networks requires many hand-labeled training samples. In this paper, we present a network and training strategy that relies on the strong use of data augmentation to use the available annotated samples more efficiently.',
-      tags: ['cs.CV', 'medical imaging', 'segmentation', 'neural networks'],
-      url: 'https://arxiv.org/abs/1505.04597',
-      publishedDate: '2015-05-18',
-      citations: 0,
-      source: 'arxiv',
-    },
-    {
-      id: 'arxiv-0905.2794',
-      title: 'Quantum Error Correction for Quantum Computing',
-      authors: ['Devitt, S.', 'Munro, W.', 'Nemoto, K.'],
-      abstract: 'Quantum computing is fragile due to decoherence and operational errors. Quantum error correction protects quantum information from these errors and is essential for reliable quantum computation. This article reviews the major approaches to quantum error correction.',
-      tags: ['quant-ph', 'quantum computing', 'error correction'],
-      url: 'https://arxiv.org/abs/0905.2794',
-      publishedDate: '2009-05-18',
-      citations: 0,
-      source: 'arxiv',
-    },
-    {
-      id: 'arxiv-2005.14165',
-      title: 'Language Models are Few-Shot Learners (GPT-3)',
-      authors: ['Brown, T.', 'Mann, B.', 'Ryder, N.', 'Subbiah, M.'],
-      abstract: 'We demonstrate that scaling up language models greatly improves task-agnostic, few-shot performance, sometimes even reaching competitiveness with prior state-of-the-art fine-tuning approaches. We train GPT-3, an autoregressive language model with 175 billion parameters.',
-      tags: ['cs.CL', 'gpt', 'language models', 'few-shot learning'],
-      url: 'https://arxiv.org/abs/2005.14165',
-      publishedDate: '2020-05-28',
-      citations: 0,
-      source: 'arxiv',
-    },
-    {
-      id: 'arxiv-2303.08774',
-      title: 'GPT-4 Technical Report',
-      authors: ['OpenAI'],
-      abstract: 'We report the development of GPT-4, a large-scale, multimodal model which can accept image and text inputs and produce text outputs. GPT-4 exhibits human-level performance on various professional and academic benchmarks.',
-      tags: ['cs.CL', 'gpt', 'multimodal', 'large language models'],
-      url: 'https://arxiv.org/abs/2303.08774',
-      publishedDate: '2023-03-15',
-      citations: 0,
-      source: 'arxiv',
-    },
-  ];
+  const mockPapers = MOCK_ARXIV_PAPERS;
 
   // Filter based on query if provided - use word matching for better results
   const queryLower = query.toLowerCase().trim();

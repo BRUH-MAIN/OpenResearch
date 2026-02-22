@@ -2,8 +2,10 @@ import 'dotenv/config';
 import bcrypt from 'bcryptjs';
 import { db } from './db/index.js';
 import * as schema from './db/schema.js';
+import logger from './utils/logger.js';
+const seedLogger = logger.child({ context: 'seed' });
 async function seed() {
-    console.log('🌱 Seeding database...');
+    seedLogger.info('Seeding database...');
     try {
         const hashedPassword = await bcrypt.hash('password123', 12);
         // Create users
@@ -31,7 +33,7 @@ async function seed() {
             password: hashedPassword,
             avatar: 'https://ui-avatars.com/api/?name=David'
         }).returning({ id: schema.users.id });
-        console.log('✅ Created users');
+        seedLogger.info('Created users');
         // Create groups
         const [aiLab] = await db.insert(schema.groups).values({
             name: 'AI Research Lab',
@@ -57,7 +59,7 @@ async function seed() {
             ownerId: alice.id,
             avatar: 'https://ui-avatars.com/api/?name=Vision'
         }).returning({ id: schema.groups.id });
-        console.log('✅ Created groups');
+        seedLogger.info('Created groups');
         // Add members to groups
         await db.insert(schema.groupMembers).values([
             { groupId: aiLab.id, userId: alice.id, role: 'owner' },
@@ -69,7 +71,7 @@ async function seed() {
             { groupId: healthGroup.id, userId: carol.id, role: 'owner' },
             { groupId: visionLab.id, userId: alice.id, role: 'owner' },
         ]);
-        console.log('✅ Added group members');
+        seedLogger.info('Added group members');
         // Create sessions
         const [session1] = await db.insert(schema.sessions).values({
             groupId: aiLab.id,
@@ -91,7 +93,7 @@ async function seed() {
             title: 'Quantum Error Correction Codes',
             status: 'active'
         }).returning({ id: schema.sessions.id });
-        console.log('✅ Created sessions');
+        seedLogger.info('Created sessions');
         // Create messages
         await db.insert(schema.messages).values([
             {
@@ -119,7 +121,7 @@ async function seed() {
                 type: 'user'
             }
         ]);
-        console.log('✅ Created messages');
+        seedLogger.info('Created messages');
         // Create papers
         await db.insert(schema.papers).values([
             {
@@ -171,14 +173,12 @@ async function seed() {
                 citations: 82000
             }
         ]);
-        console.log('✅ Created papers');
-        console.log('🎉 Seeding complete!');
-        console.log('\n📧 Test credentials:');
-        console.log('   Email: alice@example.com');
-        console.log('   Password: password123');
+        seedLogger.info('Created papers');
+        seedLogger.info('Seeding complete!');
+        seedLogger.info({ email: 'alice@example.com', password: 'password123' }, 'Test credentials');
     }
     catch (error) {
-        console.error('❌ Seeding failed:', error);
+        seedLogger.error({ err: error }, 'Seeding failed');
         process.exit(1);
     }
 }
