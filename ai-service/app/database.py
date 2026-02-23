@@ -536,6 +536,45 @@ class Database:
             row = result.fetchone()
             return str(row.id) if row else None
 
+    async def save_paper(
+        self,
+        paper_id: str,
+        title: str,
+        abstract: str,
+        authors: list[str],
+        url: str,
+        published_date: Optional[str] = None
+    ) -> bool:
+        """Save a paper to the papers table."""
+        if not self.is_connected:
+            return False
+            
+        import json
+        async with self.session_factory() as session:
+            try:
+                await session.execute(
+                    text("""
+                        INSERT INTO papers (id, title, authors, abstract, url, published_date)
+                        VALUES (:id, :title, :authors, :abstract, :url, :published_date)
+                        ON CONFLICT (id) DO NOTHING
+                    """),
+                    {
+                        "id": paper_id,
+                        "title": title,
+                        "authors": json.dumps(authors),
+                        "abstract": abstract,
+                        "url": url,
+                        "published_date": published_date
+                    }
+                )
+                await session.commit()
+                return True
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to save paper {paper_id}: {e}")
+                return False
+
 
 # Singleton instance
 database = Database()
+

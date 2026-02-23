@@ -290,6 +290,7 @@ function ChatPageContent() {
         options: {
           selected_source_count: enabledPaperIds.length,
         },
+        agenticRunId: pendingMessageId,
       });
 
       const content = formatAgenticResponse(response);
@@ -367,6 +368,7 @@ function ChatPageContent() {
         options: {
           selected_source_count: enabledPaperIds.length,
         },
+        agenticRunId: pendingMessageId,
       });
 
       const deepResearch =

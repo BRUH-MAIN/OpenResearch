@@ -10,6 +10,7 @@
 import logger from '../utils/logger.js';
 import { createError } from '../middleware/error.js';
 import { setTimeout, clearTimeout } from 'timers';
+import { TextDecoder } from 'util';
 
 // Get AI service URL from environment (with fallback)
 function getAiServiceUrl(): string {
@@ -388,6 +389,81 @@ class AIClient {
     logger.info(`Agentic task completed in ${response.latency_ms}ms`);
 
     return response;
+  }
+
+  /**
+   * Run an agentic research task and stream progress
+   */
+  async runAgenticTaskStream(
+    request: AgenticRunRequest,
+    onProgress: (message: string) => void
+  ): Promise<AgenticRunResponse> {
+    logger.info(`Agentic task stream: ${request.task_type}`);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/agentic/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Request failed' })) as { detail?: string };
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let finalResult: AgenticRunResponse | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            if (data.type === 'progress') {
+              onProgress(data.message);
+            } else if (data.type === 'complete') {
+              finalResult = data as unknown as AgenticRunResponse;
+            } else if (data.type === 'error') {
+              throw new Error(data.error);
+            }
+          } catch (e) {
+            // Ignore parse errors for incomplete chunks
+          }
+        }
+      }
+
+      clearTimeout(timeoutId);
+
+      if (!finalResult) {
+        throw new Error('Stream ended without complete event');
+      }
+
+      logger.info(`Agentic task stream completed in ${finalResult.latency_ms}ms`);
+      return finalResult;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
   }
 
   /**
