@@ -66,6 +66,14 @@ export function useSocket(sessionId: string | null) {
       setMessages((prev) => [...prev, message]);
     });
 
+    socket.on('agentic:progress', (data: { messageId: string; content: string }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === data.messageId ? { ...msg, content: data.content } : msg
+        )
+      );
+    });
+
     socket.on('user:typing', (data: TypingUser) => {
       setTypingUsers((prev) => {
         if (prev.some(u => u.userId === data.userId)) return prev;

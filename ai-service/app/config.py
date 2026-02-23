@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     # API Configuration
     app_name: str = "OpenResearch AI Service"
     debug: bool = False
+    # Database Configuration
+    database_url: str = ""
     
     # Groq API
     groq_api_key: str = ""
@@ -30,7 +32,7 @@ class Settings(BaseSettings):
     
     # Rate limiting
     max_context_messages: int = 50
-    max_context_tokens: int = 8000
+    max_context_tokens: int = 10000
     request_timeout: int = 30
     
     model_config = SettingsConfigDict(

@@ -24,7 +24,7 @@ from typing import Optional
 
 from fastapi import FastAPI, HTTPException, status, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 from .config import get_settings
 from .models import (
@@ -277,6 +277,40 @@ async def run_agentic_task(request: AgenticRunRequest):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Agentic task failed: {str(e)}",
         )
+
+@app.post(
+    "/agentic/stream",
+    responses={
+        400: {"model": ErrorResponse, "description": "Missing @ai trigger"},
+        503: {"model": ErrorResponse, "description": "AI service not configured"},
+    },
+    tags=["Agentic"],
+    summary="Stream agentic research task events",
+)
+async def stream_agentic_task(request: AgenticRunRequest):
+    """Stream an agentic task via LangGraph orchestration."""
+    validate_ai_trigger(request.prompt, "prompt")
+
+    if not groq_client.is_configured:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI service not configured. Please set GROQ_API_KEY.",
+        )
+
+    return StreamingResponse(
+        agentic_service.stream_task_events(
+            request.task_type,
+            {
+                "prompt": request.prompt,
+                "group_id": request.group_id,
+                "user_id": request.user_id,
+                "session_id": request.session_id,
+                "paper_ids": request.paper_ids,
+                "options": request.options,
+            },
+        ),
+        media_type="application/x-ndjson",
+    )
 
 @app.post(
     "/agentic/classify-intent",

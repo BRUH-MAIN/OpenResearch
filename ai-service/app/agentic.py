@@ -242,6 +242,37 @@ class AgenticService:
                 candidates.append(cleaned)
         return candidates
 
+    def _extract_text_from_possible_json(self, text: str) -> str:
+        """Helper to extract text if the model wraps final output in JSON."""
+        if not isinstance(text, str):
+            return str(text)
+        
+        # Try parsing directly
+        try:
+            parsed = json.loads(text.strip())
+            if isinstance(parsed, dict):
+                if "final_response" in parsed:
+                    return parsed["final_response"]
+                if "response" in parsed:
+                    return parsed["response"]
+        except Exception:
+            pass
+        
+        # Try finding markdown JSON blocks
+        m = re.match(r"^```(?:json)?\s*(\{.*?\})\s*```$", text.strip(), re.DOTALL)
+        if m:
+            try:
+                parsed = json.loads(m.group(1))
+                if isinstance(parsed, dict):
+                    if "final_response" in parsed:
+                        return parsed["final_response"]
+                    if "response" in parsed:
+                        return parsed["response"]
+            except Exception:
+                pass
+                
+        return text
+
     # ------------------------------------------------------------------
     # Source collection (single unified method)
     # ------------------------------------------------------------------
@@ -396,15 +427,61 @@ class AgenticService:
     async def _tool_retrieve_papers(self, query: str, config: RunnableConfig) -> str:
         """Search for and retrieve relevant academic papers from arXiv and the group database."""
         group_id = config.get("configurable", {}).get("group_id")
+        user_id = config.get("configurable", {}).get("user_id")
         try:
             papers: list[dict] = []
 
             try:
                 mcp_response = await search_arxiv(query=query, limit=10)
-                papers = mcp_response.get("papers", [])
+                arxiv_papers = mcp_response.get("papers", [])
+                
+                if arxiv_papers:
+                    import uuid
+                    from .database import database
+                    from .vector_store import vector_store
+                    
+                    for p in arxiv_papers:
+                        original_id = p.get("id", p.get("url", str(uuid.uuid4())))
+                        paper_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, original_id))
+                        p["id"] = paper_uuid
+                        
+                        # 1. Save to papers table
+                        await database.save_paper(
+                            paper_id=paper_uuid,
+                            title=p.get("title", "Untitled"),
+                            abstract=p.get("abstract", ""),
+                            authors=p.get("authors", []),
+                            url=p.get("url", original_id),
+                            published_date=p.get("published")
+                        )
+                        
+                        # 2. Add to group_papers
+                        if user_id:
+                            await database.add_group_paper(
+                                group_id=group_id,
+                                paper_id=paper_uuid,
+                                added_by=user_id,
+                                notes=f"Auto-retrieved from arXiv for query: {query}"
+                            )
+                        
+                        # 3. Add to vector store
+                        if vector_store.is_connected:
+                            await vector_store.insert_paper_chunks(
+                                group_id=group_id,
+                                paper_id=paper_uuid,
+                                title=p.get("title", "Untitled"),
+                                abstract=p.get("abstract", ""),
+                                full_text=None,
+                                metadata={
+                                    "added_by": user_id or "system",
+                                    "source": "arxiv",
+                                    "original_id": original_id
+                                }
+                            )
+                
+                papers.extend(arxiv_papers)
             except Exception as exc:
                 logger.warning("Paper retrieval failed: %s", exc)
-                papers = []
 
             if not papers:
                 papers = await self._get_group_papers(group_id)
@@ -727,9 +804,9 @@ class AgenticService:
             messages = final_state.get("messages", [])
             final_response = "Task completed, but no response was generated."
             if messages and hasattr(messages[-1], "content"):
-                final_response = messages[-1].content
+                final_response = self._extract_text_from_possible_json(messages[-1].content)
             elif messages and isinstance(messages[-1], dict):
-                final_response = messages[-1].get("content", final_response)
+                final_response = self._extract_text_from_possible_json(messages[-1].get("content", final_response))
 
             errors = []
 
@@ -745,15 +822,123 @@ class AgenticService:
             trace_id, effective_task, latency_ms,
         )
 
+        key_map = {
+            "deep_research": "deep_research",
+            "literature_survey": "literature_review",
+            "gap_analysis": "research_gaps",
+            "fact_checking": "fact_check",
+            "novelty_assessment": "novelty",
+            "research_mentor": "mentor_advice",
+            "paper_writing": "paper_draft",
+            "research_planning": "research_plan",
+        }
+        result_key = key_map.get(effective_task, "result")
+
         return {
             "task_type": effective_task,
             "trace_id": trace_id,
-            "result": {"final_response": final_response},
+            "result": {result_key: final_response},
             "artifacts": [],
             "errors": errors,
             "metadata": request.get("options") or {},
             "latency_ms": latency_ms,
         }
+
+    async def stream_task_events(self, task: str, request: dict):
+        if not self.is_initialized:
+            self.initialize()
+            if not self.is_initialized:
+                yield json.dumps({"type": "error", "error": "Agentic service not initialized"}) + "\n"
+                return
+
+        start_time = time.time()
+        raw_prompt = request.get("prompt", "")
+
+        effective_task = task
+        if not effective_task or effective_task == "auto":
+            intent, score, _phrase = classify_intent(raw_prompt)
+            if intent:
+                logger.info("Auto-classified intent: %s (score=%.3f)", intent, score)
+                effective_task = intent
+            else:
+                effective_task = "literature_survey"
+
+        trace_id = str(uuid.uuid4())
+        logger.info("[trace=%s] Starting stream_task_events for %s", trace_id, effective_task)
+
+        user_content = (
+            f"User request: {raw_prompt}\n\n"
+            f"The identified overall objective is '{effective_task}'. "
+            f"You MUST use your tools to accomplish this. Do not write the final response until you have used the tools.\n\n"
+            f"<context>\n"
+            f"Group ID: {request.get('group_id')}\n"
+            f"User ID: {request.get('user_id')}\n"
+            f"</context>\n"
+        )
+        if request.get("paper_ids"):
+            user_content += f"Specific Target Paper IDs: {request.get('paper_ids')}\n"
+
+        initial_input = {"messages": [{"role": "user", "content": user_content}]}
+        agent = self._get_agent_for_task(effective_task)
+
+        final_response = "Task completed, but no response was generated."
+        errors = []
+
+        try:
+            async for event in agent.astream_events(
+                initial_input,
+                config={
+                    "configurable": {
+                        "group_id": request.get("group_id"),
+                        "user_id": request.get("user_id")
+                    }
+                },
+                version="v2"
+            ):
+                kind = event["event"]
+                name = event["name"]
+
+                if kind == "on_tool_start":
+                    yield json.dumps({"type": "progress", "message": f"Running tool: {name}..."}) + "\n"
+                elif kind == "on_tool_end":
+                    yield json.dumps({"type": "progress", "message": f"Completed tool: {name}"}) + "\n"
+                elif kind == "on_chat_model_end":
+                    msg = event.get("data", {}).get("output", {})
+                    if hasattr(msg, "content") and msg.content:
+                        final_response = self._extract_text_from_possible_json(msg.content)
+                    elif isinstance(msg, dict) and "content" in msg and msg["content"]:
+                        final_response = self._extract_text_from_possible_json(msg["content"])
+
+        except Exception as exc:
+            logger.error("DeepAgent stream execution failed: %s", exc, exc_info=True)
+            yield json.dumps({"type": "error", "error": str(exc)}) + "\n"
+            return
+
+        latency_ms = int((time.time() - start_time) * 1000)
+        logger.info("[trace=%s] Completed stream in %dms", trace_id, latency_ms)
+
+        key_map = {
+            "deep_research": "deep_research",
+            "literature_survey": "literature_review",
+            "gap_analysis": "research_gaps",
+            "fact_checking": "fact_check",
+            "novelty_assessment": "novelty",
+            "research_mentor": "mentor_advice",
+            "paper_writing": "paper_draft",
+            "research_planning": "research_plan",
+        }
+        result_key = key_map.get(str(effective_task), "result")
+
+        yield json.dumps({
+            "type": "complete",
+            "task_type": effective_task,
+            "trace_id": trace_id,
+            "result": {result_key: final_response},
+            "artifacts": [],
+            "errors": errors,
+            "metadata": request.get("options") or {},
+            "latency_ms": latency_ms,
+        }) + "\n"
 
 
 agentic_service = AgenticService()

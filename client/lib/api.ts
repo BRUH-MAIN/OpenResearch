@@ -373,6 +373,7 @@ class ApiClient {
       sessionId?: string;
       paperIds?: string[];
       options?: Record<string, unknown>;
+      agenticRunId?: string;
     }
   ) {
     return this.request<AgenticRunResponse>('/api/ai/agentic/run', {

@@ -12,6 +12,7 @@ import { db, sessions, groupMembers, messages } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { createError } from '../middleware/error.js';
 import { agenticLimiter } from '../middleware/rateLimiter.js';
+import { io } from '../index.js';
 
 
 const router = Router();
@@ -120,10 +121,9 @@ router.get('/health', async (req, res, next) => {
 router.use(authenticate);
 
 
-// Agentic task runner
 router.post('/agentic/run', agenticLimiter, async (req: AuthRequest, res: Response, next) => {
   try {
-    const { taskType, prompt, groupId, sessionId, paperIds, options } = req.body;
+    const { taskType, prompt, groupId, sessionId, paperIds, options, agenticRunId } = req.body;
     const userId = req.user!.id;
 
     if (!taskType || typeof taskType !== 'string') {
@@ -148,15 +148,25 @@ router.post('/agentic/run', agenticLimiter, async (req: AuthRequest, res: Respon
       resolvedGroupId = session.groupId;
     }
 
-    const response = await aiClient.runAgenticTask({
-      task_type: taskType as AgenticTaskType,
-      prompt,
-      group_id: resolvedGroupId,
-      user_id: userId,
-      session_id: sessionId,
-      paper_ids: paperIds,
-      options,
-    });
+    const response = await aiClient.runAgenticTaskStream(
+      {
+        task_type: taskType as AgenticTaskType,
+        prompt,
+        group_id: resolvedGroupId,
+        user_id: userId,
+        session_id: sessionId,
+        paper_ids: paperIds,
+        options,
+      },
+      (message) => {
+        if (sessionId && agenticRunId) {
+          io.to(`session:${sessionId}`).emit('agentic:progress', {
+            messageId: agenticRunId,
+            content: message,
+          });
+        }
+      }
+    );
 
     if (sessionId) {
       await db.insert(messages).values({
