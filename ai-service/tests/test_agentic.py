@@ -1,8 +1,6 @@
-"""Tests for the agentic orchestration service."""
-
 import asyncio
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch, PropertyMock
+from unittest.mock import AsyncMock, MagicMock, patch
 from tenacity import RetryError
 
 from app.agentic import AgenticService, AgentState
@@ -35,9 +33,6 @@ def initialized_service(service, mock_llm):
     service._llm_cache = {"mock-model": mock_llm}
     service._api_key = "test-key"
     service._initialized = True
-
-    # Agent building is handled dynamically now
-
     return service
 
 
@@ -64,15 +59,11 @@ class TestInitialization:
     @patch("app.agentic.get_settings")
     @patch("app.agentic._LANGCHAIN_AVAILABLE", True)
     @patch("app.agentic.ChatGroq")
-    @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.mcp_client")
-    def test_initialize_success(self, mock_mcp, mock_mem0, mock_groq_cls, mock_settings):
+    def test_initialize_success(self, mock_groq_cls, mock_settings):
         settings = MagicMock()
         settings.groq_api_key = "test-api-key"
         settings.groq_model = "llama-3.3-70b-versatile"
         mock_settings.return_value = settings
-        mock_mem0.initialize.return_value = True
-        mock_mcp.initialize.return_value = True
 
         svc = AgenticService()
         result = svc.initialize()
@@ -98,10 +89,6 @@ class TestInitialization:
         svc = AgenticService()
         result = svc.initialize()
         assert result is False
-
-
-
-
 
 # ---------------------------------------------------------------------------
 # LLM Call Tests
@@ -153,48 +140,21 @@ class TestCallLLM:
         assert isinstance(result, dict)
         assert result["key"] == "value"
 
-
-# ---------------------------------------------------------------------------
-# Memory Context Formatting Tests
-# ---------------------------------------------------------------------------
-
-class TestFormatMemoryContext:
-
-    def test_empty_context(self):
-        result = AgenticService._format_memory_context([])
-        assert result == "No prior context available."
-
-    def test_with_text_key(self):
-        mem = [{"text": "first memory"}, {"text": "second memory"}]
-        result = AgenticService._format_memory_context(mem)
-        assert "- [1] first memory" in result
-        assert "- [2] second memory" in result
-
-    def test_with_memory_key(self):
-        mem = [{"memory": "recalled fact"}]
-        result = AgenticService._format_memory_context(mem)
-        assert "- [1] recalled fact" in result
-
-    def test_fallback_to_str(self):
-        mem = [{"some_unexpected": "data"}]
-        result = AgenticService._format_memory_context(mem)
-        assert "- [1]" in result
-        assert "some_unexpected" in result
-
-
 # ---------------------------------------------------------------------------
 # Agent Node Tests
 # ---------------------------------------------------------------------------
 
+class TestAgentNodes:
+
     @pytest.mark.asyncio
     @patch("app.agentic.database")
-    @patch("app.agentic.mcp_client")
-    async def test_paper_retrieval_tool(self, mock_mcp, mock_db, initialized_service):
-        mock_mcp.is_configured.return_value = False
+    @patch("app.agentic.search_arxiv")
+    async def test_paper_retrieval_tool(self, mock_search, mock_db, initialized_service):
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(
             return_value=[{"title": "Test Paper", "abstract": "Test abstract"}]
         )
+        mock_search.return_value = {"papers": []}
 
         result = await initialized_service._tool_retrieve_papers(
             query="find papers on NLP", config={"configurable": {"group_id": "test-group"
@@ -224,12 +184,14 @@ class TestFormatMemoryContext:
         assert result == "mock LLM response"
 
     @pytest.mark.asyncio
-    async def test_fact_check_tool(self, initialized_service):
-        with patch.object(initialized_service, "_load_memory", AsyncMock(return_value=[])):
-            result = await initialized_service._tool_fact_check(
-                 claim="verify that transformers outperform RNNs", config={"configurable": {"group_id": "g", "user_id": "u"
-            }})
-            assert result == "mock LLM response"
+    @patch("app.agentic.database")
+    async def test_fact_check_tool(self, mock_db, initialized_service):
+        mock_db.is_connected = True
+        mock_db.get_group_papers = AsyncMock(return_value=[])
+        result = await initialized_service._tool_fact_check(
+             claim="verify that transformers outperform RNNs", config={"configurable": {"group_id": "g", "user_id": "u"
+        }})
+        assert result == "mock LLM response"
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
@@ -243,14 +205,11 @@ class TestFormatMemoryContext:
         assert result == "mock LLM response"
 
     @pytest.mark.asyncio
-    @patch("app.agentic.mem0_adapter")
-    async def test_research_mentor_tool(self, mock_mem0, initialized_service):
-        mock_mem0.add = AsyncMock()
-        with patch.object(initialized_service, "_load_memory", AsyncMock(return_value=[])):
-            result = await initialized_service._tool_provide_mentoring(
-                 query="how should I approach NLP research?", config={"configurable": {"group_id": "g", "user_id": "u"
-            }})
-            assert result == "mock LLM response"
+    async def test_research_mentor_tool(self, initialized_service):
+        result = await initialized_service._tool_provide_mentoring(
+             query="how should I approach NLP research?", config={"configurable": {"group_id": "g", "user_id": "u"
+        }})
+        assert result == "mock LLM response"
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
@@ -264,23 +223,21 @@ class TestFormatMemoryContext:
         assert result == "mock LLM response"
 
     @pytest.mark.asyncio
-    @patch("app.agentic.mem0_adapter")
-    async def test_research_planning_tool(self, mock_mem0, initialized_service):
-        mock_mem0.add = AsyncMock()
-        with patch.object(initialized_service, "_load_memory", AsyncMock(return_value=[])):
-            result = await initialized_service._tool_plan_research(
-                 request="plan my NLP research", config={"configurable": {"group_id": "g", "user_id": "u"
-            }})
-            assert result == "mock LLM response"
+    async def test_research_planning_tool(self, initialized_service):
+        result = await initialized_service._tool_plan_research(
+             request="plan my NLP research", config={"configurable": {"group_id": "g", "user_id": "u"
+        }})
+        assert result == "mock LLM response"
 
     @pytest.mark.asyncio
     @patch("app.agentic.classify_intent")
     async def test_run_task_routes_correctly(self, mock_classify, initialized_service):
-        # The primary deep agent is a mock
-        initialized_service._agent = AsyncMock()
-        initialized_service._agent.ainvoke.return_value = {
+        # Provide a fake agent for _get_agent_for_task
+        mock_agent = AsyncMock()
+        mock_agent.ainvoke.return_value = {
             "messages": [MagicMock(content="mock generated response")]
         }
+        initialized_service._get_agent_for_task = MagicMock(return_value=mock_agent)
 
         result = await initialized_service.run_task("fact_check", {
             "prompt": "@ai verify this claim",
@@ -290,11 +247,8 @@ class TestFormatMemoryContext:
 
         assert result["task_type"] == "fact_check"
         assert "result" in result
-        assert result["result"]["final_response"] == "mock generated response"
+        assert result["result"]["result"] == "mock generated response"
         assert "latency_ms" in result
-
-
-
 
 
 # ---------------------------------------------------------------------------
@@ -305,10 +259,8 @@ class TestErrorBoundaries:
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
-    @patch("app.agentic.mcp_client")
-    async def test_paper_retrieval_error_boundary(self, mock_mcp, mock_db, initialized_service):
+    async def test_paper_retrieval_error_boundary(self, mock_db, initialized_service):
         """When the LLM or DB raises, paper_retrieval should not crash."""
-        mock_mcp.is_configured.return_value = False
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(side_effect=RuntimeError("DB down"))
 
@@ -321,7 +273,11 @@ class TestErrorBoundaries:
     @patch("app.agentic.database")
     async def test_literature_survey_error_boundary(self, mock_db, initialized_service):
         mock_db.is_connected = True
-        mock_db.get_group_papers = AsyncMock(return_value=[])
+        mock_db.get_group_papers = AsyncMock(return_value=[
+            {"title": "Paper 1", "abstract": "Test 1"},
+            {"title": "Paper 2", "abstract": "Test 2"},
+            {"title": "Paper 3", "abstract": "Test 3"}
+        ])
         # Force LLM to raise
         initialized_service._llm.ainvoke = AsyncMock(side_effect=RuntimeError("LLM fail"))
 
@@ -332,11 +288,11 @@ class TestErrorBoundaries:
 
     @pytest.mark.asyncio
     async def test_fact_check_error_boundary(self, initialized_service):
-        with patch.object(initialized_service, "_load_memory", AsyncMock(side_effect=RuntimeError("memory fail"))):
-            result = await initialized_service._tool_fact_check(
-                 claim="test claim", config={"configurable": {"group_id": "g", "user_id": "u"
-            }})
-            assert "Error fact checking:" in result
+        initialized_service._llm.ainvoke = AsyncMock(side_effect=RuntimeError("LLM fail"))
+        result = await initialized_service._tool_fact_check(
+             claim="test claim", config={"configurable": {"group_id": "g", "user_id": "u"
+        }})
+        assert "Error fact checking:" in result
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
@@ -353,11 +309,10 @@ class TestErrorBoundaries:
     @pytest.mark.asyncio
     async def test_research_mentor_error_boundary(self, initialized_service):
         initialized_service._llm.ainvoke = AsyncMock(side_effect=ValueError("bad model"))
-        with patch.object(initialized_service, "_load_memory", AsyncMock(return_value=[])):
-            result = await initialized_service._tool_provide_mentoring(
-                 query="test query", config={"configurable": {"group_id": "g", "user_id": "u"
-            }})
-            assert "Error providing mentoring:" in result
+        result = await initialized_service._tool_provide_mentoring(
+             query="test query", config={"configurable": {"group_id": "g", "user_id": "u"
+        }})
+        assert "Error providing mentoring:" in result
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
@@ -375,18 +330,14 @@ class TestErrorBoundaries:
     async def test_research_planning_error_boundary(self, initialized_service):
         initialized_service._llm.ainvoke = AsyncMock(side_effect=RuntimeError("model crashed"))
 
-        with patch.object(initialized_service, "_load_memory", AsyncMock(return_value=[])):
-            result = await initialized_service._tool_plan_research(
-                 request="plan my NLP research", config={"configurable": {"group_id": "g", "user_id": "u"
-            }})
-            assert "Error planning research:" in result
+        result = await initialized_service._tool_plan_research(
+             request="plan my NLP research", config={"configurable": {"group_id": "g", "user_id": "u"
+        }})
+        assert "Error planning research:" in result
 
     @pytest.mark.asyncio
-    @patch("app.agentic.get_settings")
-    async def test_deep_research_error_boundary(self, mock_settings, initialized_service):
-        settings = MagicMock()
-        settings.research_model = "mock-model"
-        mock_settings.return_value = settings
+    @patch("app.agentic.search_arxiv")
+    async def test_deep_research_error_boundary(self, mock_search, initialized_service):
         initialized_service._llm.ainvoke = AsyncMock(side_effect=RuntimeError("API down"))
 
         result = await initialized_service._tool_deep_research(
@@ -404,75 +355,50 @@ class TestCollectSources:
     @pytest.mark.asyncio
     @patch("app.agentic.get_settings")
     @patch("app.agentic.vector_store")
-    @patch("app.agentic.mcp_client")
+    @patch("app.agentic.search_arxiv")
     @patch("app.agentic.database")
-    async def test_fallback_to_group_papers(self, mock_db, mock_mcp, mock_vs, mock_settings, initialized_service):
+    async def test_fallback_to_group_papers(self, mock_db, mock_search, mock_vs, mock_settings, initialized_service):
         settings = MagicMock()
-        settings.search_api = "tavily"
-        settings.tavily_api_key = ""  # No key → skip Tavily
-        settings.max_search_results = 5
         mock_settings.return_value = settings
-        mock_mcp.is_configured.return_value = False
         mock_vs.is_connected = False
         mock_db.is_connected = True
+        mock_search.return_value = {"papers": []}
         mock_db.get_group_papers = AsyncMock(
             return_value=[{"title": "Fallback Paper", "abstract": "abc"}]
         )
 
-        state = _make_state()
-        sources = await initialized_service._collect_sources(state, ["query1"])
+        sources = await initialized_service._collect_sources(["query1"], group_id="test-group")
         assert len(sources) == 1
         assert sources[0]["source_type"] == "group_papers"
 
     @pytest.mark.asyncio
-    @patch("app.agentic.get_settings")
     @patch("app.agentic.vector_store")
-    @patch("app.agentic.mcp_client")
+    @patch("app.agentic.search_arxiv")
     @patch("app.agentic.database")
-    async def test_mcp_source_collection(self, mock_db, mock_mcp, mock_vs, mock_settings, initialized_service):
-        settings = MagicMock()
-        settings.search_api = "mcp"
-        settings.tavily_api_key = ""
-        settings.mcp_search_server = "academic_papers"
-        settings.mcp_search_tool = "search_arxiv"
-        settings.max_search_queries = 2
-        settings.max_search_results = 5
-        mock_settings.return_value = settings
-        mock_mcp.is_configured.return_value = True
-        mock_mcp.invoke = AsyncMock(return_value={
-            "papers": [{"title": "MCP Paper", "abstract": "from MCP"}]
-        })
-        mock_vs.is_connected = False
-        mock_db.is_connected = False
-
-        state = _make_state()
-        sources = await initialized_service._collect_sources(state, ["test query"])
-        assert len(sources) == 1
-        assert sources[0]["source_type"] == "mcp"
-
-    @pytest.mark.asyncio
-    @patch("app.agentic.get_settings")
-    @patch("app.agentic.vector_store")
-    @patch("app.agentic.mcp_client")
-    @patch("app.agentic.database")
-    async def test_failed_search_logs_warning(self, mock_db, mock_mcp, mock_vs, mock_settings, initialized_service):
-        settings = MagicMock()
-        settings.search_api = "mcp"
-        settings.tavily_api_key = ""
-        settings.mcp_search_server = "academic_papers"
-        settings.mcp_search_tool = "search_arxiv"
-        settings.max_search_queries = 1
-        settings.max_search_results = 5
-        mock_settings.return_value = settings
-        mock_mcp.is_configured.return_value = True
-        mock_mcp.invoke = AsyncMock(side_effect=RuntimeError("MCP down"))
+    async def test_mcp_source_collection(self, mock_db, mock_search, mock_vs, initialized_service):
+        mock_search.return_value = {
+            "papers": [{"title": "Extracted Paper", "abstract": "from search"}]
+        }
         mock_vs.is_connected = False
         mock_db.is_connected = False
         mock_db.get_group_papers = AsyncMock(return_value=[])
 
-        state = _make_state()
+        sources = await initialized_service._collect_sources(["test query"], group_id="test-group")
+        assert len(sources) == 1
+        assert sources[0]["source_type"] == "arxiv"
+
+    @pytest.mark.asyncio
+    @patch("app.agentic.vector_store")
+    @patch("app.agentic.search_arxiv")
+    @patch("app.agentic.database")
+    async def test_failed_search_logs_warning(self, mock_db, mock_search, mock_vs, initialized_service):
+        mock_search.side_effect = RuntimeError("ArXiv down")
+        mock_vs.is_connected = False
+        mock_db.is_connected = False
+        mock_db.get_group_papers = AsyncMock(return_value=[])
+
         # Should not raise, should return empty and log warning
-        sources = await initialized_service._collect_sources(state, ["test"])
+        sources = await initialized_service._collect_sources(["test"], group_id="test-group")
         assert sources == []
 
 
@@ -511,17 +437,19 @@ class TestAutoIntentClassification:
     @patch("app.agentic.classify_intent")
     @patch("app.agentic.database")
     @patch("app.agentic.vector_store")
-    @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.mcp_client")
     async def test_auto_classify_when_task_empty(
-        self, mock_mcp, mock_mem0, mock_vs, mock_db, mock_classify, initialized_service
+        self, mock_vs, mock_db, mock_classify, initialized_service
     ):
         mock_classify.return_value = ("fact_check", 0.92, "verify the claim")
-        mock_mcp.is_configured.return_value = False
-        mock_mem0.search = AsyncMock(return_value=[])
         mock_vs.is_connected = False
         mock_db.is_connected = True
         mock_db.store_ai_artifact = AsyncMock(return_value=None)
+        
+        mock_agent = AsyncMock()
+        mock_agent.ainvoke.return_value = {
+            "messages": [MagicMock(content="mock generated response")]
+        }
+        initialized_service._get_agent_for_task = MagicMock(return_value=mock_agent)
 
         result = await initialized_service.run_task("", {
             "prompt": "@ai verify this claim about GPT",
@@ -535,19 +463,20 @@ class TestAutoIntentClassification:
     @patch("app.agentic.classify_intent")
     @patch("app.agentic.database")
     @patch("app.agentic.vector_store")
-    @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.mcp_client")
     async def test_auto_classify_when_task_is_auto(
-        self, mock_mcp, mock_mem0, mock_vs, mock_db, mock_classify, initialized_service
+        self, mock_vs, mock_db, mock_classify, initialized_service
     ):
         mock_classify.return_value = ("literature_survey", 0.88, "survey the field")
-        mock_mcp.is_configured.return_value = False
-        mock_mem0.search = AsyncMock(return_value=[])
-        mock_mem0.add = AsyncMock()
         mock_vs.is_connected = False
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
         mock_db.store_ai_artifact = AsyncMock(return_value=None)
+        
+        mock_agent = AsyncMock()
+        mock_agent.ainvoke.return_value = {
+            "messages": [MagicMock(content="mock generated response")]
+        }
+        initialized_service._get_agent_for_task = MagicMock(return_value=mock_agent)
 
         result = await initialized_service.run_task("auto", {
             "prompt": "@ai survey the field of NLP",
@@ -561,16 +490,20 @@ class TestAutoIntentClassification:
     @patch("app.agentic.classify_intent")
     @patch("app.agentic.database")
     @patch("app.agentic.vector_store")
-    @patch("app.agentic.mcp_client")
     async def test_auto_classify_below_threshold_defaults(
-        self, mock_mcp, mock_vs, mock_db, mock_classify, initialized_service
+        self, mock_vs, mock_db, mock_classify, initialized_service
     ):
         mock_classify.return_value = (None, 0.45, None)
-        mock_mcp.is_configured.return_value = False
         mock_vs.is_connected = False
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
         mock_db.store_ai_artifact = AsyncMock(return_value=None)
+        
+        mock_agent = AsyncMock()
+        mock_agent.ainvoke.return_value = {
+            "messages": [MagicMock(content="mock generated response")]
+        }
+        initialized_service._get_agent_for_task = MagicMock(return_value=mock_agent)
 
         result = await initialized_service.run_task("", {
             "prompt": "@ai hello",
@@ -583,16 +516,18 @@ class TestAutoIntentClassification:
     @patch("app.agentic.classify_intent")
     @patch("app.agentic.database")
     @patch("app.agentic.vector_store")
-    @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.mcp_client")
     async def test_explicit_task_skips_classify(
-        self, mock_mcp, mock_mem0, mock_vs, mock_db, mock_classify, initialized_service
+        self, mock_vs, mock_db, mock_classify, initialized_service
     ):
-        mock_mcp.is_configured.return_value = False
-        mock_mem0.search = AsyncMock(return_value=[])
         mock_vs.is_connected = False
         mock_db.is_connected = True
         mock_db.store_ai_artifact = AsyncMock(return_value=None)
+        
+        mock_agent = AsyncMock()
+        mock_agent.ainvoke.return_value = {
+            "messages": [MagicMock(content="mock generated response")]
+        }
+        initialized_service._get_agent_for_task = MagicMock(return_value=mock_agent)
 
         result = await initialized_service.run_task("fact_check", {
             "prompt": "@ai check this",
@@ -612,16 +547,18 @@ class TestRunTaskResponse:
     @pytest.mark.asyncio
     @patch("app.agentic.database")
     @patch("app.agentic.vector_store")
-    @patch("app.agentic.mem0_adapter")
-    @patch("app.agentic.mcp_client")
     async def test_response_includes_errors_field(
-        self, mock_mcp, mock_mem0, mock_vs, mock_db, initialized_service
+        self, mock_vs, mock_db, initialized_service
     ):
-        mock_mcp.is_configured.return_value = False
-        mock_mem0.search = AsyncMock(return_value=[])
         mock_vs.is_connected = False
         mock_db.is_connected = True
         mock_db.store_ai_artifact = AsyncMock(return_value=None)
+        
+        mock_agent = AsyncMock()
+        mock_agent.ainvoke.return_value = {
+            "messages": [MagicMock(content="mock generated response")]
+        }
+        initialized_service._get_agent_for_task = MagicMock(return_value=mock_agent)
 
         result = await initialized_service.run_task("fact_check", {
             "prompt": "@ai test",
