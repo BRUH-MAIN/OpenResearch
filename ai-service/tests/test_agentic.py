@@ -162,15 +162,67 @@ class TestAgentNodes:
         assert "Retrieved 1 papers" in result
 
     @pytest.mark.asyncio
+    @patch("app.agentic.reranker")
     @patch("app.agentic.database")
-    async def test_literature_survey_tool(self, mock_db, initialized_service):
+    async def test_literature_survey_tool(self, mock_db, mock_reranker, initialized_service):
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[{"title": "Test Paper", "abstract": "Deep learning..."}])
+        mock_reranker.is_available = False
 
         result = await initialized_service._tool_survey_literature(
              query="review deep learning for NLP", config={"configurable": {"group_id": "test-group", "user_id": "user-1"
         }})
         assert result == "mock LLM response"
+
+    @pytest.mark.asyncio
+    @patch("app.agentic.reranker")
+    @patch("app.agentic.vector_store")
+    @patch("app.agentic.database")
+    async def test_literature_survey_filters_irrelevant_chunks(
+        self, mock_db, mock_vs, mock_reranker, initialized_service
+    ):
+        """Chunks irrelevant to the query should be filtered out by the LLM relevance gate."""
+        mock_db.is_connected = True
+        mock_db.get_group_papers = AsyncMock(return_value=[
+            {"title": "Paper A", "abstract": "text to 3D generation"},
+            {"title": "Paper B", "abstract": "voice conversion TTS"},
+            {"title": "Paper C", "abstract": "CNN visualization"},
+        ])
+
+        # Vector store returns mixed-relevance chunks
+        mock_vs.is_connected = True
+        mock_vs.search_group_vectors = AsyncMock(return_value=[
+            {"id": "1", "content": "3D model generation from text", "similarity": 0.85},
+            {"id": "2", "content": "voice conversion using seq2seq", "similarity": 0.55},
+            {"id": "3", "content": "CNN fixation maps", "similarity": 0.40},
+        ])
+        mock_reranker.is_available = False
+
+        # Track LLM calls and return appropriate responses
+        call_count = [0]
+
+        async def multi_response_ainvoke(messages, **kwargs):
+            call_count[0] += 1
+            # Call 1: sub-query generation
+            if call_count[0] == 1:
+                return MagicMock(content='["text to 3D generation"]')
+            # Call 2+: relevance filter – only item 1 is relevant
+            # (the filter asks for numbers of relevant items)
+            if call_count[0] <= 4:
+                return MagicMock(content='[1]')
+            # Final call: literature review
+            return MagicMock(content='Literature review about 3D generation.')
+
+        initialized_service._llm.ainvoke = multi_response_ainvoke
+
+        result = await initialized_service._tool_survey_literature(
+            query="text to 3D models",
+            config={"configurable": {"group_id": "test-group", "user_id": "user-1"}},
+        )
+
+        # The final result should not contain TTS/CNN content
+        assert "voice conversion" not in result.lower()
+        assert "cnn fixation" not in result.lower()
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
@@ -181,7 +233,7 @@ class TestAgentNodes:
         result = await initialized_service._tool_analyze_gaps(
              literature_review_context="Prior survey findings...", config={"configurable": {"group_id": "test-group"
         }})
-        assert result == "mock LLM response"
+        assert result.startswith("mock LLM response")
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
@@ -191,7 +243,7 @@ class TestAgentNodes:
         result = await initialized_service._tool_fact_check(
              claim="verify that transformers outperform RNNs", config={"configurable": {"group_id": "g", "user_id": "u"
         }})
-        assert result == "mock LLM response"
+        assert result.startswith("mock LLM response")
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
@@ -202,14 +254,14 @@ class TestAgentNodes:
         result = await initialized_service._tool_assess_novelty(
              idea="is attention-free transformers novel?", config={"configurable": {"group_id": "g"
         }})
-        assert result == "mock LLM response"
+        assert result.startswith("mock LLM response")
 
     @pytest.mark.asyncio
     async def test_research_mentor_tool(self, initialized_service):
         result = await initialized_service._tool_provide_mentoring(
              query="how should I approach NLP research?", config={"configurable": {"group_id": "g", "user_id": "u"
         }})
-        assert result == "mock LLM response"
+        assert result.startswith("mock LLM response")
 
     @pytest.mark.asyncio
     @patch("app.agentic.database")
@@ -220,14 +272,14 @@ class TestAgentNodes:
         result = await initialized_service._tool_write_paper_draft(
              paper_request="write a paper on NLP", config={"configurable": {"group_id": "g"
         }})
-        assert result == "mock LLM response"
+        assert result.startswith("mock LLM response")
 
     @pytest.mark.asyncio
     async def test_research_planning_tool(self, initialized_service):
         result = await initialized_service._tool_plan_research(
              request="plan my NLP research", config={"configurable": {"group_id": "g", "user_id": "u"
         }})
-        assert result == "mock LLM response"
+        assert result.startswith("mock LLM response")
 
     @pytest.mark.asyncio
     @patch("app.agentic.classify_intent")
@@ -247,7 +299,7 @@ class TestAgentNodes:
 
         assert result["task_type"] == "fact_check"
         assert "result" in result
-        assert result["result"]["result"] == "mock generated response"
+        assert result["result"]["fact_check"] == "mock generated response"
         assert "latency_ms" in result
 
 
@@ -258,11 +310,13 @@ class TestAgentNodes:
 class TestErrorBoundaries:
 
     @pytest.mark.asyncio
+    @patch("app.agentic.search_arxiv", new_callable=AsyncMock)
     @patch("app.agentic.database")
-    async def test_paper_retrieval_error_boundary(self, mock_db, initialized_service):
+    async def test_paper_retrieval_error_boundary(self, mock_db, mock_arxiv, initialized_service):
         """When the LLM or DB raises, paper_retrieval should not crash."""
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(side_effect=RuntimeError("DB down"))
+        mock_arxiv.side_effect = RuntimeError("arXiv down")
 
         result = await initialized_service._tool_retrieve_papers(
              query="find papers", config={"configurable": {"group_id": "g"

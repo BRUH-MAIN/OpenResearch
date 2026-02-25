@@ -7,14 +7,15 @@ import { Avatar } from '@/components/ui';
 import { Users, FileText, User, LogOut, ChevronDown, Mail, Bell, Sun, Moon } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { useTheme } from '@/components/providers';
-import { api } from '@/lib/api';
+import { usePendingInvitations } from '@/lib/hooks/useInvitations';
 
 export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout, accessToken } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { theme, toggleTheme } = useTheme();
-  const [pendingCount, setPendingCount] = useState(0);
+  const { data: pendingInvitations = [] } = usePendingInvitations();
+  const pendingCount = pendingInvitations.length;
   const [showNotifications, setShowNotifications] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
 
@@ -25,22 +26,6 @@ export function Navbar() {
   ];
 
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
-
-  // Fetch pending group invitations count
-  useEffect(() => {
-    async function fetchPending() {
-      if (!accessToken) return;
-      try {
-        const groupInvites = await api.getPendingInvitations(accessToken);
-        setPendingCount(groupInvites.length);
-      } catch {
-        // Silently fail
-      }
-    }
-    fetchPending();
-    const interval = setInterval(fetchPending, 30000);
-    return () => clearInterval(interval);
-  }, [accessToken]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

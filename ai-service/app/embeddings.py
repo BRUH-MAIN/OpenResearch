@@ -20,18 +20,28 @@ _tokenizer = None
 
 
 def _get_model():
-    """Lazy load the sentence-transformer model."""
+    """Lazy load the sentence-transformer model with robust fallback chain."""
     global _model, _tokenizer
     if _model is None:
         from sentence_transformers import SentenceTransformer
-        logger.info("Loading SPECTER2 embedding model...")
-        try:
-            _model = SentenceTransformer('allenai/specter2')
-            logger.info("SPECTER2 model loaded successfully")
-        except Exception as exc:
-            logger.warning("SPECTER2 load failed: %s, falling back to SPECTER", exc)
-            _model = SentenceTransformer('allenai/specter')
-            logger.info("SPECTER model loaded successfully")
+
+        # Fallback chain: specter2 → specter2_base (no peft) → all-MiniLM-L6-v2
+        MODELS = [
+            ("allenai/specter2", "SPECTER2"),
+            ("allenai/specter2_base", "SPECTER2-base (no adapter)"),
+            ("sentence-transformers/all-MiniLM-L6-v2", "all-MiniLM-L6-v2 (general-purpose fallback)"),
+        ]
+
+        for model_id, label in MODELS:
+            try:
+                logger.info("Loading embedding model: %s …", label)
+                _model = SentenceTransformer(model_id)
+                logger.info("✅ Embedding model loaded: %s", label)
+                return _model
+            except Exception as exc:
+                logger.warning("Failed to load %s: %s", label, exc)
+
+        logger.error("❌ All embedding model fallbacks failed")
     return _model
 
 

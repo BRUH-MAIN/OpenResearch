@@ -9,3 +9,16 @@ export type { StudioOutput } from './StudioPanel';
 
 export { ResearchMessage } from './ResearchMessage';
 export type { ResearchMessageProps, Citation } from './ResearchMessage';
+
+export { CommandPalette, COMMANDS } from './CommandPalette';
+export type { Command } from './CommandPalette';
+
+export { WorkspacePinnedNotes } from './WorkspacePinnedNotes';
+export type { PinnedNote } from './WorkspacePinnedNotes';
+
+export { WorkspaceTimeline } from './WorkspaceTimeline';
+export type { TimelineEvent } from './WorkspaceTimeline';
+
+export { WorkspaceExport } from './WorkspaceExport';
+
+export { WorkspaceOutline } from './WorkspaceOutline';

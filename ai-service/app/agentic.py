@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import copy
 import logging
 import time
 import json
@@ -40,8 +41,10 @@ except Exception as exc:  # pragma: no cover - optional dependency import
 from .config import get_settings
 from .database import database
 from .vector_store import vector_store
+from .reranker import reranker
 from .intent_classifier import classify_intent
 from .tools.arxiv import search_arxiv
+from .tools.web_search import search_web
 
 # Default timeout for a single LLM call (seconds).
 _LLM_CALL_TIMEOUT = 60
@@ -135,7 +138,7 @@ class AgenticService:
         task_tool_map = {
             "literature_survey": [self._tool_retrieve_papers, self._tool_survey_literature],
             "gap_analysis": [self._tool_retrieve_papers, self._tool_survey_literature, self._tool_analyze_gaps],
-            "fact_checking": [self._tool_fact_check],
+            "fact_check": [self._tool_fact_check],
             "novelty_assessment": [self._tool_retrieve_papers, self._tool_assess_novelty],
             "research_mentor": [self._tool_provide_mentoring],
             "paper_writing": [self._tool_retrieve_papers, self._tool_write_paper_draft],
@@ -420,69 +423,240 @@ class AgenticService:
             lines.append(f"- {title}: {abstract[:400]}")
         return "\n".join(lines)
 
+    async def _filter_relevant_items(
+        self,
+        query: str,
+        items: list[dict],
+        title_key: str = "title",
+        content_key: str = "content",
+    ) -> list[dict]:
+        """Use LLM to filter items by relevance to the query.
+
+        Asks the model to return the 1-based indices of items that are
+        **directly** relevant.  Falls back to returning everything if
+        the LLM call or parsing fails.
+        """
+        if not items:
+            return []
+
+        # Build numbered list for the LLM
+        settings = get_settings()
+        max_items = settings.rag_relevance_filter_max_items
+        numbered = []
+        for i, item in enumerate(items[:max_items]):
+            title = item.get(title_key, "Untitled")
+            snippet = (item.get(content_key, "") or item.get("abstract", ""))[:200]
+            numbered.append(f"{i + 1}. {title}: {snippet}")
+        paper_list = "\n".join(numbered)
+
+        system_prompt = (
+            "You are a strict research-relevance classifier. "
+            "Given a research topic and a numbered list of papers/excerpts, "
+            "return ONLY a JSON array of the numbers whose content is "
+            "DIRECTLY relevant to the topic.  Be strict — do NOT include "
+            "papers on unrelated subjects even if they share broad ML/AI "
+            "terminology.  If NONE are relevant, return an empty array [].\n"
+            "Example response: [1, 3, 5]"
+        )
+        user_prompt = f"Topic: {query}\n\nPapers:\n{paper_list}"
+
+        try:
+            result = await self._call_llm_json(
+                system_prompt, user_prompt, temperature=0.1,
+            )
+            if isinstance(result, list):
+                valid = set()
+                for v in result:
+                    try:
+                        idx = int(v) - 1
+                        if 0 <= idx < len(items):
+                            valid.add(idx)
+                    except (ValueError, TypeError):
+                        continue
+                filtered = [items[i] for i in sorted(valid)]
+                logger.info(
+                    "Relevance filter: %d/%d items kept for query %r",
+                    len(filtered), len(items), query[:80],
+                )
+                return filtered
+        except Exception as exc:
+            logger.warning("Relevance filter LLM call failed: %s", exc)
+
+        return items  # fallback: don't drop anything
+
+    # ------------------------------------------------------------------
+    # Shared RAG + Web Search helpers
+    # ------------------------------------------------------------------
+
+    async def _gather_context(
+        self,
+        query: str,
+        sub_queries: list[str],
+        group_id: Optional[str],
+        include_web: bool = True,
+        include_arxiv: bool = True,
+    ) -> tuple[str, list[dict]]:
+        """
+        Collect sources from vector store, web search, and arXiv.
+
+        Returns:
+            (context_text, source_registry)
+            source_registry: list of {id, title, url, type, snippet}
+        """
+        source_registry: list[dict] = []
+        seen_urls: set[str] = set()
+        sid = 0
+
+        def _add(title: str, url: str, snippet: str, src_type: str):
+            nonlocal sid
+            if url and url in seen_urls:
+                return
+            if url:
+                seen_urls.add(url)
+            sid += 1
+            source_registry.append({
+                "id": f"S{sid}",
+                "title": title or "Untitled",
+                "url": url or "",
+                "type": src_type,
+                "snippet": snippet[:500] if snippet else "",
+            })
+
+        # 1) Vector store search (hybrid: vector + BM25 + RRF)
+        if vector_store.is_connected and group_id:
+            for sq in sub_queries[:5]:
+                try:
+                    results = await vector_store.hybrid_search_group_vectors(
+                        group_id=group_id, query=str(sq), limit=5
+                    )
+                    for res in results:
+                        _add(
+                            title=res.get("title", res.get("paper_id", "DB Chunk")),
+                            url=res.get("url", ""),
+                            snippet=res.get("content", ""),
+                            src_type="vector_store",
+                        )
+                except Exception as exc:
+                    logger.warning("Hybrid search failed for %r: %s", sq, exc)
+
+        # 2) Web search
+        if include_web:
+            for sq in sub_queries[:3]:
+                try:
+                    web_results = await search_web(query=str(sq), limit=3)
+                    for item in web_results.get("results", []):
+                        _add(
+                            title=item.get("title", ""),
+                            url=item.get("url", ""),
+                            snippet=item.get("snippet", ""),
+                            src_type="web",
+                        )
+                except Exception as exc:
+                    logger.warning("Web search failed for %r: %s", sq, exc)
+
+        # 3) ArXiv search
+        if include_arxiv:
+            for sq in sub_queries[:3]:
+                try:
+                    ax_resp = await search_arxiv(query=str(sq), limit=3)
+                    for item in ax_resp.get("papers", []):
+                        _add(
+                            title=item.get("title", ""),
+                            url=item.get("url", item.get("id", "")),
+                            snippet=item.get("abstract", ""),
+                            src_type="arxiv",
+                        )
+                except Exception as exc:
+                    logger.warning("ArXiv search failed for %r: %s", sq, exc)
+
+        # 4) Fallback to group papers if nothing found
+        if not source_registry and group_id:
+            papers = await self._get_group_papers(group_id)
+            for paper in papers[:8]:
+                _add(
+                    title=paper.get("title", "Untitled"),
+                    url=paper.get("url", ""),
+                    snippet=paper.get("abstract", ""),
+                    src_type="group_papers",
+                )
+
+        # 5) Cross-encoder reranking — reorder by true relevance
+        if len(source_registry) > 1 and reranker.is_available:
+            try:
+                source_registry = await reranker.rerank(
+                    query=query,
+                    results=source_registry,
+                    top_k=min(len(source_registry), 15),
+                    content_key="snippet",
+                )
+            except Exception as exc:
+                logger.warning("Reranking failed: %s", exc)
+
+        # Build context text
+        context_lines = []
+        for src in source_registry:
+            context_lines.append(f"--- [{src['id']}] {src['title']} ({src['type']}) ---")
+            context_lines.append(src["snippet"])
+            if src["url"]:
+                context_lines.append(f"URL: {src['url']}")
+            context_lines.append("")
+
+        context_text = "\n".join(context_lines) if context_lines else "No external context found."
+        return context_text, source_registry
+
+    def _resolve_references(self, text: str, sources: list[dict]) -> str:
+        """
+        Replace [S1], [S2] etc. in LLM output with clickable markdown links.
+
+        Example: [S1] → [Smith et al. — "Title"](https://arxiv.org/abs/...)
+        """
+        for src in sources:
+            marker = f"[{src['id']}]"
+            if marker not in text:
+                continue
+            title = src["title"][:60]
+            url = src["url"]
+            if url:
+                replacement = f"[{title}]({url})"
+            else:
+                replacement = f"*{title}*"
+            text = text.replace(marker, replacement)
+        return text
+
+    def _build_reference_section(self, sources: list[dict]) -> str:
+        """Build a ## References section with numbered clickable links."""
+        if not sources:
+            return ""
+        lines = ["\n\n## References\n"]
+        for i, src in enumerate(sources, 1):
+            title = src["title"]
+            url = src["url"]
+            src_type = src["type"]
+            if url:
+                lines.append(f"{i}. [{title}]({url}) — *{src_type}*")
+            else:
+                lines.append(f"{i}. {title} — *{src_type}*")
+        return "\n".join(lines)
+
     # ------------------------------------------------------------------
     # Agent Tools
     # ------------------------------------------------------------------
 
     async def _tool_retrieve_papers(self, query: str, config: RunnableConfig) -> str:
-        """Search for and retrieve relevant academic papers from arXiv and the group database."""
+        """Search for relevant academic papers from arXiv (read-only, no auto-save to group)."""
         group_id = config.get("configurable", {}).get("group_id")
-        user_id = config.get("configurable", {}).get("user_id")
         try:
             papers: list[dict] = []
 
+            # Search arXiv — results are returned as context only, NOT persisted
             try:
                 mcp_response = await search_arxiv(query=query, limit=10)
                 arxiv_papers = mcp_response.get("papers", [])
-                
-                if arxiv_papers:
-                    import uuid
-                    from .database import database
-                    from .vector_store import vector_store
-                    
-                    for p in arxiv_papers:
-                        original_id = p.get("id", p.get("url", str(uuid.uuid4())))
-                        paper_uuid = str(uuid.uuid5(uuid.NAMESPACE_URL, original_id))
-                        p["id"] = paper_uuid
-                        
-                        # 1. Save to papers table
-                        await database.save_paper(
-                            paper_id=paper_uuid,
-                            title=p.get("title", "Untitled"),
-                            abstract=p.get("abstract", ""),
-                            authors=p.get("authors", []),
-                            url=p.get("url", original_id),
-                            published_date=p.get("published")
-                        )
-                        
-                        # 2. Add to group_papers
-                        if user_id:
-                            await database.add_group_paper(
-                                group_id=group_id,
-                                paper_id=paper_uuid,
-                                added_by=user_id,
-                                notes=f"Auto-retrieved from arXiv for query: {query}"
-                            )
-                        
-                        # 3. Add to vector store
-                        if vector_store.is_connected:
-                            await vector_store.insert_paper_chunks(
-                                group_id=group_id,
-                                paper_id=paper_uuid,
-                                title=p.get("title", "Untitled"),
-                                abstract=p.get("abstract", ""),
-                                full_text=None,
-                                metadata={
-                                    "added_by": user_id or "system",
-                                    "source": "arxiv",
-                                    "original_id": original_id
-                                }
-                            )
-                
                 papers.extend(arxiv_papers)
             except Exception as exc:
-                logger.warning("Paper retrieval failed: %s", exc)
+                logger.warning("ArXiv search failed: %s", exc)
 
+            # Fall back to existing group papers if arXiv returned nothing
             if not papers:
                 papers = await self._get_group_papers(group_id)
 
@@ -525,26 +699,74 @@ class AgenticService:
             all_chunks = []
             seen_chunk_ids = set()
 
+            settings = get_settings()
             if vector_store.is_connected:
                 for sq in sub_queries:
                     results = await vector_store.search_group_vectors(
                         group_id=group_id,
                         query=str(sq),
-                        limit=5,
+                        limit=settings.rag_chunks_per_query,
                     )
                     for res in results:
                         if res["id"] not in seen_chunk_ids:
+                            # Skip chunks with very low vector similarity
+                            similarity = res.get("similarity", 0)
+                            if similarity < settings.rag_similarity_threshold:
+                                continue
                             seen_chunk_ids.add(res["id"])
                             all_chunks.append(res)
 
+            # Rerank chunks using cross-encoder if available
+            if len(all_chunks) > 1 and reranker.is_available:
+                try:
+                    all_chunks = await reranker.rerank(
+                        query=query,
+                        results=all_chunks,
+                        top_k=min(len(all_chunks), settings.rag_reranker_top_k),
+                        content_key="content",
+                    )
+                    all_chunks = [c for c in all_chunks if c.get("rerank_score", 0) > settings.rag_reranker_score_threshold]
+                except Exception as exc:
+                    logger.warning("Reranking literature chunks failed: %s", exc)
+
+            # --- LLM-based relevance gate (handles the case where all
+            #     chunks are off-topic even if their scores are high) ---
+            if all_chunks:
+                all_chunks = await self._filter_relevant_items(
+                    query=query, items=all_chunks,
+                    title_key="paper_id", content_key="content",
+                )
+
             if all_chunks:
                 context_lines = []
-                for i, chunk in enumerate(all_chunks[:15]):
+                for i, chunk in enumerate(all_chunks[:settings.rag_max_context_chunks]):
                     context_lines.append(f"--- Excerpt {i+1} ---")
                     context_lines.append(f"Content: {chunk.get('content', '')}")
                 context_text = "\n".join(context_lines)
             else:
-                context_text = self._format_papers(papers)
+                # Fallback: filter group papers by LLM relevance
+                paper_items = [
+                    {
+                        "title": p.get("title", "Untitled"),
+                        "content": f"{p.get('title', '')} {p.get('abstract', '')}",
+                    }
+                    for p in papers
+                ]
+                paper_items = await self._filter_relevant_items(
+                    query=query, items=paper_items,
+                    title_key="title", content_key="content",
+                )
+
+                if paper_items:
+                    context_text = "\n".join(
+                        f"- {p['title']}: {p['content'][:400]}" for p in paper_items
+                    )
+                else:
+                    context_text = (
+                        "No papers in the current group are relevant to this topic. "
+                        "The review should state that no relevant papers were found "
+                        "and suggest the user add papers on this topic to the group."
+                    )
 
             system_prompt = (
                 "You are an expert Academic Reviewer. Synthesize the provided paper excerpts into a comprehensive, deeply detailed structured literature review. "
@@ -567,19 +789,41 @@ class AgenticService:
         """Identify research gaps, unresolved debates, and underexplored areas."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            papers = await self._get_group_papers(group_id)
+            # Generate sub-queries for gap analysis
+            sub_queries = await self._call_llm_json(
+                system_prompt="You are a research strategist. Generate 3-5 focused search queries to find potential research gaps, underexplored areas, and recent developments related to the topic. Return a JSON array of strings.",
+                user_prompt=f"Topic context:\n{literature_review_context[:2000]}",
+                temperature=0.2,
+            )
+            if not isinstance(sub_queries, list):
+                sub_queries = [literature_review_context[:200]]
+
+            context_text, sources = await self._gather_context(
+                query=literature_review_context[:500],
+                sub_queries=sub_queries,
+                group_id=group_id,
+            )
 
             system_prompt = (
                 "You are the Gap Analysis Agent. Identify research gaps, unresolved debates, "
-                "and underexplored areas based on the literature review."
+                "and underexplored areas based on the provided context.\n\n"
+                "RULES:\n"
+                "1. Cite sources using [S1], [S2], etc.\n"
+                "2. Rate each gap: 🔴 High / 🟡 Medium / 🟢 Low significance\n"
+                "3. Suggest concrete approaches for each gap with supporting references\n"
+                "4. Structure output with clear numbered gaps\n"
+                "5. Be thorough and detailed"
             )
             user_prompt = (
-                f"Literature review context:\n{literature_review_context}\n\n"
-                f"Papers:\n{self._format_papers(papers)}\n\n"
-                "Return a prioritized list of gaps with significance and suggested approaches."
+                f"Literature review context:\n{literature_review_context[:3000]}\n\n"
+                f"Additional sources:\n{context_text}\n\n"
+                "Identify and analyze all research gaps with citations."
             )
 
-            return await self._call_llm(system_prompt, user_prompt)
+            raw = await self._call_llm(system_prompt, user_prompt)
+            result = self._resolve_references(raw, sources)
+            result += self._build_reference_section(sources)
+            return result
         except Exception as exc:
             logger.error("_tool_analyze_gaps failed: %s", exc, exc_info=True)
             return f"Error analyzing gaps: {exc}"
@@ -588,19 +832,40 @@ class AgenticService:
         """Verify claims against available context. Returns supported, contradicted, or unclear with evidence."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            papers = await self._get_group_papers(group_id)
+            # Generate search queries to verify the claim
+            sub_queries = await self._call_llm_json(
+                system_prompt="You are a fact-checking strategist. Generate 3-5 search queries to find evidence that supports or contradicts the given claim. Return a JSON array of strings.",
+                user_prompt=f"Claim to verify: {claim}",
+                temperature=0.2,
+            )
+            if not isinstance(sub_queries, list):
+                sub_queries = [claim]
+
+            context_text, sources = await self._gather_context(
+                query=claim,
+                sub_queries=sub_queries,
+                group_id=group_id,
+            )
 
             system_prompt = (
-                "You are the Fact-Checking Agent. Verify claims against available context. "
-                "Return supported, contradicted, or unclear with evidence."
+                "You are the Fact-Checking Agent. Verify the claim against the provided evidence.\n\n"
+                "RULES:\n"
+                "1. Cite all evidence using [S1], [S2], etc.\n"
+                "2. For each sub-claim classify as: ✅ Supported / ❌ Contradicted / ⚠️ Unclear\n"
+                "3. Provide a confidence level (High/Medium/Low) with justification\n"
+                "4. Quote specific evidence from sources\n"
+                "5. Structure output clearly with a final verdict"
             )
             user_prompt = (
                 f"Claim to verify: {claim}\n\n"
-                f"Available papers:\n{self._format_papers(papers)}\n\n"
-                "Provide a verification status and evidence summary."
+                f"Available evidence:\n{context_text}\n\n"
+                "Provide a thorough fact-check with evidence citations."
             )
 
-            return await self._call_llm(system_prompt, user_prompt)
+            raw = await self._call_llm(system_prompt, user_prompt)
+            result = self._resolve_references(raw, sources)
+            result += self._build_reference_section(sources)
+            return result
         except Exception as exc:
             logger.error("_tool_fact_check failed: %s", exc, exc_info=True)
             return f"Error fact checking: {exc}"
@@ -609,36 +874,84 @@ class AgenticService:
         """Compare an idea against existing papers and assess novelty."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            papers = await self._get_group_papers(group_id)
+            # Generate search queries for prior art
+            sub_queries = await self._call_llm_json(
+                system_prompt="You are a novelty assessment strategist. Generate 3-5 search queries to find existing work similar to the idea. Aim to find overlapping research. Return a JSON array of strings.",
+                user_prompt=f"Idea to assess: {idea}",
+                temperature=0.2,
+            )
+            if not isinstance(sub_queries, list):
+                sub_queries = [idea]
+
+            context_text, sources = await self._gather_context(
+                query=idea,
+                sub_queries=sub_queries,
+                group_id=group_id,
+            )
 
             system_prompt = (
-                "You are the Novelty Assessment Agent. Compare the idea against existing papers "
-                "and assess novelty with a score and suggestions to differentiate."
+                "You are the Novelty Assessment Agent. Compare the idea against existing work.\n\n"
+                "RULES:\n"
+                "1. Cite all related work using [S1], [S2], etc.\n"
+                "2. Provide a novelty score (0-100) with detailed justification\n"
+                "3. List specific overlaps with existing work (cite sources)\n"
+                "4. Identify the unique contributions of the idea\n"
+                "5. Suggest differentiation strategies with references\n"
+                "6. Use a structured format with clear sections"
             )
             user_prompt = (
-                f"Idea: {idea}\n\n"
-                f"Related papers:\n{self._format_papers(papers)}\n\n"
-                "Return: novelty score (0-100), overlaps, and differentiation suggestions."
+                f"Idea to assess: {idea}\n\n"
+                f"Existing work found:\n{context_text}\n\n"
+                "Provide a comprehensive novelty assessment with citations."
             )
 
-            return await self._call_llm(system_prompt, user_prompt)
+            raw = await self._call_llm(system_prompt, user_prompt)
+            result = self._resolve_references(raw, sources)
+            result += self._build_reference_section(sources)
+            return result
         except Exception as exc:
             logger.error("_tool_assess_novelty failed: %s", exc, exc_info=True)
             return f"Error assessing novelty: {exc}"
 
     async def _tool_provide_mentoring(self, query: str, config: RunnableConfig) -> str:
         """Provide personalized guidance, methodology advice, and next steps."""
+        group_id = config.get("configurable", {}).get("group_id")
         try:
-            system_prompt = (
-                "You are the Research Mentor Agent. Provide personalized guidance, "
-                "methodology advice, and next steps."
+            # Generate search queries for resources
+            sub_queries = await self._call_llm_json(
+                system_prompt="You are a research mentor. Generate 3-5 search queries to find helpful resources, methodologies, tutorials, and seminal papers for the student's question. Return a JSON array of strings.",
+                user_prompt=f"Student question: {query}",
+                temperature=0.2,
             )
-            user_prompt = (
-                f"User query: {query}\n\n"
-                "Provide actionable mentoring advice and suggested next steps."
+            if not isinstance(sub_queries, list):
+                sub_queries = [query]
+
+            context_text, sources = await self._gather_context(
+                query=query,
+                sub_queries=sub_queries,
+                group_id=group_id,
             )
 
-            return await self._call_llm(system_prompt, user_prompt)
+            system_prompt = (
+                "You are the Research Mentor Agent. Provide detailed, actionable guidance.\n\n"
+                "RULES:\n"
+                "1. Cite resources using [S1], [S2], etc.\n"
+                "2. Recommend seminal papers with proper citations\n"
+                "3. Suggest specific methodologies with references\n"
+                "4. Provide step-by-step next actions\n"
+                "5. Include recommended tools, datasets, or frameworks with links\n"
+                "6. Be encouraging but rigorous"
+            )
+            user_prompt = (
+                f"Student query: {query}\n\n"
+                f"Available resources:\n{context_text}\n\n"
+                "Provide comprehensive mentoring advice with cited resources."
+            )
+
+            raw = await self._call_llm(system_prompt, user_prompt)
+            result = self._resolve_references(raw, sources)
+            result += self._build_reference_section(sources)
+            return result
         except Exception as exc:
             logger.error("_tool_provide_mentoring failed: %s", exc, exc_info=True)
             return f"Error providing mentoring: {exc}"
@@ -647,36 +960,84 @@ class AgenticService:
         """Draft a structured paper outline and key sections."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            papers = await self._get_group_papers(group_id)
+            # Generate queries for reference gathering
+            sub_queries = await self._call_llm_json(
+                system_prompt="You are an academic writing assistant. Generate 3-5 search queries to find reference material for the paper topic. Return a JSON array of strings.",
+                user_prompt=f"Paper topic: {paper_request}",
+                temperature=0.2,
+            )
+            if not isinstance(sub_queries, list):
+                sub_queries = [paper_request]
+
+            context_text, sources = await self._gather_context(
+                query=paper_request,
+                sub_queries=sub_queries,
+                group_id=group_id,
+            )
 
             system_prompt = (
-                "You are the Paper Writing Agent. Draft a structured paper outline and "
-                "key sections aligned with academic standards."
+                "You are the Paper Writing Agent. Draft a structured academic paper.\n\n"
+                "RULES:\n"
+                "1. Include inline citations using [S1], [S2], etc.\n"
+                "2. Produce: Title, Abstract, Introduction (with background & citations), "
+                "Related Work, Proposed Approach/Outline, and Conclusion\n"
+                "3. Cite relevant sources throughout the text\n"
+                "4. Follow academic writing conventions\n"
+                "5. Make the introduction thorough with proper literature context"
             )
             user_prompt = (
-                f"Paper request: {paper_request}\n\n"
-                f"Reference papers:\n{self._format_papers(papers)}\n\n"
-                "Provide: title, abstract, outline, and a starter introduction."
+                f"Paper topic: {paper_request}\n\n"
+                f"Reference material:\n{context_text}\n\n"
+                "Write the structured paper draft with inline citations."
             )
 
-            return await self._call_llm(system_prompt, user_prompt)
+            raw = await self._call_llm(system_prompt, user_prompt)
+            result = self._resolve_references(raw, sources)
+            result += self._build_reference_section(sources)
+            return result
         except Exception as exc:
             logger.error("_tool_write_paper_draft failed: %s", exc, exc_info=True)
             return f"Error writing paper draft: {exc}"
 
     async def _tool_plan_research(self, request: str, config: RunnableConfig) -> str:
         """Create a milestone-based plan with dependencies, timeline estimates, and resources."""
+        group_id = config.get("configurable", {}).get("group_id")
         try:
+            # Generate queries for methodology & best practices search
+            sub_queries = await self._call_llm_json(
+                system_prompt="You are a research planning strategist. Generate 3-5 search queries to find methodologies, best practices, tools, and existing approaches for the research plan. Return a JSON array of strings.",
+                user_prompt=f"Research plan request: {request}",
+                temperature=0.2,
+            )
+            if not isinstance(sub_queries, list):
+                sub_queries = [request]
+
+            context_text, sources = await self._gather_context(
+                query=request,
+                sub_queries=sub_queries,
+                group_id=group_id,
+            )
+
             system_prompt = (
-                "You are the Research Planning Agent. Create a milestone-based plan with "
-                "dependencies, timeline estimates, and resources."
+                "You are the Research Planning Agent. Create a comprehensive, milestone-based plan.\n\n"
+                "RULES:\n"
+                "1. Cite methodologies and resources using [S1], [S2], etc.\n"
+                "2. Include: Milestones with timeline estimates, dependencies between tasks,\n"
+                "   recommended tools/datasets (with links), potential risks\n"
+                "3. Link each milestone to relevant references\n"
+                "4. Be specific and actionable\n"
+                "5. Include a Gantt-chart style text timeline"
             )
             user_prompt = (
                 f"Research plan request: {request}\n\n"
-                "Provide a plan with milestones, timeline, and dependencies."
+                f"Available methodologies and resources:\n{context_text}\n\n"
+                "Create the detailed research plan with referenced resources."
             )
 
-            return await self._call_llm(system_prompt, user_prompt)
+            raw = await self._call_llm(system_prompt, user_prompt)
+            result = self._resolve_references(raw, sources)
+            result += self._build_reference_section(sources)
+            return result
         except Exception as exc:
             logger.error("_tool_plan_research failed: %s", exc, exc_info=True)
             return f"Error planning research: {exc}"
@@ -688,7 +1049,7 @@ class AgenticService:
             # Step 1: Generate search queries
             plan_system = (
                 "You are a research planner. Generate a focused set of search queries to answer the user question. "
-                "Return a JSON array of 3-6 concise search queries."
+                "Return a JSON array of 4-6 concise, diverse search queries."
             )
             plan_text = await self._call_llm(
                 plan_system,
@@ -699,11 +1060,20 @@ class AgenticService:
             if not queries:
                 queries = [re.sub(r"@ai", "", query, flags=re.IGNORECASE).strip() or query]
 
-            # Step 2: Collect sources
-            sources = await self._collect_sources(queries, group_id)
+            # Step 2: Gather sources from all channels
+            context_text, sources = await self._gather_context(
+                query=query,
+                sub_queries=queries,
+                group_id=group_id,
+                include_web=True,
+                include_arxiv=True,
+            )
 
             # Step 3: Summarize sources
-            summaries = await self._summarize_sources(query, sources)
+            summaries = await self._summarize_sources(query, [
+                {"title": s["title"], "content": s["snippet"], "url": s["url"]}
+                for s in sources
+            ])
 
             # Step 4: Synthesize notes
             compression_system = (
@@ -719,18 +1089,24 @@ class AgenticService:
 
             # Step 5: Write final report
             report_system = (
-                "You are the Deep Research Agent. Write a comprehensive report with citations, "
-                "clear sections, and actionable takeaways."
+                "You are the Deep Research Agent. Write a comprehensive report.\n\n"
+                "RULES:\n"
+                "1. Use citations [S1], [S2], etc. throughout the text\n"
+                "2. Include: Executive Summary, Key Findings, Evidence & Analysis, "
+                "Open Questions, and Future Directions\n"
+                "3. Be thorough, detailed, and evidence-based\n"
+                "4. Each claim must be backed by a citation"
             )
             report = await self._call_llm(
                 report_system,
                 f"Research question: {query}\n\nResearch notes:\n{notes}\n\n"
-                "Write a report with: Executive Summary, Key Findings, Evidence & Analysis, "
-                "Open Questions, and Future Directions. Keep citations like [S1].",
+                "Write the comprehensive report with citations.",
                 temperature=0.2,
             )
 
-            return f"Deep Research Report:\n\n{report}"
+            result = self._resolve_references(report, sources)
+            result += self._build_reference_section(sources)
+            return f"Deep Research Report:\n\n{result}"
         except Exception as exc:
             logger.error("_tool_deep_research failed: %s", exc, exc_info=True)
             return f"Error in deep research: {exc}"
@@ -826,7 +1202,7 @@ class AgenticService:
             "deep_research": "deep_research",
             "literature_survey": "literature_review",
             "gap_analysis": "research_gaps",
-            "fact_checking": "fact_check",
+            "fact_check": "fact_check",
             "novelty_assessment": "novelty",
             "research_mentor": "mentor_advice",
             "paper_writing": "paper_draft",
@@ -885,29 +1261,306 @@ class AgenticService:
         errors = []
 
         try:
-            async for event in agent.astream_events(
-                initial_input,
-                config={
-                    "configurable": {
-                        "group_id": request.get("group_id"),
-                        "user_id": request.get("user_id")
-                    }
-                },
-                version="v2"
-            ):
-                kind = event["event"]
-                name = event["name"]
+            if effective_task == "literature_survey":
+                group_id = request.get("group_id")
+                query = raw_prompt
+                
+                steps = [
+                    {"icon": "search", "label": "Processing research query", "status": "active", "detail": "Extracting key terms..."},
+                    {"icon": "database", "label": "Searching distinct papers in DB", "status": "pending", "detail": ""},
+                    {"icon": "globe", "label": "Searching Arxiv", "status": "pending", "detail": ""},
+                    {"icon": "layers", "label": "Retrieving context chunks", "status": "pending", "detail": ""},
+                    {"icon": "brain", "label": "Synthesizing literature review", "status": "pending", "detail": ""}
+                ]
 
-                if kind == "on_tool_start":
-                    yield json.dumps({"type": "progress", "message": f"Running tool: {name}..."}) + "\n"
-                elif kind == "on_tool_end":
-                    yield json.dumps({"type": "progress", "message": f"Completed tool: {name}"}) + "\n"
-                elif kind == "on_chat_model_end":
-                    msg = event.get("data", {}).get("output", {})
-                    if hasattr(msg, "content") and msg.content:
-                        final_response = self._extract_text_from_possible_json(msg.content)
-                    elif isinstance(msg, dict) and "content" in msg and msg["content"]:
-                        final_response = self._extract_text_from_possible_json(msg["content"])
+                def yield_progress():
+                    return json.dumps({"type": "progress", "message": json.dumps({"agentic_steps": steps})}) + "\n"
+
+                yield yield_progress()
+
+                # Step 1
+                query_gen_system = "You are an expert academic librarian. Break down the user's research topic into 3 to 5 highly specific search queries for retrieving relevant chunks from a vector database of research papers."
+                sub_queries = await self._call_llm_json(
+                    system_prompt=query_gen_system,
+                    user_prompt=f"Topic: {query}",
+                    temperature=0.2,
+                )
+                if not isinstance(sub_queries, list):
+                    sub_queries = [query]
+                
+                steps[0]["status"] = "done"
+                steps[0]["detail"] = f"Generated {len(sub_queries)} queries"
+                steps[1]["status"] = "active"
+                steps[1]["detail"] = "Querying vector store..."
+                yield yield_progress()
+
+                # Step 2: Vector search + group papers
+                all_chunks = []
+                seen_chunk_ids = set()
+                papers = []
+                if group_id:
+                    papers = await self._get_group_papers(group_id)
+                    settings = get_settings()
+                    if vector_store.is_connected:
+                        for sq in sub_queries:
+                            results = await vector_store.search_group_vectors(group_id=group_id, query=str(sq), limit=settings.rag_chunks_per_query)
+                            for res in results:
+                                if res["id"] not in seen_chunk_ids:
+                                    # Skip chunks with very low vector similarity
+                                    similarity = res.get("similarity", 0)
+                                    if similarity < settings.rag_similarity_threshold:
+                                        continue
+                                    seen_chunk_ids.add(res["id"])
+                                    all_chunks.append(res)
+                
+                steps[1]["status"] = "done"
+                steps[1]["detail"] = f"Found {len(papers)} papers, {len(all_chunks)} chunks"
+                steps[2]["status"] = "active"
+                steps[2]["detail"] = "Checking if external papers are needed..."
+                yield yield_progress()
+
+                # Step 3
+                if len(papers) < 3:
+                    steps[2]["detail"] = "Fetching external papers from Arxiv..."
+                    yield yield_progress()
+                    await self._tool_retrieve_papers(query, RunnableConfig(configurable={"group_id": group_id}))
+                    if group_id:
+                        papers = await self._get_group_papers(group_id)
+                    steps[2]["detail"] = f"Retrieved combined {len(papers)} papers."
+                else:
+                    steps[2]["detail"] = "Sufficient papers found in DB."
+                
+                steps[2]["status"] = "done"
+                steps[3]["status"] = "active"
+                steps[3]["detail"] = "Filtering relevant excerpts..."
+                yield yield_progress()
+
+                # Step 4: LLM-based relevance filtering
+                if all_chunks:
+                    all_chunks = await self._filter_relevant_items(
+                        query=query, items=all_chunks,
+                        title_key="paper_id", content_key="content",
+                    )
+
+                if all_chunks:
+                    context_lines = []
+                    for i, chunk in enumerate(all_chunks[:settings.rag_max_context_chunks]):
+                        context_lines.append(f"--- Excerpt {i+1} ---")
+                        context_lines.append(f"Content: {chunk.get('content', '')}")
+                    context_text = "\n".join(context_lines)
+                else:
+                    # Fallback: filter group papers by LLM relevance
+                    paper_items = [
+                        {
+                            "title": p.get("title", "Untitled"),
+                            "content": f"{p.get('title', '')} {p.get('abstract', '')}",
+                        }
+                        for p in papers
+                    ]
+                    paper_items = await self._filter_relevant_items(
+                        query=query, items=paper_items,
+                        title_key="title", content_key="content",
+                    )
+
+                    if paper_items:
+                        context_text = "\n".join(
+                            f"- {p['title']}: {p['content'][:400]}" for p in paper_items
+                        )
+                    else:
+                        context_text = (
+                            "No papers in the current group are relevant to this topic. "
+                            "The review should state that no relevant papers were found "
+                            "and suggest the user add papers on this topic to the group."
+                        )
+
+                steps[3]["status"] = "done"
+                steps[3]["detail"] = f"Filtered to {len(all_chunks)} relevant excerpts" if all_chunks else "Using filtered papers"
+                steps[4]["status"] = "active"
+                steps[4]["detail"] = "Running LLM to write review..."
+                yield yield_progress()
+
+                # Step 5
+                system_prompt = (
+                    "You are an expert Academic Reviewer. Synthesize the provided paper excerpts into a comprehensive, deeply detailed structured literature review. "
+                    "You MUST include a Markdown table comparing the key innovations, methods, or findings of the papers discussed. "
+                    "Structure the review with clear thematic sections and a conclusion."
+                )
+
+                user_prompt = (
+                    f"User topic: {query}\n\n"
+                    f"Retrieved Research Excerpts:\n{context_text}\n\n"
+                    "Please write the detailed literature review now, ensuring to include the comparative Markdown table."
+                )
+
+                final_response = await self._call_llm(system_prompt, user_prompt, temperature=0.3)
+                
+                steps[4]["status"] = "done"
+                steps[4]["detail"] = "Review completed."
+                yield yield_progress()
+
+            else:
+                # -------------------------------------------------------
+                # Generic 5-phase streaming pipeline for all other agents
+                # -------------------------------------------------------
+                group_id = request.get("group_id")
+                query = raw_prompt
+
+                # Define per-task step labels
+                TASK_STEPS = {
+                    "gap_analysis": [
+                        {"icon": "search", "label": "Analyzing research topic", "status": "active", "detail": "Generating sub-queries..."},
+                        {"icon": "database", "label": "Searching paper database", "status": "pending", "detail": ""},
+                        {"icon": "globe", "label": "Searching the web", "status": "pending", "detail": ""},
+                        {"icon": "layers", "label": "Assembling context", "status": "pending", "detail": ""},
+                        {"icon": "brain", "label": "Identifying research gaps", "status": "pending", "detail": ""},
+                    ],
+                    "fact_check": [
+                        {"icon": "search", "label": "Parsing claims", "status": "active", "detail": "Generating verification queries..."},
+                        {"icon": "database", "label": "Searching evidence in DB", "status": "pending", "detail": ""},
+                        {"icon": "globe", "label": "Searching web for evidence", "status": "pending", "detail": ""},
+                        {"icon": "file-search", "label": "Searching academic papers", "status": "pending", "detail": ""},
+                        {"icon": "brain", "label": "Synthesizing verdict", "status": "pending", "detail": ""},
+                    ],
+                    "novelty_assessment": [
+                        {"icon": "search", "label": "Analyzing idea", "status": "active", "detail": "Generating prior art queries..."},
+                        {"icon": "database", "label": "Searching prior art in DB", "status": "pending", "detail": ""},
+                        {"icon": "globe", "label": "Searching web for similar work", "status": "pending", "detail": ""},
+                        {"icon": "file-search", "label": "Searching arXiv papers", "status": "pending", "detail": ""},
+                        {"icon": "brain", "label": "Scoring novelty", "status": "pending", "detail": ""},
+                    ],
+                    "research_mentor": [
+                        {"icon": "search", "label": "Understanding query", "status": "active", "detail": "Generating resource queries..."},
+                        {"icon": "database", "label": "Searching group knowledge", "status": "pending", "detail": ""},
+                        {"icon": "globe", "label": "Finding web resources", "status": "pending", "detail": ""},
+                        {"icon": "file-search", "label": "Finding academic resources", "status": "pending", "detail": ""},
+                        {"icon": "brain", "label": "Generating mentoring advice", "status": "pending", "detail": ""},
+                    ],
+                    "paper_writing": [
+                        {"icon": "search", "label": "Analyzing paper topic", "status": "active", "detail": "Generating reference queries..."},
+                        {"icon": "database", "label": "Gathering references from DB", "status": "pending", "detail": ""},
+                        {"icon": "globe", "label": "Searching web references", "status": "pending", "detail": ""},
+                        {"icon": "file-search", "label": "Searching arXiv references", "status": "pending", "detail": ""},
+                        {"icon": "brain", "label": "Drafting paper", "status": "pending", "detail": ""},
+                    ],
+                    "research_planning": [
+                        {"icon": "search", "label": "Analyzing research goals", "status": "active", "detail": "Generating methodology queries..."},
+                        {"icon": "database", "label": "Searching group methodologies", "status": "pending", "detail": ""},
+                        {"icon": "globe", "label": "Finding best practices", "status": "pending", "detail": ""},
+                        {"icon": "file-search", "label": "Searching academic frameworks", "status": "pending", "detail": ""},
+                        {"icon": "brain", "label": "Building research plan", "status": "pending", "detail": ""},
+                    ],
+                    "deep_research": [
+                        {"icon": "search", "label": "Planning research queries", "status": "active", "detail": "Generating sub-queries..."},
+                        {"icon": "database", "label": "Searching vector store", "status": "pending", "detail": ""},
+                        {"icon": "globe", "label": "Searching the web", "status": "pending", "detail": ""},
+                        {"icon": "file-search", "label": "Searching arXiv", "status": "pending", "detail": ""},
+                        {"icon": "layers", "label": "Summarizing sources", "status": "pending", "detail": ""},
+                        {"icon": "brain", "label": "Writing research report", "status": "pending", "detail": ""},
+                    ],
+                }
+
+                # Use default steps if task not in map
+                default_steps = [
+                    {"icon": "search", "label": "Processing query", "status": "active", "detail": "Generating sub-queries..."},
+                    {"icon": "database", "label": "Searching knowledge base", "status": "pending", "detail": ""},
+                    {"icon": "globe", "label": "Searching the web", "status": "pending", "detail": ""},
+                    {"icon": "file-search", "label": "Searching academic papers", "status": "pending", "detail": ""},
+                    {"icon": "brain", "label": "Generating response", "status": "pending", "detail": ""},
+                ]
+
+                steps = copy.deepcopy(TASK_STEPS.get(effective_task, default_steps))
+
+                def yield_progress():
+                    return json.dumps({"type": "progress", "message": json.dumps({"agentic_steps": steps})}) + "\n"
+
+                yield yield_progress()
+
+                # Phase 1: Generate sub-queries
+                sub_queries = await self._call_llm_json(
+                    system_prompt="You are a research strategist. Generate 3-5 focused search queries relevant to the user's request. Return a JSON array of strings.",
+                    user_prompt=f"User request: {query}",
+                    temperature=0.2,
+                )
+                if not isinstance(sub_queries, list):
+                    sub_queries = [query]
+
+                steps[0]["status"] = "done"
+                steps[0]["detail"] = f"Generated {len(sub_queries)} queries"
+                steps[1]["status"] = "active"
+                steps[1]["detail"] = "Querying vector store..."
+                yield yield_progress()
+
+                # Phase 2-4: Gather context (vector store + web + arXiv)
+                context_text, sources = await self._gather_context(
+                    query=query,
+                    sub_queries=sub_queries,
+                    group_id=group_id,
+                )
+
+                # Update steps 1-3 as done based on source counts
+                vs_count = sum(1 for s in sources if s["type"] == "vector_store")
+                web_count = sum(1 for s in sources if s["type"] == "web")
+                arxiv_count = sum(1 for s in sources if s["type"] == "arxiv")
+
+                steps[1]["status"] = "done"
+                steps[1]["detail"] = f"Found {vs_count} DB results"
+                steps[2]["status"] = "done"
+                steps[2]["detail"] = f"Found {web_count} web results"
+                if len(steps) > 4:
+                    steps[3]["status"] = "done"
+                    steps[3]["detail"] = f"Found {arxiv_count} arXiv results"
+                    synth_idx = len(steps) - 1
+                else:
+                    synth_idx = 3
+
+                steps[synth_idx]["status"] = "active"
+                steps[synth_idx]["detail"] = "Running LLM synthesis..."
+                yield yield_progress()
+
+                # Phase 5: Call the actual agent tool
+                tool_config = {"configurable": {"group_id": group_id, "user_id": request.get("user_id")}}
+
+                tool_map = {
+                    "gap_analysis": lambda: self._tool_analyze_gaps(query, tool_config),
+                    "fact_check": lambda: self._tool_fact_check(query, tool_config),
+                    "novelty_assessment": lambda: self._tool_assess_novelty(query, tool_config),
+                    "research_mentor": lambda: self._tool_provide_mentoring(query, tool_config),
+                    "paper_writing": lambda: self._tool_write_paper_draft(query, tool_config),
+                    "research_planning": lambda: self._tool_plan_research(query, tool_config),
+                    "deep_research": lambda: self._tool_deep_research(query, tool_config),
+                }
+
+                tool_fn = tool_map.get(effective_task)
+                if tool_fn:
+                    final_response = await tool_fn()
+                else:
+                    # Fallback to generic astream_events
+                    async for event in agent.astream_events(
+                        initial_input,
+                        config={
+                            "configurable": {
+                                "group_id": request.get("group_id"),
+                                "user_id": request.get("user_id")
+                            }
+                        },
+                        version="v2"
+                    ):
+                        kind = event["event"]
+                        name = event["name"]
+                        if kind == "on_chat_model_end":
+                            msg = event.get("data", {}).get("output", {})
+                            if hasattr(msg, "content") and msg.content:
+                                final_response = self._extract_text_from_possible_json(msg.content)
+                            elif isinstance(msg, dict) and "content" in msg and msg["content"]:
+                                final_response = self._extract_text_from_possible_json(msg["content"])
+
+                steps[synth_idx]["status"] = "done"
+                steps[synth_idx]["detail"] = "Completed."
+                # Mark any remaining intermediate steps as done
+                for s in steps:
+                    if s["status"] in ("active", "pending"):
+                        s["status"] = "done"
+                yield yield_progress()
 
         except Exception as exc:
             logger.error("DeepAgent stream execution failed: %s", exc, exc_info=True)
@@ -921,7 +1574,7 @@ class AgenticService:
             "deep_research": "deep_research",
             "literature_survey": "literature_review",
             "gap_analysis": "research_gaps",
-            "fact_checking": "fact_check",
+            "fact_check": "fact_check",
             "novelty_assessment": "novelty",
             "research_mentor": "mentor_advice",
             "paper_writing": "paper_draft",

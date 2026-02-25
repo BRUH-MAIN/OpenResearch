@@ -74,6 +74,28 @@ export function useSocket(sessionId: string | null) {
       );
     });
 
+    // Streaming: append each token to the AI message content
+    socket.on('ai:token', (data: { messageId: string; token: string }) => {
+      setMessages((prev) =>
+        prev.map((msg) =>
+          msg.id === data.messageId
+            ? { ...msg, content: (msg.content || '') + data.token }
+            : msg
+        )
+      );
+    });
+
+    // Streaming complete: finalize message with full content + metadata
+    socket.on('ai:token:done', (data: { messageId: string; content: string; metadata: Record<string, unknown> }) => {
+      setMessages((prev) =>
+        prev.map((msg) => {
+          if (msg.id !== data.messageId) return msg;
+          const existing = (msg.metadata ?? {}) as Record<string, unknown>;
+          return { ...msg, content: data.content, metadata: { ...existing, ...data.metadata } };
+        })
+      );
+    });
+
     socket.on('user:typing', (data: TypingUser) => {
       setTypingUsers((prev) => {
         if (prev.some(u => u.userId === data.userId)) return prev;

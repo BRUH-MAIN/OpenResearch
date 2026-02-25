@@ -95,7 +95,8 @@ class ApiClient {
 
   // Groups
   async getGroups(token: string) {
-    return this.request<Group[]>('/api/groups', { token });
+    const response = await this.request<{ items: Group[]; cursor: string | null; hasMore: boolean }>('/api/groups', { token });
+    return response.items;
   }
 
   async getGroup(token: string, groupId: string) {
@@ -454,6 +455,7 @@ export interface Message {
   createdAt: string;
   userName?: string;
   userAvatar?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface Paper {
