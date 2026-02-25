@@ -22,6 +22,16 @@ class Settings(BaseSettings):
     # Groq API
     groq_api_key: str = ""
     groq_model: str = "llama-3.1-8b-instant"
+    groq_available_models: list[str] = [
+        "llama-3.1-8b-instant",
+        "llama-3.3-70b-versatile",
+        "llama-3.1-70b-versatile",
+        "gemma2-9b-it",
+        "mixtral-8x7b-32768",
+    ]
+
+    # Web Search (Tavily)
+    tavily_api_key: str = ""
 
     # Deep research search configuration
     server_url: str = "http://localhost:3001"
@@ -34,6 +44,18 @@ class Settings(BaseSettings):
     max_context_messages: int = 50
     max_context_tokens: int = 10000
     request_timeout: int = 30
+
+    # RAG pipeline
+    rag_chunks_per_query: int = 3  # chunks retrieved per sub-query
+    rag_similarity_threshold: float = 0.5  # min cosine similarity to keep a chunk
+    rag_max_context_chunks: int = 15  # max chunks sent to the LLM
+    rag_reranker_top_k: int = 15  # max items kept after cross-encoder reranking
+    rag_reranker_score_threshold: float = 0.01  # min reranker score to keep
+    rag_relevance_filter_max_items: int = 30  # max items evaluated by LLM relevance filter
+
+    # Logging
+    log_max_bytes: int = 10 * 1024 * 1024  # 10 MB
+    log_backup_count: int = 5
     
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),

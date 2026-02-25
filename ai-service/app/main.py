@@ -50,41 +50,85 @@ from .agentic import agentic_service
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup and shutdown events."""
+    import time as _time
     settings = get_settings()
-    print(f"🚀 Starting {settings.app_name}")
-    
-    # Initialize Groq
-    if groq_client.initialize():
-        print("✅ Groq AI client initialized")
-    else:
-        print("⚠️  Groq API key not configured - AI features will return errors")
-    
-    # Initialize embedding service
-    if embedding_service.initialize():
-        print("✅ Embedding service initialized")
-    else:
-        print("⚠️  Embedding service not configured")
-    
-    # Initialize database
-    if await database.connect():
-        print("✅ Database connected")
-    else:
-        print("⚠️  Database not connected - context features limited")
-    
-    # Initialize vector store
-    if await vector_store.connect():
-        print("✅ Vector store connected")
-    else:
-        print("⚠️  Vector store not connected - RAG features limited")
+    total_steps = 5
+    results = []
 
-    # Initialize agentic orchestration
-    if agentic_service.initialize():
-        print("✅ Agentic orchestration initialized")
+    print()
+    print("=" * 60)
+    print(f"  🚀  {settings.app_name} — Starting up")
+    print("=" * 60)
+    print()
+
+    # ── Step 1: Groq ────────────────────────────────────────
+    print(f"[1/{total_steps}]  Initializing Groq AI client …")
+    t0 = _time.time()
+    if groq_client.initialize():
+        results.append(("Groq AI client", True, _time.time() - t0))
+        print(f"  ✅  Groq ready ({_time.time() - t0:.1f}s)")
     else:
-        print("⚠️  Agentic orchestration not configured")
-    
+        results.append(("Groq AI client", False, _time.time() - t0))
+        print(f"  ⚠️   Groq API key not configured")
+    print()
+
+    # ── Step 2: Embedding model ────────────────────────────
+    print(f"[2/{total_steps}]  Loading embedding model (SPECTER2) …")
+    print(f"         This may take a minute on first run while weights are downloaded.")
+    t0 = _time.time()
+    if embedding_service.initialize():
+        results.append(("Embedding model", True, _time.time() - t0))
+        print(f"  ✅  Embedding model ready ({_time.time() - t0:.1f}s)")
+    else:
+        results.append(("Embedding model", False, _time.time() - t0))
+        print(f"  ⚠️   Embedding service not configured")
+    print()
+
+    # ── Step 3: Database ───────────────────────────────────
+    print(f"[3/{total_steps}]  Connecting to database …")
+    t0 = _time.time()
+    if await database.connect():
+        results.append(("Database", True, _time.time() - t0))
+        print(f"  ✅  Database connected ({_time.time() - t0:.1f}s)")
+    else:
+        results.append(("Database", False, _time.time() - t0))
+        print(f"  ⚠️   Database not connected")
+    print()
+
+    # ── Step 4: Vector store ───────────────────────────────
+    print(f"[4/{total_steps}]  Connecting to vector store …")
+    t0 = _time.time()
+    if await vector_store.connect():
+        results.append(("Vector store", True, _time.time() - t0))
+        print(f"  ✅  Vector store connected ({_time.time() - t0:.1f}s)")
+    else:
+        results.append(("Vector store", False, _time.time() - t0))
+        print(f"  ⚠️   Vector store not connected")
+    print()
+
+    # ── Step 5: Agentic orchestration ─────────────────────
+    print(f"[5/{total_steps}]  Initializing agentic orchestration …")
+    t0 = _time.time()
+    if agentic_service.initialize():
+        results.append(("Agentic orchestration", True, _time.time() - t0))
+        print(f"  ✅  Agentic orchestration ready ({_time.time() - t0:.1f}s)")
+    else:
+        results.append(("Agentic orchestration", False, _time.time() - t0))
+        print(f"  ⚠️   Agentic orchestration not configured")
+    print()
+
     # Create reports directory
     os.makedirs("./reports", exist_ok=True)
+
+    # ── Summary ────────────────────────────────────────────
+    ok = sum(1 for _, s, _ in results if s)
+    print("=" * 60)
+    print(f"  {'✅' if ok == total_steps else '⚠️ '}  {ok}/{total_steps} services initialized")
+    for name, success, elapsed in results:
+        icon = "✅" if success else "❌"
+        print(f"      {icon}  {name} ({elapsed:.1f}s)")
+    print("=" * 60)
+    print()
     
     yield
     
@@ -103,9 +147,14 @@ app = FastAPI(
 )
 
 # CORS middleware
+_allowed_origins = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003"
+).split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict to your domains
+    allow_origins=[o.strip() for o in _allowed_origins],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -487,6 +536,150 @@ Provide a helpful response based on the group's context."""
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"AI generation failed: {str(e)}",
         )
+
+
+@app.post(
+    "/groups/{group_id}/ai-chat/stream",
+    responses={
+        400: {"model": ErrorResponse, "description": "Missing @ai trigger"},
+        503: {"model": ErrorResponse, "description": "AI service not configured"},
+    },
+    tags=["Group AI"],
+    summary="Stream group AI chat tokens",
+)
+async def group_ai_chat_stream(group_id: str, request: GroupAIChatRequest):
+    """
+    Stream AI chat response token-by-token for a group.
+
+    Returns NDJSON: each line is {"token":"..."} or {"done":true,"latency_ms":N,"sources":[...]}.
+    """
+    import json as _json
+
+    validate_uuid(group_id, "group_id")
+    validate_uuid(request.group_id, "group_id")
+    if request.group_id != group_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="group_id in body must match path.",
+        )
+    validate_ai_trigger(request.prompt)
+
+    if not groq_client.is_configured:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="AI service not configured. Please set GROQ_API_KEY.",
+        )
+
+    # --- RAG context retrieval (same as non-streaming) ---
+    query = request.prompt.lower().replace('@ai', '').strip()
+
+    try:
+        context_items, vector_ids = await get_group_context(
+            group_id=group_id, query=query, limit=10,
+            content_types=["paper", "qa", "summary", "memory"],
+        )
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    session_messages = []
+    if request.session_id and database.is_connected:
+        session_messages = await database.get_session_messages(request.session_id, limit=30)
+
+    memory_notes = []
+    if database.is_connected:
+        memory_notes = await database.get_group_memory_notes(group_id, limit=10)
+
+    context_parts = []
+    if context_items:
+        rag_context = "\n".join([
+            f"[{item['content_type'].upper()}] {item['content'][:500]}"
+            for item in context_items
+        ])
+        context_parts.append(f"## Retrieved Context\n{rag_context}")
+    if session_messages:
+        messages_text = "\n".join([
+            f"[{msg.get('user_name', 'Unknown')}]: {msg.get('content', '')}"
+            for msg in session_messages[-10:]
+        ])
+        context_parts.append(f"## Recent Messages\n{messages_text}")
+    if memory_notes:
+        notes_text = "\n".join([
+            f"[{note['note_type'].upper()}]: {note['content']}"
+            for note in memory_notes
+        ])
+        context_parts.append(f"## Group Memory Notes\n{notes_text}")
+
+    context = "\n\n".join(context_parts) if context_parts else "No context available."
+
+    system_instruction = """You are an AI research assistant for OpenResearch, a collaboration platform for research teams.
+You help researchers by answering questions using the group's papers, discussion context, and memory notes.
+Always cite sources when possible using [SOURCE_TYPE] references.
+Be concise, accurate, and helpful. Use academic language appropriate for researchers."""
+
+    prompt = f"""Group Context:
+{context}
+
+---
+
+User Request: {request.prompt}
+
+Provide a helpful response based on the group's context."""
+
+    sources = [
+        {"id": item['id'], "type": item['content_type'], "similarity": item['similarity']}
+        for item in context_items[:5]
+    ]
+
+    async def _stream():
+        start = time.time()
+        full_text = []
+        try:
+            async for token in groq_client.generate_stream(
+                prompt=prompt,
+                system_instruction=system_instruction,
+                temperature=0.5,
+                max_tokens=2048,
+            ):
+                full_text.append(token)
+                yield _json.dumps({"token": token}) + "\n"
+        except Exception as exc:
+            yield _json.dumps({"error": str(exc)}) + "\n"
+            return
+
+        latency_ms = int((time.time() - start) * 1000)
+
+        # Store artifact in background
+        full_answer = "".join(full_text)
+        try:
+            await store_ai_artifact(
+                group_id=group_id,
+                artifact_type="chat_response",
+                content=full_answer,
+                prompt=request.prompt,
+                session_id=request.session_id,
+                user_id=request.user_id,
+                metadata={
+                    "vector_ids_used": vector_ids,
+                    "context_items_count": len(context_items),
+                    "latency_ms": latency_ms,
+                    "streamed": True,
+                },
+            )
+        except Exception:
+            pass  # non-critical
+
+        yield _json.dumps({
+            "done": True,
+            "latency_ms": latency_ms,
+            "sources": sources,
+            "model": groq_client.model_name,
+            "context_items_used": len(context_items),
+            "vector_ids_used": vector_ids,
+        }) + "\n"
+
+    return StreamingResponse(_stream(), media_type="application/x-ndjson")
 
 
 # ============ Paper Q&A ============

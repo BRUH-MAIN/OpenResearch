@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useRef, useEffect, Suspense, useCallback } from 'react';
+import React, { useState, useRef, useEffect, Suspense, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
 import { Button, Modal } from '@/components/ui';
+import { Skeleton, SkeletonText } from '@/components/ui/Skeleton';
 import { Loader2, FileText, PlusCircle, Bot, Copy, Wifi, WifiOff } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { api, Session, GroupPaper } from '@/lib/api';
@@ -18,7 +19,80 @@ import {
   Source,
   StudioOutput,
   Citation,
+  CommandPalette,
+  COMMANDS,
+  Command,
 } from '@/components/research';
+import type { PinnedNote } from '@/components/research';
+import type { TimelineEvent } from '@/components/research';
+
+// ==================== Skeleton Loading ====================
+
+function ResearchSkeleton() {
+  return (
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg-primary)' }}>
+      <Navbar />
+      <div className="research-skeleton">
+        {/* Left sidebar skeleton */}
+        <div className="research-skeleton-sidebar space-y-3">
+          <Skeleton height={36} borderRadius="var(--radius-lg)" />
+          <Skeleton height={32} borderRadius="var(--radius-lg)" />
+          <div className="space-y-2 pt-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="p-3 rounded-lg" style={{ border: '1px solid var(--color-border-primary)' }}>
+                <Skeleton height={14} width="80%" borderRadius="var(--radius-sm)" />
+                <Skeleton height={10} width="50%" borderRadius="var(--radius-sm)" className="mt-2" />
+                <Skeleton height={10} width="100%" borderRadius="var(--radius-sm)" className="mt-2" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Center chat skeleton */}
+        <div className="research-skeleton-chat">
+          <div className="flex items-center justify-between mb-6 pb-3" style={{ borderBottom: '1px solid var(--color-border-primary)' }}>
+            <Skeleton height={16} width={120} borderRadius="var(--radius-sm)" />
+            <Skeleton height={24} width={90} borderRadius="var(--radius-full)" />
+          </div>
+          <div className="flex-1 flex flex-col items-center justify-center max-w-3xl mx-auto w-full">
+            <Skeleton height={56} width={56} borderRadius="var(--radius-xl)" className="mb-6" />
+            <Skeleton height={28} width="60%" borderRadius="var(--radius-sm)" className="mb-3" />
+            <Skeleton height={14} width="30%" borderRadius="var(--radius-sm)" className="mb-8" />
+            <div className="space-y-2 w-full">
+              {[1, 2, 3].map((i) => (
+                <Skeleton key={i} height={52} borderRadius="var(--radius-xl)" />
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Right sidebar skeleton */}
+        <div className="research-skeleton-right" />
+      </div>
+    </div>
+  );
+}
+
+// ==================== localStorage helpers for pins ====================
+
+const PINS_KEY = (sessionId: string) => `openresearch_pins_${sessionId}`;
+
+function loadPinnedNotes(sessionId: string): PinnedNote[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = localStorage.getItem(PINS_KEY(sessionId));
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePinnedNotes(sessionId: string, notes: PinnedNote[]) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(PINS_KEY(sessionId), JSON.stringify(notes));
+}
+
+// ==================== Main Component ====================
 
 function ResearchChatContent() {
   const searchParams = useSearchParams();
@@ -35,12 +109,23 @@ function ResearchChatContent() {
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(true);
   const [showAddSourceModal, setShowAddSourceModal] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Sources State (from group papers)
+  // Sources State
   const [sources, setSources] = useState<Source[]>([]);
   const [studioOutputs, setStudioOutputs] = useState<StudioOutput[]>([]);
   const [isDeepResearching, setIsDeepResearching] = useState(false);
   const [deepResearchMessageId, setDeepResearchMessageId] = useState<string | null>(null);
+
+  // Command Palette
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
+  const [commandQuery, setCommandQuery] = useState('');
+  const [commandActiveIndex, setCommandActiveIndex] = useState(0);
+
+  // Workspace State
+  const [pinnedNotes, setPinnedNotes] = useState<PinnedNote[]>([]);
+  const [outline, setOutline] = useState<string | null>(null);
+  const [isGeneratingOutline, setIsGeneratingOutline] = useState(false);
 
   // Socket connection
   const {
@@ -54,6 +139,98 @@ function ResearchChatContent() {
     appendMessage,
     updateMessage,
   } = useSocket(sessionId);
+
+  // Load pinned notes from localStorage
+  useEffect(() => {
+    if (sessionId) {
+      setPinnedNotes(loadPinnedNotes(sessionId));
+    }
+  }, [sessionId]);
+
+  // Build timeline events
+  const timelineEvents: TimelineEvent[] = useMemo(() => {
+    const events: TimelineEvent[] = [];
+
+    // Session created
+    if (session) {
+      events.push({
+        id: 'session-created',
+        type: 'session_created',
+        title: `Session "${session.title}" created`,
+        timestamp: session.createdAt,
+      });
+    }
+
+    // Sources added
+    sources.forEach((source) => {
+      events.push({
+        id: `source-${source.id}`,
+        type: 'source_added',
+        title: `Added "${source.title.length > 40 ? source.title.slice(0, 40) + '…' : source.title}"`,
+        timestamp: source.addedAt,
+      });
+    });
+
+    // Reports generated
+    studioOutputs.forEach((output) => {
+      events.push({
+        id: `report-${output.id}`,
+        type: 'report_generated',
+        title: output.title,
+        description: output.status === 'generating' ? 'In progress…' : undefined,
+        timestamp: output.createdAt,
+      });
+    });
+
+    // Sort chronologically (newest first)
+    events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+    return events;
+  }, [session, sources, studioOutputs]);
+
+  // Dynamic empty state suggestions
+  const dynamicSuggestions = useMemo(() => {
+    if (sources.length === 0) {
+      return [
+        'What are the key concepts in these papers?',
+        'Compare the methodologies used',
+        'Summarize the main findings',
+      ];
+    }
+
+    const suggestions: string[] = [];
+    const titles = sources.slice(0, 3).map((s) => s.title);
+
+    if (titles.length >= 1) {
+      const shortTitle = titles[0].length > 50 ? titles[0].slice(0, 50) + '…' : titles[0];
+      suggestions.push(`Summarize "${shortTitle}"`);
+    }
+    if (titles.length >= 2) {
+      const t1 = titles[0].length > 30 ? titles[0].slice(0, 30) + '…' : titles[0];
+      const t2 = titles[1].length > 30 ? titles[1].slice(0, 30) + '…' : titles[1];
+      suggestions.push(`Compare "${t1}" and "${t2}"`);
+    }
+    suggestions.push('What are the research gaps across these papers?');
+
+    return suggestions;
+  }, [sources]);
+
+  // Source-aware header
+  const sourceContextLabel = useMemo(() => {
+    const enabled = sources.filter((s) => s.enabled);
+    if (enabled.length === 0) return 'Chat';
+    if (enabled.length === 1) {
+      const t = enabled[0].title;
+      return t.length > 30 ? t.slice(0, 30) + '…' : t;
+    }
+    if (enabled.length === 2) {
+      const t1 = enabled[0].title.length > 20 ? enabled[0].title.slice(0, 20) + '…' : enabled[0].title;
+      const t2 = enabled[1].title.length > 20 ? enabled[1].title.slice(0, 20) + '…' : enabled[1].title;
+      return `${t1}, ${t2}`;
+    }
+    const t1 = enabled[0].title.length > 20 ? enabled[0].title.slice(0, 20) + '…' : enabled[0].title;
+    return `${t1} +${enabled.length - 1} more`;
+  }, [sources]);
 
   // Fetch session, messages, and group papers
   useEffect(() => {
@@ -86,6 +263,8 @@ function ResearchChatContent() {
               url: paper.url,
               enabled: true,
               addedAt: paper.addedAt,
+              tags: paper.tags,
+              publishedDate: paper.publishedDate,
             }));
             setSources(sourcesFromPapers);
           } catch {
@@ -106,6 +285,15 @@ function ResearchChatContent() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+      textarea.style.height = 'auto';
+      textarea.style.height = `${Math.min(textarea.scrollHeight, 144)}px`;
+    }
+  }, [inputMessage]);
 
   // Typing handlers
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -130,8 +318,31 @@ function ResearchChatContent() {
       typingTimeoutRef.current = setTimeout(() => {
         stopTyping();
       }, 2000);
+
+      // Command palette detection
+      const lastWord = value.split(/\s/).pop() || '';
+      if (lastWord.startsWith('/') || lastWord.startsWith('@')) {
+        setShowCommandPalette(true);
+        setCommandQuery(lastWord);
+        setCommandActiveIndex(0);
+      } else {
+        setShowCommandPalette(false);
+      }
     },
     [startTyping, stopTyping]
+  );
+
+  const handleCommandSelect = useCallback(
+    (command: Command) => {
+      // Replace the last word (command trigger) with the command prefix
+      const words = inputMessage.split(/\s/);
+      words.pop();
+      const newInput = [...words, command.prefix + ' '].join(' ').trimStart();
+      setInputMessage(newInput);
+      setShowCommandPalette(false);
+      textareaRef.current?.focus();
+    },
+    [inputMessage]
   );
 
   const handleSendMessage = useCallback(() => {
@@ -140,6 +351,7 @@ function ResearchChatContent() {
     sendMessage(inputMessage.trim());
     setInputMessage('');
     stopTyping();
+    setShowCommandPalette(false);
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
@@ -147,6 +359,34 @@ function ResearchChatContent() {
   }, [inputMessage, isConnected, sendMessage, stopTyping]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (showCommandPalette) {
+      const filtered = COMMANDS.filter(
+        (cmd) =>
+          cmd.prefix.toLowerCase().includes(commandQuery.toLowerCase()) ||
+          cmd.label.toLowerCase().includes(commandQuery.toLowerCase())
+      );
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setCommandActiveIndex((prev) => Math.min(prev + 1, filtered.length - 1));
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setCommandActiveIndex((prev) => Math.max(prev - 1, 0));
+        return;
+      }
+      if (e.key === 'Enter' && filtered[commandActiveIndex]) {
+        e.preventDefault();
+        handleCommandSelect(filtered[commandActiveIndex]);
+        return;
+      }
+      if (e.key === 'Escape') {
+        setShowCommandPalette(false);
+        return;
+      }
+    }
+
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -162,6 +402,47 @@ function ResearchChatContent() {
 
   const handleToggleAll = useCallback((enabled: boolean) => {
     setSources((prev) => prev.map((s) => ({ ...s, enabled })));
+  }, []);
+
+  // Pin handlers
+  const handlePinMessage = useCallback(
+    (messageId: string, content: string) => {
+      if (!sessionId) return;
+      const existing = pinnedNotes.find((n) => n.messageId === messageId);
+      if (existing) {
+        addToast('Already pinned', 'info');
+        return;
+      }
+
+      const newNote: PinnedNote = {
+        id: `pin-${Date.now()}`,
+        messageId,
+        content,
+        userName: 'Research Assistant',
+        pinnedAt: new Date().toISOString(),
+      };
+      const updated = [newNote, ...pinnedNotes];
+      setPinnedNotes(updated);
+      savePinnedNotes(sessionId, updated);
+      setRightPanelCollapsed(false);
+      addToast('Pinned to Workspace', 'success');
+    },
+    [sessionId, pinnedNotes, addToast]
+  );
+
+  const handleRemoveNote = useCallback(
+    (noteId: string) => {
+      if (!sessionId) return;
+      const updated = pinnedNotes.filter((n) => n.id !== noteId);
+      setPinnedNotes(updated);
+      savePinnedNotes(sessionId, updated);
+    },
+    [sessionId, pinnedNotes]
+  );
+
+  const handleScrollToMessage = useCallback((messageId: string) => {
+    const el = document.querySelector(`[data-message-id="${messageId}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
   // Studio handlers
@@ -188,6 +469,41 @@ function ResearchChatContent() {
       addToast(err instanceof Error ? err.message : 'Failed to generate report', 'error');
     }
   }, [accessToken, session?.groupId, addToast]);
+
+  // Outline handler
+  const handleGenerateOutline = useCallback(async () => {
+    if (!accessToken || !sessionId || !session?.groupId) return;
+
+    setIsGeneratingOutline(true);
+    setRightPanelCollapsed(false);
+
+    try {
+      const enabledPaperIds = sources
+        .filter((s) => s.enabled && s.type === 'paper')
+        .map((s) => s.id);
+
+      const response = await api.runAgenticTask(accessToken, {
+        taskType: 'research_planning',
+        prompt: `Generate a structured research outline for "${session.title}" based on the selected sources. Include sections, subsections, and key points to cover.`,
+        groupId: session.groupId,
+        sessionId,
+        paperIds: enabledPaperIds.length > 0 ? enabledPaperIds : undefined,
+      });
+
+      const outlineText =
+        (response.result?.outline as string) ||
+        (response.result?.report as string) ||
+        (response.result?.research_planning as string) ||
+        JSON.stringify(response.result || {}, null, 2);
+
+      setOutline(outlineText);
+      addToast('Outline generated', 'success');
+    } catch (err) {
+      addToast(err instanceof Error ? err.message : 'Failed to generate outline', 'error');
+    } finally {
+      setIsGeneratingOutline(false);
+    }
+  }, [accessToken, sessionId, session?.groupId, session?.title, sources, addToast]);
 
   const handleDeepResearch = useCallback(async () => {
     if (!accessToken || !sessionId || !session?.groupId) {
@@ -276,21 +592,14 @@ function ResearchChatContent() {
   const handleSelectPrompt = useCallback(
     (prompt: string) => {
       setInputMessage(`@ai ${prompt}`);
+      textareaRef.current?.focus();
     },
     []
   );
 
   // Loading state
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg-primary)' }}>
-        <Navbar />
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <Loader2 size={48} className="animate-spin mb-4" style={{ color: 'var(--color-brand-secondary)' }} />
-          <p style={{ color: 'var(--color-text-muted)' }}>Loading research session…</p>
-        </div>
-      </div>
-    );
+    return <ResearchSkeleton />;
   }
 
   // Error state
@@ -347,17 +656,30 @@ function ResearchChatContent() {
 
         {/* Center - Chat Panel */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Chat Header */}
+          {/* Chat Header — Source-Aware */}
           <div
             className="flex items-center justify-between px-6 py-3 border-b"
             style={{ borderColor: 'var(--color-border-primary)' }}
           >
-            <span
-              className="text-[15px] font-medium"
-              style={{ color: 'var(--color-text-primary)' }}
-            >
-              Chat
-            </span>
+            <div className="flex items-center gap-2 min-w-0">
+              <span
+                className="text-[15px] font-medium truncate"
+                style={{ color: 'var(--color-text-primary)' }}
+              >
+                {sourceContextLabel}
+              </span>
+              {enabledSources.length > 0 && (
+                <span
+                  className="text-[11px] px-1.5 py-0.5 rounded-full shrink-0"
+                  style={{
+                    background: 'var(--color-bg-tertiary)',
+                    color: 'var(--color-text-tertiary)',
+                  }}
+                >
+                  {enabledSources.length} source{enabledSources.length !== 1 ? 's' : ''}
+                </span>
+              )}
+            </div>
             <div className="flex items-center gap-2">
               <div
                 className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px]"
@@ -375,7 +697,7 @@ function ResearchChatContent() {
           {/* Main Content Area */}
           <div className="flex-1 overflow-y-auto research-panel-scroll">
             <div className="max-w-3xl mx-auto px-6 py-6">
-              {/* Empty State */}
+              {/* Empty State with dynamic suggestions */}
               {showEmptyState && (
                 <div className="py-8">
                   <div className="mb-6">
@@ -406,11 +728,7 @@ function ResearchChatContent() {
                   </p>
 
                   <div className="space-y-2.5">
-                    {[
-                      'What are the key concepts in these papers?',
-                      'Compare the methodologies used',
-                      'Summarize the main findings',
-                    ].map((question, index) => (
+                    {dynamicSuggestions.map((question, index) => (
                       <button
                         key={index}
                         onClick={() => handleSelectPrompt(question)}
@@ -431,20 +749,22 @@ function ResearchChatContent() {
                 const isAgenticPending = deepResearchMessageId === msg.id && isAI;
 
                 return (
-                  <ResearchMessage
-                    key={msg.id}
-                    id={msg.id}
-                    content={msg.content}
-                    type={isAI ? 'ai' : 'user'}
-                    userName={msg.userName}
-                    userAvatar={msg.userAvatar}
-                    timestamp={new Date(msg.createdAt)}
-                    isCurrentUser={isCurrentUser}
-                    onFeedback={isAI ? handleFeedback : undefined}
-                    onCopy={handleCopy}
-                    onCitationClick={handleCitationClick}
-                    className={isAgenticPending ? 'ai-thinking-animation' : ''}
-                  />
+                  <div key={msg.id} data-message-id={msg.id}>
+                    <ResearchMessage
+                      id={msg.id}
+                      content={msg.content}
+                      type={isAI ? 'ai' : 'user'}
+                      userName={msg.userName}
+                      userAvatar={msg.userAvatar}
+                      timestamp={new Date(msg.createdAt)}
+                      isCurrentUser={isCurrentUser}
+                      onFeedback={isAI ? handleFeedback : undefined}
+                      onCopy={handleCopy}
+                      onPin={isAI ? handlePinMessage : undefined}
+                      onCitationClick={handleCitationClick}
+                      className={isAgenticPending ? 'ai-thinking-animation' : ''}
+                    />
+                  </div>
                 );
               })}
 
@@ -489,7 +809,16 @@ function ResearchChatContent() {
               background: 'var(--color-bg-primary)',
             }}
           >
-            <div className="max-w-3xl mx-auto">
+            <div className="max-w-3xl mx-auto relative">
+              {/* Command Palette */}
+              {showCommandPalette && (
+                <CommandPalette
+                  query={commandQuery}
+                  activeIndex={commandActiveIndex}
+                  onSelect={handleCommandSelect}
+                />
+              )}
+
               {!isConnected && (
                 <div
                   className="flex items-center justify-center mb-3 text-sm px-4 py-2 rounded-xl"
@@ -503,7 +832,7 @@ function ResearchChatContent() {
                 </div>
               )}
               <div
-                className="flex items-center gap-3 px-5 py-3 rounded-full transition-all"
+                className="flex items-end gap-3 px-5 py-3 rounded-2xl transition-all"
                 style={{
                   background: 'var(--color-bg-secondary)',
                   border: '1px solid var(--color-border-primary)',
@@ -517,19 +846,20 @@ function ResearchChatContent() {
                   e.currentTarget.style.boxShadow = 'none';
                 }}
               >
-                <input
-                  type="text"
+                <textarea
+                  ref={textareaRef}
                   value={inputMessage}
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask a research question…"
+                  placeholder="Ask a research question… (type / or @ for commands)"
                   disabled={!isConnected}
-                  className="flex-1 bg-transparent text-[14px] focus:outline-none disabled:opacity-50"
+                  rows={1}
+                  className="flex-1 bg-transparent text-[14px] disabled:opacity-50 research-textarea"
                   style={{ color: 'var(--color-text-primary)' }}
                 />
 
                 <span
-                  className="px-3 py-1 rounded-full text-[12px] whitespace-nowrap"
+                  className="px-3 py-1 rounded-full text-[12px] whitespace-nowrap shrink-0"
                   style={{
                     background: 'var(--color-bg-tertiary)',
                     color: 'var(--color-text-tertiary)',
@@ -541,7 +871,7 @@ function ResearchChatContent() {
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || !isConnected}
-                  className="p-2 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="p-2 rounded-full transition-all disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
                   style={{
                     background: inputMessage.trim()
                       ? 'linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary))'
@@ -568,13 +898,23 @@ function ResearchChatContent() {
           </div>
         </div>
 
-        {/* Right Sidebar - Outputs Panel */}
+        {/* Right Sidebar - Workspace Panel */}
         <StudioPanel
           outputs={studioOutputs}
           onGenerateReport={handleGenerateReport}
           hasSourcesSelected={enabledSources.length > 0}
           isCollapsed={rightPanelCollapsed}
           onToggleCollapse={() => setRightPanelCollapsed(!rightPanelCollapsed)}
+          pinnedNotes={pinnedNotes}
+          onRemoveNote={handleRemoveNote}
+          onScrollToMessage={handleScrollToMessage}
+          timelineEvents={timelineEvents}
+          sources={sources}
+          outline={outline}
+          isGeneratingOutline={isGeneratingOutline}
+          onGenerateOutline={handleGenerateOutline}
+          onCopy={handleCopy}
+          onToast={(msg) => addToast(msg, 'success')}
         />
       </div>
 
@@ -610,17 +950,7 @@ function ResearchChatContent() {
 
 export default function ResearchChatPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen flex flex-col" style={{ background: 'var(--color-bg-primary)' }}>
-          <Navbar />
-          <div className="flex-1 flex flex-col items-center justify-center">
-            <Loader2 size={48} className="animate-spin mb-4" style={{ color: 'var(--color-brand-secondary)' }} />
-            <p style={{ color: 'var(--color-text-muted)' }}>Loading…</p>
-          </div>
-        </div>
-      }
-    >
+    <Suspense fallback={<ResearchSkeleton />}>
       <ResearchChatContent />
     </Suspense>
   );

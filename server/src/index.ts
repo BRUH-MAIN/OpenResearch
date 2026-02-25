@@ -27,6 +27,7 @@ import recommendationsRoutes from './routes/recommendations.js';
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
+import { correlationId } from './middleware/correlationId.js';
 import { initializeSocket } from './socket/index.js';
 
 // Swagger / OpenAPI
@@ -78,6 +79,9 @@ app.use(morgan('combined', {
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
+
+// Correlation ID for cross-service tracing
+app.use(correlationId);
 
 // Apply rate limiting to API routes
 app.use('/api', apiLimiter);

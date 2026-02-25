@@ -1,77 +1,45 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
 import { Button, Card, CardBody, CardHeader, Avatar, Input } from '@/components/ui';
 import { Plus, Users, Calendar, Search, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
-import { api, Group } from '@/lib/api';
+import { useGroups, useCreateGroup } from '@/lib/hooks/useGroups';
 import { toast } from '@/lib/toast';
 
 export default function HomePage() {
-  const { accessToken, user } = useAuthStore();
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { user } = useAuthStore();
+  const { data: groups = [], isLoading, error } = useGroups();
+  const createGroup = useCreateGroup();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
   const [newGroup, setNewGroup] = useState({
     name: '',
     description: '',
   });
 
-  // Fetch groups on mount
-  useEffect(() => {
-    async function fetchGroups() {
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        const fetchedGroups = await api.getGroups(accessToken);
-        setGroups(fetchedGroups);
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load groups';
-        setError(message);
-        toast.error(message);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchGroups();
-  }, [accessToken]);
-
   const filteredGroups = groups.filter(
-    group =>
+    (group: any) =>
       group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       group.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleCreateGroup = async () => {
-    if (!accessToken || !newGroup.name.trim() || !newGroup.description.trim()) return;
+    if (!newGroup.name.trim() || !newGroup.description.trim()) return;
 
     try {
-      setIsCreating(true);
-      const created = await api.createGroup(accessToken, {
+      await createGroup.mutateAsync({
         name: newGroup.name.trim(),
         description: newGroup.description.trim(),
       });
-      setGroups(prev => [...prev, { ...created, memberCount: 1 }]);
       setShowCreateModal(false);
       setNewGroup({ name: '', description: '' });
       toast.success('Group created successfully!');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to create group';
-      setError(message);
       toast.error(message);
-    } finally {
-      setIsCreating(false);
     }
   };
 
@@ -107,7 +75,7 @@ export default function HomePage() {
         {/* Error State */}
         {error && (
           <div className="bg-[var(--color-error-bg)] border border-[var(--color-error)]/30 rounded-xl p-4 mb-6">
-            <p className="text-[var(--color-error)]">{error}</p>
+            <p className="text-[var(--color-error)]">{error instanceof Error ? error.message : 'Failed to load groups'}</p>
           </div>
         )}
 
@@ -139,7 +107,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGroups.map((group) => {
+            {filteredGroups.map((group: any) => {
               const isOwner = group.ownerId === user?.id;
               return (
                 <Link key={group.id} href={`/group?id=${group.id}`}>
@@ -212,14 +180,14 @@ export default function HomePage() {
                   setShowCreateModal(false);
                   setNewGroup({ name: '', description: '' });
                 }}
-                disabled={isCreating}
+                disabled={createGroup.isPending}
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleCreateGroup}
-                disabled={!newGroup.name.trim() || !newGroup.description.trim() || isCreating}
-                isLoading={isCreating}
+                disabled={!newGroup.name.trim() || !newGroup.description.trim() || createGroup.isPending}
+                isLoading={createGroup.isPending}
               >
                 Create Group
               </Button>

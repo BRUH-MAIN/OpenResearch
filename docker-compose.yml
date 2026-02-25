@@ -62,6 +62,8 @@ services:
     build:
       context: ./ai-service
       dockerfile: Dockerfile
+      args:
+        - HF_TOKEN=${HF_TOKEN:-}
     container_name: openresearch-ai
     restart: unless-stopped
     depends_on:
@@ -73,6 +75,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/openresearch
       SERVER_URL: http://server:3001
       DEBUG: "false"
+      HF_TOKEN: ${HF_TOKEN:-}
     ports:
       - "8000:8000"
     healthcheck:

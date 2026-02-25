@@ -199,13 +199,12 @@ export function initializeSocket(httpServer: HttpServer) {
         // Broadcast to all in session (including sender)
         io.to(`session:${sessionId}`).emit('message:new', messageWithUser);
 
-        // Check for @ai mention and trigger AI response
+        // Check for @ai mention and trigger AI response (streaming)
         if (content.toLowerCase().includes('@ai')) {
           try {
             // Pre-check AI service health before making request
             const isAvailable = await aiClient.isAvailable();
             if (!isAvailable) {
-              // Emit a user-friendly error without crashing
               socket.emit('ai:error', {
                 message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
                 code: 'AI_NOT_CONFIGURED',
@@ -214,51 +213,99 @@ export function initializeSocket(httpServer: HttpServer) {
               return;
             }
 
-            // Get group ID from session for group-isolated RAG
-            const aiResponse = await aiClient.processAtAiMessage(
-              content,
-              sessionId,
-              socket.userId!,
-              session.groupId // Pass groupId for group-isolated RAG
-            );
-
-            if (aiResponse) {
-              // Now always a GroupAIChatResponse
-              const answerText = aiResponse.text;
-
-              // Extract metadata safely
-              const metadataObj = aiResponse.metadata as Record<string, unknown> || {};
-
-              // Save AI response to database
-              const [aiMessage] = await db
-                .insert(messages)
-                .values({
-                  sessionId,
-                  userId: null, // AI messages have no user
-                  content: answerText,
-                  type: 'ai',
-                  metadata: {
-                    sources: aiResponse.sources || [],
-                    model: (metadataObj.model as string) || 'groq',
-                    latency_ms: aiResponse.latency_ms,
-                    context_items_used: (metadataObj.context_items_used as number) || 0,
-                    vector_ids_used: (metadataObj.vector_ids_used as string[]) || [],
-                  },
-                })
-                .returning();
-
-              // Broadcast AI response
-              const aiMessageWithMeta = {
-                ...aiMessage,
-                userName: 'AI Assistant',
-                userAvatar: null,
-              };
-
-              io.to(`session:${sessionId}`).emit('message:new', aiMessageWithMeta);
+            if (!session.groupId) {
+              socket.emit('ai:error', {
+                message: 'AI chat is only supported within research groups.',
+                code: 'NO_GROUP',
+                recoverable: true
+              });
+              return;
             }
+
+            // Create placeholder AI message in DB with empty content
+            const [aiMessagePlaceholder] = await db
+              .insert(messages)
+              .values({
+                sessionId,
+                userId: null,
+                content: '',
+                type: 'ai',
+                metadata: { streaming: true },
+              })
+              .returning();
+
+            const placeholderWithMeta = {
+              ...aiMessagePlaceholder,
+              userName: 'AI Assistant',
+              userAvatar: null,
+            };
+
+            // Emit placeholder so UI shows the message bubble immediately
+            io.to(`session:${sessionId}`).emit('message:new', placeholderWithMeta);
+
+            // Stream tokens from AI service
+            let accumulated = '';
+            let streamMeta: Record<string, unknown> = {};
+
+            try {
+              for await (const chunk of aiClient.groupAIChatStream({
+                prompt: content,
+                group_id: session.groupId,
+                session_id: sessionId,
+                user_id: socket.userId!,
+              })) {
+                if (chunk.error) {
+                  socketLogger.error({ err: chunk.error }, 'AI stream error chunk');
+                  break;
+                }
+
+                if (chunk.token) {
+                  accumulated += chunk.token;
+                  io.to(`session:${sessionId}`).emit('ai:token', {
+                    messageId: aiMessagePlaceholder.id,
+                    token: chunk.token,
+                  });
+                }
+
+                if (chunk.done) {
+                  streamMeta = {
+                    sources: chunk.sources || [],
+                    model: chunk.model || 'groq',
+                    latency_ms: chunk.latency_ms || 0,
+                    context_items_used: (chunk as Record<string, unknown>).context_items_used || 0,
+                    vector_ids_used: (chunk as Record<string, unknown>).vector_ids_used || [],
+                  };
+                }
+              }
+            } catch (streamErr) {
+              socketLogger.error({ err: streamErr }, 'AI token stream error');
+              // If we accumulated some text, keep it; otherwise provide error message
+              if (!accumulated) {
+                accumulated = 'I encountered an error while generating a response. Please try again.';
+              }
+            }
+
+            // Update DB message with final content
+            await db
+              .update(messages)
+              .set({
+                content: accumulated,
+                metadata: {
+                  ...streamMeta,
+                  streaming: false,
+                },
+              })
+              .where(eq(messages.id, aiMessagePlaceholder.id));
+
+            // Notify clients that streaming is done
+            io.to(`session:${sessionId}`).emit('ai:token:done', {
+              messageId: aiMessagePlaceholder.id,
+              content: accumulated,
+              metadata: streamMeta,
+            });
+
           } catch (aiError) {
             socketLogger.error({ err: aiError }, 'AI response error');
-            // Send structured error so client can handle gracefully
             const errorMessage = aiError instanceof Error ? aiError.message : 'AI service unavailable';
             const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
             socket.emit('ai:error', {

@@ -3,7 +3,7 @@
 import React, { forwardRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot, Copy, ThumbsUp, ThumbsDown, BookmarkPlus, User } from 'lucide-react';
+import { Bot, Copy, ThumbsUp, ThumbsDown, BookmarkPlus, User, Search, Database, Globe, Download, Layers, CheckCircle2, Loader2, BrainCircuit, FileSearch, Pin } from 'lucide-react';
 
 export interface Citation {
   id: string;
@@ -25,6 +25,7 @@ export interface ResearchMessageProps {
   onFeedback?: (messageId: string, feedback: 'up' | 'down') => void;
   onCopy?: (content: string) => void;
   onSaveToNotes?: (messageId: string) => void;
+  onPin?: (messageId: string, content: string) => void;
   onCitationClick?: (citation: Citation) => void;
   className?: string;
 }
@@ -43,6 +44,7 @@ export const ResearchMessage = forwardRef<HTMLDivElement, ResearchMessageProps>(
       onFeedback,
       onCopy,
       onSaveToNotes,
+      onPin,
       onCitationClick,
       className = '',
     },
@@ -152,6 +154,75 @@ export const ResearchMessage = forwardRef<HTMLDivElement, ResearchMessageProps>(
       hr: () => <hr className="divider my-3" />,
     };
 
+    let agenticSteps: any[] | null = null;
+    if (isAI && content.trim().startsWith('{') && content.trim().endsWith('}')) {
+      try {
+        const parsed = JSON.parse(content);
+        if (parsed && Array.isArray(parsed.agentic_steps)) {
+          agenticSteps = parsed.agentic_steps;
+        }
+      } catch (e) {
+        // ignore if not valid JSON
+      }
+    }
+
+    const getIconForStep = (iconName: string, status: string) => {
+      if (status === 'active') {
+        return <Loader2 size={18} className="animate-spin" style={{ color: 'var(--color-brand-secondary)' }} />;
+      }
+      if (status === 'done') {
+        return <CheckCircle2 size={18} style={{ color: 'var(--color-success)' }} />;
+      }
+
+      const props = { size: 18, style: { color: 'var(--color-text-muted)' } };
+      switch (iconName) {
+        case 'search': return <Search {...props} />;
+        case 'database': return <Database {...props} />;
+        case 'globe': return <Globe {...props} />;
+        case 'download': return <Download {...props} />;
+        case 'layers': return <Layers {...props} />;
+        case 'brain': return <BrainCircuit {...props} />;
+        case 'file-search': return <FileSearch {...props} />;
+        default: return <Bot {...props} />;
+      }
+    };
+
+    const renderAgenticSteps = (steps: any[]) => {
+      return (
+        <div className="space-y-3 my-2 w-full max-w-md">
+          {steps.map((step, idx) => {
+            const isActive = step.status === 'active';
+            const isDone = step.status === 'done';
+            return (
+              <div
+                key={idx}
+                className={`flex items-center gap-3 p-3 rounded-xl border transition-all ${isActive ? 'bg-[#1a2b3c] border-[#2c4b6b]' : 'bg-[#1e1e1e] border-[#333]'}`}
+                style={{
+                  background: isActive ? 'var(--color-bg-elevated)' : 'var(--color-bg-tertiary)',
+                  borderColor: isActive ? 'var(--color-brand-secondary)' : 'var(--color-border-primary)',
+                  boxShadow: isActive ? '0 0 10px rgba(20, 255, 236, 0.1)' : 'none'
+                }}
+              >
+                <div className="flex-shrink-0">
+                  {getIconForStep(step.icon, step.status)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className={`text-[14px] ${isActive ? 'font-medium' : ''}`} style={{ color: isActive ? 'var(--color-text-primary)' : (isDone ? 'var(--color-text-secondary)' : 'var(--color-text-muted)') }}>
+                    {step.label}
+                  </p>
+                  {step.detail && (
+                    <p className="text-[12px] truncate mt-0.5" style={{ color: 'var(--color-text-tertiary)' }}>
+                      {step.detail}
+                    </p>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      );
+    };
+
     // System messages
     if (isSystem) {
       return (
@@ -196,9 +267,13 @@ export const ResearchMessage = forwardRef<HTMLDivElement, ResearchMessageProps>(
           {/* Content */}
           <div className="pl-14">
             <div style={{ color: 'var(--color-text-secondary)' }} className="whitespace-pre-wrap">
-              <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
-                {getMarkdownContent()}
-              </ReactMarkdown>
+              {agenticSteps ? (
+                renderAgenticSteps(agenticSteps)
+              ) : (
+                <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
+                  {getMarkdownContent()}
+                </ReactMarkdown>
+              )}
             </div>
 
             {/* Citations */}
@@ -253,6 +328,24 @@ export const ResearchMessage = forwardRef<HTMLDivElement, ResearchMessageProps>(
                   }}
                 >
                   <Copy size={16} />
+                </button>
+              )}
+              {onPin && (
+                <button
+                  onClick={() => onPin(id, content)}
+                  className="p-2 rounded-full transition-colors"
+                  title="Pin to Workspace"
+                  style={{ color: 'var(--color-text-tertiary)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                    e.currentTarget.style.color = 'var(--color-brand-secondary)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                  }}
+                >
+                  <Pin size={16} />
                 </button>
               )}
               {onFeedback && (

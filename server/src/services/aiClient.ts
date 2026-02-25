@@ -302,6 +302,76 @@ class AIClient {
   }
 
   /**
+   * Stream Group AI Chat tokens via NDJSON
+   * Yields objects: { token: string } or { done: true, latency_ms, sources, ... }
+   */
+  async *groupAIChatStream(
+    request: GroupAIChatRequest
+  ): AsyncGenerator<{ token?: string; done?: boolean; latency_ms?: number; sources?: Array<{ id: string; type: string; similarity?: number }>; model?: string; error?: string }> {
+    validateAiTrigger(request.prompt);
+
+    logger.info(`Group AI chat stream for group: ${request.group_id}, session: ${request.session_id || 'none'}`);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/groups/${request.group_id}/ai-chat/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Request failed' })) as { detail?: string };
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            yield data;
+          } catch {
+            // Ignore malformed chunks
+          }
+        }
+      }
+
+      // Process remaining buffer
+      if (buffer.trim()) {
+        try {
+          yield JSON.parse(buffer);
+        } catch {
+          // Ignore
+        }
+      }
+
+      clearTimeout(timeoutId);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  }
+
+  /**
    * Paper Q&A with @ai trigger
    */
   async paperQuestion(request: PaperQuestionRequest): Promise<PaperAnswerResponse> {

@@ -106,6 +106,41 @@ class GroqClient:
         latency_ms = int((time.time() - start_time) * 1000)
         return response_text, latency_ms
 
+    async def generate_stream(
+        self,
+        prompt: str,
+        system_instruction: Optional[str] = None,
+        temperature: float = 0.7,
+        max_tokens: int = 2048,
+        model: Optional[str] = None,
+    ):
+        """
+        Stream a response from Groq token-by-token using ChatGroq.astream().
+
+        Yields:
+            Individual token strings as they arrive.
+        """
+        if not self.is_configured:
+            raise RuntimeError("Groq client not initialized. Please set GROQ_API_KEY.")
+
+        llm = self._llm
+        if model and model != self.model_name:
+            llm = ChatGroq(
+                api_key=self.api_key,
+                model_name=model,
+                temperature=temperature,
+            )
+
+        messages = []
+        if system_instruction:
+            messages.append(SystemMessage(content=system_instruction))
+        messages.append(HumanMessage(content=prompt))
+
+        async for chunk in llm.astream(messages):
+            token = chunk.content if hasattr(chunk, "content") else str(chunk)
+            if token:
+                yield token
+
     async def chat_qa(
         self,
         question: str,

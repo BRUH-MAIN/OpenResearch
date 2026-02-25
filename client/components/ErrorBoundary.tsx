@@ -2,6 +2,7 @@
 
 import { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from './ui/Button';
+import { logger } from '@/lib/logger';
 
 interface Props {
   children: ReactNode;
@@ -30,14 +31,10 @@ export class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
     this.setState({ errorInfo });
-    
-    // Log error to console in development
-    if (process.env.NODE_ENV === 'development') {
-      console.error('ErrorBoundary caught an error:', error, errorInfo);
-    }
-    
-    // TODO: Send error to external logging service (e.g., Sentry)
-    // logErrorToService(error, errorInfo);
+
+    logger.error('ErrorBoundary caught an error', error, {
+      componentStack: errorInfo.componentStack ?? undefined,
+    });
   }
 
   handleReset = (): void => {
@@ -78,11 +75,11 @@ export class ErrorBoundary extends Component<Props, State> {
                 />
               </svg>
             </div>
-            
+
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
               Something went wrong
             </h2>
-            
+
             <p className="text-gray-600 dark:text-gray-300 mb-4">
               We apologize for the inconvenience. An unexpected error has occurred.
             </p>

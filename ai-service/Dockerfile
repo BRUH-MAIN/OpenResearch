@@ -23,6 +23,15 @@ RUN uv pip install --system --no-cache --index-strategy unsafe-best-match -r req
 # Copy application code
 COPY app/ ./app/
 
+# Accept HF_TOKEN for authenticated model downloads (higher rate limits)
+ARG HF_TOKEN
+ENV HF_TOKEN=${HF_TOKEN}
+
+# Pre-download ML models during build for fast startup.
+# Use --progress=plain when building to see live download output:
+#   docker compose build --progress=plain ai-service
+RUN python -u -m app.download_models
+
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV PYTHONDONTWRITEBYTECODE=1
