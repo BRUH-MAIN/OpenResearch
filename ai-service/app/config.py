@@ -47,7 +47,7 @@ class Settings(BaseSettings):
 
     # RAG pipeline
     rag_chunks_per_query: int = 3  # chunks retrieved per sub-query
-    rag_similarity_threshold: float = 0.5  # min cosine similarity to keep a chunk
+    rag_similarity_threshold: float = 0.65  # min cosine similarity to keep a chunk
     rag_max_context_chunks: int = 15  # max chunks sent to the LLM
     rag_reranker_top_k: int = 15  # max items kept after cross-encoder reranking
     rag_reranker_score_threshold: float = 0.01  # min reranker score to keep

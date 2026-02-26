@@ -429,8 +429,9 @@ class AgenticService:
         items: list[dict],
         title_key: str = "title",
         content_key: str = "content",
+        time_constraint: str = "None",
     ) -> list[dict]:
-        """Use LLM to filter items by relevance to the query.
+        """Use LLM to filter items by relevance to the query and time constraint.
 
         Asks the model to return the 1-based indices of items that are
         **directly** relevant.  Falls back to returning everything if
@@ -446,19 +447,21 @@ class AgenticService:
         for i, item in enumerate(items[:max_items]):
             title = item.get(title_key, "Untitled")
             snippet = (item.get(content_key, "") or item.get("abstract", ""))[:200]
-            numbered.append(f"{i + 1}. {title}: {snippet}")
+            date_str = item.get("published_date") or item.get("published") or item.get("added_at") or "Unknown"
+            numbered.append(f"{i + 1}. {title} (Date: {date_str}): {snippet}")
         paper_list = "\n".join(numbered)
 
         system_prompt = (
             "You are a strict research-relevance classifier. "
-            "Given a research topic and a numbered list of papers/excerpts, "
+            "Given a research topic, a time constraint, and a numbered list of papers/excerpts, "
             "return ONLY a JSON array of the numbers whose content is "
-            "DIRECTLY relevant to the topic.  Be strict — do NOT include "
-            "papers on unrelated subjects even if they share broad ML/AI "
-            "terminology.  If NONE are relevant, return an empty array [].\n"
+            "DIRECTLY relevant to the topic AND falls within the time constraint. "
+            "Be extremely strict — do NOT include papers on unrelated subjects even if they share broad ML/AI terminology, "
+            "and absolutely EXCLUDE papers whose explicitly stated publication date falls outside the exact requested time frame. "
+            "If NONE are relevant, return an empty array [].\n"
             "Example response: [1, 3, 5]"
         )
-        user_prompt = f"Topic: {query}\n\nPapers:\n{paper_list}"
+        user_prompt = f"Topic: {query}\nTime Constraint: {time_constraint}\n\nPapers:\n{paper_list}"
 
         try:
             result = await self._call_llm_json(
@@ -475,8 +478,8 @@ class AgenticService:
                         continue
                 filtered = [items[i] for i in sorted(valid)]
                 logger.info(
-                    "Relevance filter: %d/%d items kept for query %r",
-                    len(filtered), len(items), query[:80],
+                    "Relevance filter: %d/%d items kept for query %r (Time: %s)",
+                    len(filtered), len(items), query[:80], time_constraint
                 )
                 return filtered
         except Exception as exc:
@@ -674,116 +677,149 @@ class AgenticService:
         if not group_id:
             return "Error: group_id is required."
 
+        # Generate sub-queries for RAG and ArXiv
+        query_gen_system = (
+            "You are an expert academic librarian. Extract a clean arXiv search query, 3-5 specific vector "
+            "database sub-queries, and any explicit time constraints (e.g. 'past 2 years', 'since 2021', "
+            "or 'None') from the user's research topic. \n"
+            "Return ONLY a JSON object with this exact structure:\n"
+            '{"arxiv_query": "clean keywords only", "vector_queries": ["query1", "query2"], "time_constraint": "None"}'
+        )
+        query_data = await self._call_llm_json(
+            system_prompt=query_gen_system,
+            user_prompt=f"Topic: {query}",
+            temperature=0.2,
+        )
+        
+        # Default fallbacks if parsing fails
+        arxiv_query = query
+        sub_queries = [query]
+        time_constraint = "None"
+        
+        if isinstance(query_data, dict):
+            arxiv_query = query_data.get("arxiv_query", query)
+            sub_queries = query_data.get("vector_queries", [query])
+            time_constraint = query_data.get("time_constraint", "None")
+
         try:
             papers = await self._get_group_papers(group_id)
-
+            arxiv_papers_fetched = []
             if len(papers) < 3:
-                logger.info("Only %d papers found, auto-retrieving more...", len(papers))
-                await self._tool_retrieve_papers(query, config)
-                papers = await self._get_group_papers(group_id)
+                logger.info("Only %d papers found, auto-retrieving more from arXiv...", len(papers))
+                try:
+                    mcp_response = await search_arxiv(query=arxiv_query, limit=10)
+                    arxiv_papers_fetched = mcp_response.get("papers", [])
+                    if arxiv_papers_fetched:
+                        logger.info("Successfully fetched %d papers from arXiv.", len(arxiv_papers_fetched))
+                        # Append the fetched arXiv papers to the in-memory papers list
+                        papers.extend(arxiv_papers_fetched)
+                except Exception as exc:
+                    logger.warning("Auto-retrieve from ArXiv failed: %s", exc)
 
             if not papers:
                 return "No papers available to survey even after retrieval attempt."
 
-            # Generate sub-queries for RAG
-            query_gen_system = "You are an expert academic librarian. Break down the user's research topic into 3 to 5 highly specific search queries for retrieving relevant chunks from a vector database of research papers."
-            sub_queries = await self._call_llm_json(
-                system_prompt=query_gen_system,
-                user_prompt=f"Topic: {query}",
-                temperature=0.2,
-            )
-            if not isinstance(sub_queries, list):
-                sub_queries = [query]
-
-            # Vector search for relevant chunks
-            all_chunks = []
-            seen_chunk_ids = set()
-
-            settings = get_settings()
-            if vector_store.is_connected:
-                for sq in sub_queries:
-                    results = await vector_store.search_group_vectors(
-                        group_id=group_id,
-                        query=str(sq),
-                        limit=settings.rag_chunks_per_query,
-                    )
-                    for res in results:
-                        if res["id"] not in seen_chunk_ids:
-                            # Skip chunks with very low vector similarity
-                            similarity = res.get("similarity", 0)
-                            if similarity < settings.rag_similarity_threshold:
-                                continue
-                            seen_chunk_ids.add(res["id"])
-                            all_chunks.append(res)
-
-            # Rerank chunks using cross-encoder if available
-            if len(all_chunks) > 1 and reranker.is_available:
-                try:
-                    all_chunks = await reranker.rerank(
-                        query=query,
-                        results=all_chunks,
-                        top_k=min(len(all_chunks), settings.rag_reranker_top_k),
-                        content_key="content",
-                    )
-                    all_chunks = [c for c in all_chunks if c.get("rerank_score", 0) > settings.rag_reranker_score_threshold]
-                except Exception as exc:
-                    logger.warning("Reranking literature chunks failed: %s", exc)
-
-            # --- LLM-based relevance gate (handles the case where all
-            #     chunks are off-topic even if their scores are high) ---
-            if all_chunks:
-                all_chunks = await self._filter_relevant_items(
-                    query=query, items=all_chunks,
-                    title_key="paper_id", content_key="content",
-                )
-
-            if all_chunks:
-                context_lines = []
-                for i, chunk in enumerate(all_chunks[:settings.rag_max_context_chunks]):
-                    context_lines.append(f"--- Excerpt {i+1} ---")
-                    context_lines.append(f"Content: {chunk.get('content', '')}")
-                context_text = "\n".join(context_lines)
-            else:
-                # Fallback: filter group papers by LLM relevance
-                paper_items = [
-                    {
-                        "title": p.get("title", "Untitled"),
-                        "content": f"{p.get('title', '')} {p.get('abstract', '')}",
-                    }
-                    for p in papers
-                ]
-                paper_items = await self._filter_relevant_items(
-                    query=query, items=paper_items,
-                    title_key="title", content_key="content",
-                )
-
-                if paper_items:
-                    context_text = "\n".join(
-                        f"- {p['title']}: {p['content'][:400]}" for p in paper_items
-                    )
-                else:
-                    context_text = (
-                        "No papers in the current group are relevant to this topic. "
-                        "The review should state that no relevant papers were found "
-                        "and suggest the user add papers on this topic to the group."
-                    )
-
-            system_prompt = (
-                "You are an expert Academic Reviewer. Synthesize the provided paper excerpts into a comprehensive, deeply detailed structured literature review. "
-                "You MUST include a Markdown table comparing the key innovations, methods, or findings of the papers discussed. "
-                "Structure the review with clear thematic sections and a conclusion."
-            )
-
-            user_prompt = (
-                f"User topic: {query}\n\n"
-                f"Retrieved Research Excerpts:\n{context_text}\n\n"
-                "Please write the detailed literature review now, ensuring to include the comparative Markdown table."
-            )
-
-            return await self._call_llm(system_prompt, user_prompt, temperature=0.3)
         except Exception as exc:
-            logger.error("_tool_survey_literature failed: %s", exc, exc_info=True)
-            return f"Error surveying literature: {exc}"
+            logger.error("Failed to retrieve papers: %s", exc)
+            return "Error retrieving papers."
+
+        # Vector search for relevant chunks
+        all_chunks = []
+        seen_chunk_ids = set()
+
+        # Inject the dynamically fetched arXiv papers as high-priority chunks
+        for i, p in enumerate(arxiv_papers_fetched):
+            chunk_id = f"arxiv_auto_{i}"
+            seen_chunk_ids.add(chunk_id)
+            all_chunks.append({
+                "id": chunk_id,
+                "paper_id": p.get("title", "ArXiv Paper"),
+                "content": f"{p.get('title', '')}\n{p.get('abstract', '')}\nPublished: {p.get('published', 'Unknown')}",
+                "similarity": 1.0,
+                "url": p.get("url", "")
+            })
+
+        settings = get_settings()
+        if vector_store.is_connected:
+            for sq in sub_queries:
+                results = await vector_store.search_group_vectors(
+                    group_id=group_id,
+                    query=str(sq),
+                    limit=settings.rag_chunks_per_query,
+                )
+                for res in results:
+                    if res["id"] not in seen_chunk_ids:
+                        # Skip chunks with very low vector similarity
+                        similarity = res.get("similarity", 0)
+                        if similarity < settings.rag_similarity_threshold:
+                            continue
+                        seen_chunk_ids.add(res["id"])
+                        all_chunks.append(res)
+
+        # Rerank chunks using cross-encoder if available
+        if len(all_chunks) > 1 and reranker.is_available:
+            try:
+                all_chunks = await reranker.rerank(
+                    query=query,
+                    results=all_chunks,
+                    top_k=min(len(all_chunks), settings.rag_reranker_top_k),
+                    content_key="content",
+                )
+                all_chunks = [c for c in all_chunks if c.get("rerank_score", 0) > settings.rag_reranker_score_threshold]
+            except Exception as exc:
+                logger.warning("Reranking literature chunks failed: %s", exc)
+
+        if all_chunks:
+            all_chunks = await self._filter_relevant_items(
+                query=query, items=all_chunks,
+                title_key="paper_id", content_key="content",
+                time_constraint=time_constraint,
+            )
+
+        if all_chunks:
+            context_lines = []
+            for i, chunk in enumerate(all_chunks[:settings.rag_max_context_chunks]):
+                context_lines.append(f"--- Excerpt {i+1} ---")
+                context_lines.append(f"Content: {chunk.get('content', '')}")
+            context_text = "\n".join(context_lines)
+        else:
+            # Fallback: filter group papers by LLM relevance
+            paper_items = [
+                {
+                    "title": p.get("title", "Untitled"),
+                    "content": f"{p.get('title', '')} {p.get('abstract', '')}",
+                }
+                for p in papers
+            ]
+            paper_items = await self._filter_relevant_items(
+                query=query, items=paper_items,
+                title_key="title", content_key="content",
+            )
+
+            if paper_items:
+                context_text = "\n".join(
+                    f"- {p['title']}: {p['content'][:400]}" for p in paper_items
+                )
+            else:
+                context_text = (
+                    "No papers in the current group are relevant to this topic. "
+                    "The review should state that no relevant papers were found "
+                    "and suggest the user add papers on this topic to the group."
+                )
+
+        system_prompt = (
+            "You are an expert Academic Reviewer. Synthesize the provided paper excerpts into a comprehensive, deeply detailed structured literature review. "
+            "You MUST include a Markdown table comparing the key innovations, methods, or findings of the papers discussed. "
+            "Structure the review with clear thematic sections and a conclusion."
+        )
+
+        user_prompt = (
+            f"User topic: {query}\n\n"
+            f"Retrieved Research Excerpts:\n{context_text}\n\n"
+            "Please write the detailed literature review now, ensuring to include the comparative Markdown table."
+        )
+
+        return await self._call_llm(system_prompt, user_prompt, temperature=0.3)
 
     async def _tool_analyze_gaps(self, literature_review_context: str, config: RunnableConfig) -> str:
         """Identify research gaps, unresolved debates, and underexplored areas."""
