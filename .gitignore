@@ -56,3 +56,6 @@ build.log
 coverage/
 .nyc_output/
 .pytest_cache/
+
+# Local custom scripts
+check_arxiv_llm.py
