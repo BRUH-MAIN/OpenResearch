@@ -141,6 +141,38 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
+// Track Zustand persist rehydration status
+// This prevents auth checks from running before localStorage is loaded
+let _hasHydrated = false;
+
+export const hasHydrated = () => _hasHydrated;
+
+// Subscribe to rehydration event (client-side only)
+if (typeof window !== 'undefined') {
+  useAuthStore.persist.onFinishHydration(() => {
+    _hasHydrated = true;
+  });
+}
+
+// Promise-based helper that resolves when hydration is complete
+export function waitForHydration(): Promise<void> {
+  // On the server, resolve immediately (no localStorage to rehydrate from)
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    if (_hasHydrated) {
+      resolve();
+      return;
+    }
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      _hasHydrated = true;
+      unsub();
+      resolve();
+    });
+  });
+}
+
 // Helper hook to get token with auto-refresh
 export function useToken() {
   const { accessToken, refreshAuth } = useAuthStore();

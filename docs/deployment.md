@@ -33,7 +33,7 @@ This guide covers deploying OpenResearch to production environments.
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/openresearch.git
+git clone https://github.com/your-org/openresearch.git
 cd openresearch
 ```
 
@@ -58,9 +58,7 @@ NEXT_PUBLIC_WS_URL=http://localhost:3001
 # AI Service
 GROQ_API_KEY=your-groq-api-key-from-console
 GROQ_MODEL=llama-3.3-70b-versatile
-OPENAI_API_KEY=your-openai-api-key-for-embeddings
-EMBEDDING_MODEL=text-embedding-3-small
-EMBEDDING_DIMENSIONS=1536
+# Embeddings use local SPECTER2 model (768-dim) — no OpenAI key needed
 ```
 
 3. **Start all services**
@@ -152,7 +150,7 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # Clone and setup
-git clone https://github.com/yourusername/openresearch.git
+git clone https://github.com/your-org/openresearch.git
 cd openresearch/server
 npm install --production
 
@@ -198,10 +196,7 @@ pm2 startup
 4. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 5. Add environment variables:
    - `GROQ_API_KEY`
-   - `OPENAI_API_KEY`
    - `DATABASE_URL`
-   - `EMBEDDING_MODEL`
-   - `EMBEDDING_DIMENSIONS`
 
 #### Google Cloud Run
 
@@ -246,11 +241,8 @@ gcloud run deploy ai-service \
 | Variable | Required | Description | Example |
 |----------|----------|-------------|---------|
 | `GROQ_API_KEY` | Yes | Groq API key for LLM | `gsk_xxx` |
-| `OPENAI_API_KEY` | Yes | OpenAI key for embeddings | `sk-xxx` |
 | `DATABASE_URL` | Yes | PostgreSQL connection string | `postgresql://...` |
 | `GROQ_MODEL` | No | LLM model name | `llama-3.3-70b-versatile` |
-| `EMBEDDING_MODEL` | No | Embedding model | `text-embedding-3-small` |
-| `EMBEDDING_DIMENSIONS` | No | Vector dimensions | `1536` |
 | `DEBUG` | No | Enable debug logging | `false` |
 
 ## Health Checks
@@ -377,8 +369,8 @@ Neon provides automated backups. Configure retention policy in dashboard.
 
 **Vector Store Not Working**
 - Verify pgvector extension is installed: `SELECT * FROM pg_extension WHERE extname = 'vector';`
-- Check embedding dimensions match (1536)
-- Verify OPENAI_API_KEY is set
+- Check embedding dimensions match (768)
+- Embeddings use local SPECTER2 model — no API key needed
 
 **Socket.IO Connection Issues**
 - Check CORS settings in server

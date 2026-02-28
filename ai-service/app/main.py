@@ -39,7 +39,7 @@ from .models import (
     IntentClassifyRequest, IntentClassifyResponse,
 )
 from .groq_client import groq_client
-from .intent_classifier import classify_intent
+from .intent_classifier import classify_intent, INTENT_THRESHOLD
 from .database import database
 from .embeddings import embedding_service
 from .vector_store import vector_store
@@ -378,8 +378,13 @@ async def classify_agentic_intent(request: IntentClassifyRequest):
     if not embedding_service.is_configured:
         embedding_service.initialize()
 
-    result = await classify_intent(request.prompt)
-    return IntentClassifyResponse(**result)
+    task_type, similarity, matched_phrase = classify_intent(request.prompt)
+    return IntentClassifyResponse(
+        task_type=task_type,
+        similarity=similarity,
+        threshold=INTENT_THRESHOLD,
+        matched_phrase=matched_phrase,
+    )
 
 
 # ============ Group AI Chat ============
@@ -401,8 +406,8 @@ async def group_ai_chat(group_id: str, request: GroupAIChatRequest):
     CRITICAL: Requires @ai trigger in prompt. Uses group-isolated RAG context.
     """
     validate_uuid(group_id, "group_id")
-    validate_uuid(request.group_id, "group_id")
-    if request.group_id != group_id:
+    # Use path param as canonical group_id; validate body matches if provided
+    if request.group_id and request.group_id != group_id:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="group_id in body must match path.",

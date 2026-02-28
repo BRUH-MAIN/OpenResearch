@@ -2,23 +2,24 @@
 
 ## Overview
 
-OpenResearch maintains **≥90% test coverage** across all services. Tests run automatically in CI/CD pipelines.
+OpenResearch maintains comprehensive test suites across all services. Tests run automatically in CI/CD pipelines.
 
 ## Test Stack
 
 ### Server (Node.js/TypeScript)
 - **Framework**: Vitest
-- **Coverage**: ≥90% (lines, functions, branches, statements)
+- **Coverage**: Tracked (mock-heavy architecture; 206 tests passing)
 - **Test Types**: Unit, Integration, E2E
 
 ### AI Service (Python)
 - **Framework**: pytest
-- **Coverage**: ≥90% (lines, branches, statements)
+- **Coverage**: ≥65% enforced (256 tests passing)
 - **Test Types**: Unit, Integration
 
 ### Client (Next.js/React)
-- **Framework**: Jest + React Testing Library (when added)
-- **Test Types**: Component, Integration
+- **Framework**: Vitest + React Testing Library
+- **Coverage**: Tracked (56 tests passing)
+- **Test Types**: Unit, Component
 
 ## Running Tests
 
@@ -76,7 +77,7 @@ pytest -v
 pytest -s
 ```
 
-### Client Tests (Future)
+### Client Tests
 
 ```bash
 cd client
@@ -91,16 +92,15 @@ npm run test:coverage
 npm run test:watch
 ```
 
-## Test Coverage Requirements
+## Test Coverage
 
-All services must maintain minimum coverage thresholds:
+All services track coverage. The AI service enforces a minimum threshold:
 
-| Metric | Threshold | Description |
-|--------|-----------|-------------|
-| Lines | 90% | Executable code lines |
-| Functions | 90% | Function/method coverage |
-| Branches | 90% | Conditional branches (if/else) |
-| Statements | 90% | Individual statements |
+| Service | Tests | Enforced Threshold |
+|---------|-------|-------------------|
+| Server | 206 | Tracked (no threshold) |
+| AI Service | 256 | ≥65% lines |
+| Client | 56 | Tracked (no threshold) |
 
 ### Viewing Coverage Reports
 
@@ -124,12 +124,15 @@ Located in `server/tests/`:
 
 ```
 tests/
+├── ai.test.ts                # AI service proxy endpoints
 ├── auth.test.ts              # Authentication & JWT
 ├── groups.test.ts            # Group CRUD operations
-├── papers.test.ts            # Paper management
 ├── groupPapers.test.ts       # Group papers & AI features
-├── reports.test.ts           # PDF report generation
+├── health.test.ts            # Health check endpoint
+├── papers.test.ts            # Paper management
 ├── recommendations.test.ts   # Paper recommendations
+├── reports.test.ts           # PDF report generation
+├── sessions.test.ts          # Chat sessions
 └── socket.test.ts            # Socket.IO real-time events
 ```
 
@@ -139,10 +142,33 @@ Located in `ai-service/tests/`:
 
 ```
 tests/
+├── test_agentic.py           # LangGraph ReAct agent
+├── test_database.py          # Database operations
+├── test_embeddings.py        # SPECTER2 embedding generation
+├── test_groq_client.py       # Groq/ChatGroq client
+├── test_intent_classifier.py # Intent classification
 ├── test_main.py              # FastAPI endpoints
-├── test_embeddings.py        # Embedding generation
-├── test_vector_store.py      # pgvector operations
-└── test_report_generator.py # PDF generation
+├── test_main_supplementary.py # Additional endpoint tests
+├── test_mcp_client.py        # MCP client integration
+├── test_memory.py            # Conversation memory
+├── test_report_generator.py  # PDF report generation
+└── test_vector_store.py      # pgvector operations
+```
+
+### Client Test Files
+
+Located in `client/__tests__/`:
+
+```
+__tests__/
+├── lib/
+│   └── auth.test.ts          # Auth utility tests
+└── ui/
+    ├── Badge.test.tsx         # Badge component
+    ├── Button.test.tsx        # Button component
+    ├── Card.test.tsx          # Card component
+    ├── Input.test.tsx         # Input component
+    └── Modal.test.tsx         # Modal component
 ```
 
 ## Writing Tests
@@ -561,11 +587,9 @@ Check environment variables:
 ```bash
 # Verify keys are set
 echo $GROQ_API_KEY
-echo $OPENAI_API_KEY
 
 # Use test mode if keys not available
 export GROQ_API_KEY=test-key
-export OPENAI_API_KEY=test-key
 ```
 
 ## Coverage Exemptions

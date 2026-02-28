@@ -57,8 +57,8 @@ A clean, focused platform for research teams to collaborate in real-time with AI
 **Key Technologies:**
 - **Frontend:** Next.js 16, React 19, TypeScript, TailwindCSS 4, Socket.IO Client, Zustand
 - **Backend:** Node.js 20, Express 5, Socket.IO 4.8, Drizzle ORM, JWT Auth
-- **Database:** PostgreSQL 16 + **pgvector** for vector storage (1536-dim embeddings)
-- **AI Service:** Python 3.12, FastAPI, Groq (Llama 3.3 70B), OpenAI Embeddings, ReportLab (PDF)
+- **Database:** PostgreSQL 16 + **pgvector** for vector storage (768-dim embeddings)
+- **AI Service:** Python 3.12, FastAPI, Groq (Llama 3.3 70B), SPECTER2 Embeddings (local), ReportLab (PDF)
 - **Real-time:** Socket.IO for bidirectional communication
 - **Vector Index:** HNSW with cosine similarity for fast semantic search
 
@@ -76,7 +76,7 @@ A clean, focused platform for research teams to collaborate in real-time with AI
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/openresearch.git
+git clone https://github.com/your-org/openresearch.git
 cd openresearch
 ```
 
@@ -229,7 +229,7 @@ OpenResearch/
 │   │   ├── config.py      # Settings
 │   │   ├── database.py    # Async SQLAlchemy
 │   │   ├── groq_client.py # Groq API integration (Llama 3.3)
-│   │   ├── embeddings.py  # OpenAI embeddings (1536-dim)
+│   │   ├── embeddings.py  # SPECTER2 embeddings (768-dim)
 │   │   ├── vector_store.py # pgvector operations
 │   │   ├── report_generator.py # PDF generation (ReportLab)
 │   │   └── models.py      # Pydantic models

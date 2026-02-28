@@ -21,7 +21,7 @@ The platform is organized as four primary services:
    - Acts as the primary API for the client
 3. **AI Service (FastAPI + Python 3.12)**
    - Handles embeddings, contextual AI Q&A, summarization, and report generation
-   - Communicates with Gemini and PostgreSQL
+   - Communicates with Groq LLM and PostgreSQL
 4. **Database (PostgreSQL 16 + pgvector)**
    - Stores app data and vector embeddings (HNSW index for fast similarity search)
 
@@ -65,18 +65,21 @@ OpenResearch/
 
 ### 4.3 AI Service (ai-service/)
 - **Framework:** FastAPI
-- **AI model:** Google Gemini 2.0 Flash
+- **AI model:** Groq (Llama 3.3 70B)
 - **Capabilities:**
   - Q&A with session + paper context
   - Session summarization
-  - Embeddings + vector search (pgvector)
+  - Embeddings + vector search (pgvector, SPECTER2 768-dim)
   - PDF report generation
 
 **Primary endpoints**
 - `GET /health`
-- `POST /test`
-- `POST /chat`
-- `POST /summarize`
+- `POST /groups/{id}/ai-chat`
+- `POST /papers/question`
+- `POST /papers/summarize`
+- `POST /agentic/run`
+- `POST /agentic/classify-intent`
+- `POST /reports/group/{id}/generate`
 
 ### 4.4 Database (PostgreSQL + pgvector)
 **Core tables**
@@ -166,13 +169,13 @@ Services exposed:
 ### 7.3 AI Service (.env)
 | Variable | Description | Required |
 |---|---|---|
-| `GEMINI_API_KEY` | Google Gemini API key | Yes |
+| `GROQ_API_KEY` | Groq API key for LLM | Yes |
 | `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `GEMINI_MODEL` | Model name (default gemini-2.0-flash-exp) | No |
+| `GROQ_MODEL` | Model name (default llama-3.3-70b-versatile) | No |
 | `DEBUG` | Verbose logging | No |
 | `MAX_CONTEXT_MESSAGES` | Max messages in context | No |
 | `MAX_CONTEXT_TOKENS` | Max tokens in context | No |
-| `REQUEST_TIMEOUT` | Gemini timeout (seconds) | No |
+| `REQUEST_TIMEOUT` | Request timeout (seconds) | No |
 
 ## 8) AI Usage & @ai Trigger
 All AI features require the `@ai` trigger in chat to avoid accidental calls and to make usage intentional and auditable.

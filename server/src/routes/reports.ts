@@ -236,15 +236,34 @@ router.get('/:reportId/download', async (req: AuthRequest, res: Response, next) 
       throw createError('Report not available for download', 400);
     }
 
-    // Stream the file from AI service or local storage
+    // Stream the file from AI service (proxy to avoid Docker-internal URL exposure)
     const fileName = `${report.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-
-    // For now, redirect to AI service file endpoint
-    // In production, you would stream from shared storage
+    
     const downloadUrl = `${process.env.AI_SERVICE_URL}${report.filePath}`;
-    res.redirect(downloadUrl);
+    
+    try {
+      const aiResponse = await fetch(downloadUrl);
+      if (!aiResponse.ok) {
+        throw createError('Failed to fetch report file from AI service', 502);
+      }
+      
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      
+      // Pipe the response body to the client
+      const reader = aiResponse.body;
+      if (reader) {
+        const { Readable } = await import('stream');
+        const nodeStream = Readable.fromWeb(reader as any);
+        nodeStream.pipe(res);
+      } else {
+        const buffer = Buffer.from(await aiResponse.arrayBuffer());
+        res.send(buffer);
+      }
+    } catch (fetchErr) {
+      if ((fetchErr as any)?.statusCode) throw fetchErr;
+      throw createError('AI service unavailable for report download', 502);
+    }
   } catch (error) {
     next(error);
   }

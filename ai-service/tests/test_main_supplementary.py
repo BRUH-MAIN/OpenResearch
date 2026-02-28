@@ -214,12 +214,8 @@ class TestClassifyIntentEndpoint:
         with patch("app.main.embedding_service") as mock_emb, \
              patch("app.main.classify_intent") as mock_cls:
             mock_emb.is_configured = True
-            mock_cls.side_effect = AsyncMock(return_value={
-                "task_type": "paper_retrieval",
-                "similarity": 0.95,
-                "threshold": 0.5,
-                "matched_phrase": "find papers",
-            })
+            # classify_intent is sync and returns a tuple
+            mock_cls.return_value = ("paper_retrieval", 0.95, "find papers")
 
             response = client.post("/agentic/classify-intent", json={
                 "prompt": "@ai classify this",
@@ -323,155 +319,8 @@ class TestDownloadReport:
 # Legacy /chat
 # ---------------------------------------------------------------------------
 
-class TestLegacyChatEndpoint:
-
-    def test_chat_groq_not_configured(self):
-        with patch("app.main.groq_client") as mock_groq:
-            mock_groq.is_configured = False
-            response = client.post("/chat", json={
-                "question": "What is ML?",
-                "session_id": SESSION_ID,
-            })
-            assert response.status_code == 503
-
-    def test_chat_success(self):
-        with patch("app.main.groq_client") as mock_groq, \
-             patch("app.main.database") as mock_db:
-            mock_groq.is_configured = True
-            mock_groq.model_name = "llama-3.3-70b-versatile"
-            mock_groq.chat_qa = AsyncMock(return_value=("Answer text", ["src"], 100))
-            mock_db.is_connected = True
-            mock_db.get_session_info = AsyncMock(return_value={"title": "Session"})
-            mock_db.get_session_messages = AsyncMock(return_value=[])
-            mock_db.get_session_papers = AsyncMock(return_value=[])
-
-            response = client.post("/chat", json={
-                "question": "What is ML?",
-                "session_id": SESSION_ID,
-                "include_papers": True,
-            })
-            assert response.status_code == 200
-            data = response.json()
-            assert "answer" in data
-
-    def test_chat_no_session(self):
-        with patch("app.main.groq_client") as mock_groq, \
-             patch("app.main.database") as mock_db:
-            mock_groq.is_configured = True
-            mock_groq.model_name = "llama-3.3-70b-versatile"
-            mock_groq.chat_qa = AsyncMock(return_value=("Answer", [], 50))
-            mock_db.is_connected = False
-
-            response = client.post("/chat", json={
-                "question": "What is ML?",
-            })
-            assert response.status_code == 200
-
-
-# ---------------------------------------------------------------------------
-# Legacy /summarize
-# ---------------------------------------------------------------------------
-
-class TestLegacySummarizeEndpoint:
-
-    def test_summarize_groq_not_configured(self):
-        with patch("app.main.groq_client") as mock_groq:
-            mock_groq.is_configured = False
-            response = client.post("/summarize", json={
-                "session_id": SESSION_ID,
-            })
-            assert response.status_code == 503
-
-    def test_summarize_db_not_connected(self):
-        with patch("app.main.groq_client") as mock_groq, \
-             patch("app.main.database") as mock_db:
-            mock_groq.is_configured = True
-            mock_db.is_connected = False
-            response = client.post("/summarize", json={
-                "session_id": SESSION_ID,
-            })
-            assert response.status_code == 503
-
-    def test_summarize_session_not_found(self):
-        with patch("app.main.groq_client") as mock_groq, \
-             patch("app.main.database") as mock_db:
-            mock_groq.is_configured = True
-            mock_db.is_connected = True
-            mock_db.get_session_info = AsyncMock(return_value=None)
-            response = client.post("/summarize", json={
-                "session_id": SESSION_ID,
-            })
-            assert response.status_code == 404
-
-    def test_summarize_no_messages(self):
-        with patch("app.main.groq_client") as mock_groq, \
-             patch("app.main.database") as mock_db:
-            mock_groq.is_configured = True
-            mock_db.is_connected = True
-            mock_db.get_session_info = AsyncMock(return_value={"title": "S"})
-            mock_db.get_session_messages = AsyncMock(return_value=[])
-            response = client.post("/summarize", json={
-                "session_id": SESSION_ID,
-            })
-            assert response.status_code == 400
-
-    def test_summarize_success(self):
-        with patch("app.main.groq_client") as mock_groq, \
-             patch("app.main.database") as mock_db:
-            mock_groq.is_configured = True
-            mock_groq.model_name = "llama-3.3-70b-versatile"
-            mock_groq.summarize_session = AsyncMock(return_value=(
-                "Session summary text",
-                ["key point 1", "key point 2"],
-                150,
-            ))
-            mock_db.is_connected = True
-            mock_db.get_session_info = AsyncMock(return_value={"title": "Test Session"})
-            mock_db.get_session_messages = AsyncMock(return_value=[
-                {"content": "Hello", "type": "user", "user_name": "Alice"},
-                {"content": "Hi", "type": "user", "user_name": "Bob"},
-            ])
-
-            response = client.post("/summarize", json={
-                "session_id": SESSION_ID,
-            })
-            assert response.status_code == 200
-            data = response.json()
-            assert "summary" in data
-            assert data["participant_count"] == 2
-
-
-# ---------------------------------------------------------------------------
-# /test endpoint
-# ---------------------------------------------------------------------------
-
-class TestTestEndpoint:
-
-    def test_test_groq_not_configured(self):
-        with patch("app.main.groq_client") as mock_groq:
-            mock_groq.is_configured = False
-            response = client.post("/test?question=hi")
-            assert response.status_code == 503
-
-    def test_test_success(self):
-        with patch("app.main.groq_client") as mock_groq:
-            mock_groq.is_configured = True
-            mock_groq.model_name = "llama-3.3-70b-versatile"
-            mock_groq.generate = AsyncMock(return_value=("Answer", 50))
-
-            response = client.post("/test?question=hi")
-            assert response.status_code == 200
-            data = response.json()
-            assert data["answer"] == "Answer"
-
-    def test_test_default_question(self):
-        with patch("app.main.groq_client") as mock_groq:
-            mock_groq.is_configured = True
-            mock_groq.model_name = "test-model"
-            mock_groq.generate = AsyncMock(return_value=("ML is...", 30))
-
-            response = client.post("/test")
-            assert response.status_code == 200
+# Legacy /chat, /summarize, and /test endpoints have been removed.
+# Tests for those endpoints are no longer needed.
 
 
 # ---------------------------------------------------------------------------
@@ -737,7 +586,12 @@ class TestReportGenerationFullFlow:
             )
             assert response.status_code == 200
             data = response.json()
-            assert data["id"] == "rpt-1"
+            # The endpoint generates its own UUID for the report id
+            import uuid
+            try:
+                uuid.UUID(data["id"])
+            except ValueError:
+                pytest.fail(f"Report id is not a valid UUID: {data['id']}")
             assert data["filename"] == "report.pdf"
 
     def test_generate_report_db_not_connected(self):
@@ -842,45 +696,6 @@ class TestReportGenerationFullFlow:
 # ---------------------------------------------------------------------------
 
 class TestExceptionPaths:
-
-    def test_chat_qa_exception(self):
-        """Cover the exception handler in chat_qa endpoint."""
-        with patch("app.main.groq_client") as mock_groq, \
-             patch("app.main.database") as mock_db:
-            mock_groq.is_configured = True
-            mock_groq.chat_qa = AsyncMock(side_effect=RuntimeError("LLM failed"))
-            mock_db.is_connected = False
-
-            response = client.post("/chat", json={
-                "question": "What is ML?",
-            })
-            assert response.status_code == 500
-
-    def test_summarize_exception(self):
-        """Cover the exception handler in summarize_session endpoint."""
-        with patch("app.main.groq_client") as mock_groq, \
-             patch("app.main.database") as mock_db:
-            mock_groq.is_configured = True
-            mock_groq.summarize_session = AsyncMock(side_effect=RuntimeError("fail"))
-            mock_db.is_connected = True
-            mock_db.get_session_info = AsyncMock(return_value={"title": "S"})
-            mock_db.get_session_messages = AsyncMock(return_value=[
-                {"content": "msg", "type": "user", "user_name": "Alice"},
-            ])
-
-            response = client.post("/summarize", json={
-                "session_id": SESSION_ID,
-            })
-            assert response.status_code == 500
-
-    def test_test_generation_exception(self):
-        """Cover the exception handler in test_generation endpoint."""
-        with patch("app.main.groq_client") as mock_groq:
-            mock_groq.is_configured = True
-            mock_groq.generate = AsyncMock(side_effect=RuntimeError("generation failed"))
-
-            response = client.post("/test?question=hi")
-            assert response.status_code == 500
 
     def test_paper_summarize_exception(self):
         """Cover the exception handler in paper_summarize endpoint."""

@@ -36,8 +36,6 @@ jobs:
         env:
           GROQ_API_KEY: test-key
           DATABASE_URL: postgresql://test:test@localhost:5432/test
-          SUPABASE_URL: https://test.supabase.co
-          SUPABASE_KEY: test-key
         run: python -m pytest --cov=app --cov-report=term-missing --cov-fail-under=90
 
   # ─── Server (Node.js / Express) ────────────────────────────────────────
@@ -64,8 +62,8 @@ jobs:
       - name: TypeScript type check
         run: npx tsc --noEmit
 
-      - name: Run tests
-        run: npx vitest run
+      - name: Run tests with coverage
+        run: npx vitest run --coverage
 
   # ─── Client (Next.js) ─────────────────────────────────────────────────
   client:
@@ -95,8 +93,6 @@ jobs:
         env:
           NEXT_PUBLIC_API_URL: http://localhost:3001
           NEXT_PUBLIC_WS_URL: http://localhost:3001
-          NEXT_PUBLIC_SUPABASE_URL: https://test.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: test-key
         run: npm run build
 
   # ─── Docker Build Verification ─────────────────────────────────────────
@@ -115,9 +111,5 @@ jobs:
           JWT_SECRET: test-secret-key-at-least-32-characters-long
           JWT_REFRESH_SECRET: test-refresh-secret-different-from-jwt-secret
           GROQ_API_KEY: test-key
-          SUPABASE_URL: https://test.supabase.co
-          SUPABASE_KEY: test-key
           NEXT_PUBLIC_API_URL: http://localhost:3001
           NEXT_PUBLIC_WS_URL: http://localhost:3001
-          NEXT_PUBLIC_SUPABASE_URL: https://test.supabase.co
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: test-key

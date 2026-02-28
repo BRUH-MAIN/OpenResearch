@@ -2,6 +2,7 @@
 .env
 .env.local
 .env.*.local
+.env.docker
 
 # Logs
 *.log
@@ -59,3 +60,28 @@ coverage/
 
 # Local custom scripts
 check_arxiv_llm.py
+
+# Debug/test artifacts (root level)
+/debug_*
+/test_*
+/playwright_logs*
+/server_logs*
+/client_logs*
+/ai_logs*
+/ai-logs*
+/ai_failed_logs*
+/all_logs*
+/cleaned_logs*
+/diff_*
+/tracebacks.txt
+/group_papers_dump.txt
+/agent_credentials.txt
+/test_output*
+/*.sql
+
+# Generated HTML docs (regenerate from .md source)
+docs/project-documentation*.html
+
+# Python coverage artifacts
+ai-service/.coverage
+ai-service/htmlcov/

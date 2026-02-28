@@ -100,9 +100,12 @@ function ReportsPageContent() {
     }
   };
 
-  const handleDownload = (report: Report) => {
-    if (report.downloadUrl) {
-      window.open(api.getReportDownloadUrl(report.id), '_blank');
+  const handleDownload = async (report: Report) => {
+    if (!accessToken || !report.downloadUrl) return;
+    try {
+      await api.downloadReport(accessToken, report.id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to download report');
     }
   };
 

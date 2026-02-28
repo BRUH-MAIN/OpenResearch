@@ -1,4 +1,4 @@
-"""Tests for the Groq client wrapper."""
+"""Tests for the Groq client wrapper (ChatGroq/LangChain-based)."""
 
 import asyncio
 import pytest
@@ -13,21 +13,31 @@ from app.groq_client import GroqClient
 
 @pytest.fixture
 def client():
-    return GroqClient()
+    with patch("app.groq_client.get_settings") as mock_settings:
+        settings = MagicMock()
+        settings.groq_api_key = ""
+        settings.groq_model = "llama-3.1-8b-instant"
+        mock_settings.return_value = settings
+        return GroqClient()
 
 
 @pytest.fixture
-def configured_client(client):
-    """A GroqClient with a mock Groq SDK client."""
-    mock_groq = MagicMock()
+def configured_client():
+    """A GroqClient with a mock ChatGroq LLM."""
+    with patch("app.groq_client.get_settings") as mock_settings:
+        settings = MagicMock()
+        settings.groq_api_key = "test-key"
+        settings.groq_model = "llama-3.1-8b-instant"
+        mock_settings.return_value = settings
+        c = GroqClient()
+    
+    mock_llm = AsyncMock()
     mock_response = MagicMock()
-    mock_response.choices = [
-        MagicMock(message=MagicMock(content="mock Groq response"))
-    ]
-    mock_groq.chat.completions.create.return_value = mock_response
-    client.client = mock_groq
-    client._initialized = True
-    return client
+    mock_response.content = "mock Groq response"
+    mock_llm.ainvoke = AsyncMock(return_value=mock_response)
+    c._llm = mock_llm
+    c._initialized = True
+    return c
 
 
 # ---------------------------------------------------------------------------
@@ -36,14 +46,14 @@ def configured_client(client):
 
 class TestInitialization:
 
+    @patch("app.groq_client.ChatGroq")
     @patch("app.groq_client.get_settings")
-    @patch("app.groq_client.Groq")
-    def test_initialize_success(self, mock_groq_cls, mock_settings):
+    def test_initialize_success(self, mock_settings, mock_chat_groq):
         settings = MagicMock()
         settings.groq_api_key = "test-key"
-        settings.groq_model = "llama-3.3-70b-versatile"
+        settings.groq_model = "llama-3.1-8b-instant"
         mock_settings.return_value = settings
-        mock_groq_cls.return_value = MagicMock()
+        mock_chat_groq.return_value = MagicMock()
 
         c = GroqClient()
         result = c.initialize()
@@ -54,7 +64,7 @@ class TestInitialization:
     def test_initialize_no_key(self, mock_settings):
         settings = MagicMock()
         settings.groq_api_key = ""
-        settings.groq_model = "llama-3.3-70b-versatile"
+        settings.groq_model = "llama-3.1-8b-instant"
         mock_settings.return_value = settings
 
         c = GroqClient()
@@ -62,51 +72,18 @@ class TestInitialization:
         assert result is False
         assert c.is_configured is False
 
+    @patch("app.groq_client.ChatGroq")
     @patch("app.groq_client.get_settings")
-    @patch("app.groq_client.Groq")
-    def test_initialize_exception(self, mock_groq_cls, mock_settings):
+    def test_initialize_exception(self, mock_settings, mock_chat_groq):
         settings = MagicMock()
         settings.groq_api_key = "test-key"
-        settings.groq_model = "llama-3.3-70b-versatile"
+        settings.groq_model = "llama-3.1-8b-instant"
         mock_settings.return_value = settings
-        mock_groq_cls.side_effect = RuntimeError("SDK error")
+        mock_chat_groq.side_effect = RuntimeError("SDK error")
 
         c = GroqClient()
         result = c.initialize()
         assert result is False
-
-
-# ---------------------------------------------------------------------------
-# Sync Generate Tests
-# ---------------------------------------------------------------------------
-
-class TestSyncGenerate:
-
-    def test_sync_generate_success(self, configured_client):
-        result = configured_client._sync_generate("test prompt")
-        assert result == "mock Groq response"
-
-    def test_sync_generate_not_configured(self, client):
-        with pytest.raises(RuntimeError, match="not initialized"):
-            client._sync_generate("test prompt")
-
-    def test_sync_generate_empty_response(self, configured_client):
-        configured_client.client.chat.completions.create.return_value = (
-            MagicMock(choices=[])
-        )
-        with pytest.raises(RuntimeError, match="Empty response"):
-            configured_client._sync_generate("test prompt")
-
-    def test_sync_generate_with_system_instruction(self, configured_client):
-        result = configured_client._sync_generate(
-            "test prompt",
-            system_instruction="You are helpful.",
-        )
-        assert result == "mock Groq response"
-        call_args = configured_client.client.chat.completions.create.call_args
-        messages = call_args.kwargs.get("messages") or call_args[1].get("messages")
-        # First message should be the system instruction
-        assert messages[0]["role"] == "system"
 
 
 # ---------------------------------------------------------------------------
@@ -122,6 +99,31 @@ class TestAsyncGenerate:
         assert isinstance(latency_ms, int)
         assert latency_ms >= 0
 
+    @pytest.mark.asyncio
+    async def test_generate_not_configured(self, client):
+        with pytest.raises(RuntimeError, match="not initialized"):
+            await client.generate("test prompt")
+
+    @pytest.mark.asyncio
+    async def test_generate_empty_response(self, configured_client):
+        mock_response = MagicMock()
+        mock_response.content = ""
+        configured_client._llm.ainvoke = AsyncMock(return_value=mock_response)
+        with pytest.raises(RuntimeError, match="Empty response"):
+            await configured_client.generate("test prompt")
+
+    @pytest.mark.asyncio
+    async def test_generate_with_system_instruction(self, configured_client):
+        text, latency = await configured_client.generate(
+            "test prompt",
+            system_instruction="You are helpful.",
+        )
+        assert text == "mock Groq response"
+        call_args = configured_client._llm.ainvoke.call_args
+        messages = call_args[0][0]
+        # First message should be the system instruction
+        assert messages[0].content == "You are helpful."
+
 
 # ---------------------------------------------------------------------------
 # Chat QA Tests
@@ -131,7 +133,6 @@ class TestChatQA:
 
     @pytest.mark.asyncio
     async def test_chat_qa_success(self, configured_client):
-        # The mock returns "mock Groq response" which has no MSG-* refs
         result, sources, latency = await configured_client.chat_qa(
             question="What is NLP?",
             context_messages=[
@@ -148,11 +149,9 @@ class TestChatQA:
 
     @pytest.mark.asyncio
     async def test_chat_qa_with_msg_references(self, configured_client):
-        configured_client.client.chat.completions.create.return_value = MagicMock(
-            choices=[MagicMock(message=MagicMock(
-                content="As mentioned in MSG-0, NLP is important."
-            ))]
-        )
+        mock_response = MagicMock()
+        mock_response.content = "As mentioned in MSG-0, NLP is important."
+        configured_client._llm.ainvoke = AsyncMock(return_value=mock_response)
         result, sources, latency = await configured_client.chat_qa(
             question="What is NLP?",
             context_messages=[
@@ -165,9 +164,7 @@ class TestChatQA:
     @pytest.mark.asyncio
     async def test_chat_qa_error_boundary(self, configured_client):
         """When the LLM raises, chat_qa should return an error string, not crash."""
-        configured_client.client.chat.completions.create.side_effect = (
-            RuntimeError("API down")
-        )
+        configured_client._llm.ainvoke = AsyncMock(side_effect=RuntimeError("API down"))
         result, sources, latency = await configured_client.chat_qa(
             question="test",
             context_messages=[],
@@ -195,11 +192,9 @@ class TestSummarizeSession:
 
     @pytest.mark.asyncio
     async def test_summarize_success(self, configured_client):
-        configured_client.client.chat.completions.create.return_value = MagicMock(
-            choices=[MagicMock(message=MagicMock(
-                content="SUMMARY:\nThis was a productive session.\n\nKEY POINTS:\n- Point 1\n- Point 2"
-            ))]
-        )
+        mock_response = MagicMock()
+        mock_response.content = "SUMMARY:\nThis was a productive session.\n\nKEY POINTS:\n- Point 1\n- Point 2"
+        configured_client._llm.ainvoke = AsyncMock(return_value=mock_response)
         summary, points, latency = await configured_client.summarize_session(
             messages=[
                 {"type": "user", "user_name": "Alice", "content": "Let's discuss NLP"},
@@ -212,9 +207,7 @@ class TestSummarizeSession:
     @pytest.mark.asyncio
     async def test_summarize_error_boundary(self, configured_client):
         """When the LLM raises, summarize_session should return a fallback."""
-        configured_client.client.chat.completions.create.side_effect = (
-            RuntimeError("timeout")
-        )
+        configured_client._llm.ainvoke = AsyncMock(side_effect=RuntimeError("timeout"))
         summary, points, latency = await configured_client.summarize_session(
             messages=[
                 {"type": "user", "user_name": "Bob", "content": "Hello"},

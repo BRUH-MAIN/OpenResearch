@@ -35,9 +35,9 @@ class SummarizeRequest(BaseModel):
 class GroupAIChatRequest(BaseModel):
     """Request for group AI chat - requires @ai trigger."""
     prompt: str = Field(..., min_length=3, max_length=5000, description="Prompt with @ai trigger")
-    group_id: str = Field(..., description="Group ID for context isolation")
+    group_id: Optional[str] = Field(None, description="Group ID for context isolation (also taken from path)")
     session_id: Optional[str] = Field(None, description="Session ID for context")
-    user_id: str = Field(..., description="User ID")
+    user_id: Optional[str] = Field(None, description="User ID")
     
     @field_validator('prompt')
     @classmethod
