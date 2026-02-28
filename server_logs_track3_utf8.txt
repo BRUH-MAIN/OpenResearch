@@ -1,0 +1,1000 @@
+﻿openresearch-ai      | INFO:     127.0.0.1:58284 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59528 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:52986 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41188 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48190 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772242796933,"pid":1,"msg":"::1 - - [28/Feb/2026:01:39:56 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772242827024,"pid":1,"msg":"::1 - - [28/Feb/2026:01:40:27 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772242857111,"pid":1,"msg":"::1 - - [28/Feb/2026:01:40:57 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772242887213,"pid":1,"msg":"::1 - - [28/Feb/2026:01:41:27 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772242917313,"pid":1,"msg":"::1 - - [28/Feb/2026:01:41:57 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772242947416,"pid":1,"msg":"::1 - - [28/Feb/2026:01:42:27 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772242977525,"pid":1,"msg":"::1 - - [28/Feb/2026:01:42:57 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243007640,"pid":1,"msg":"::1 - - [28/Feb/2026:01:43:27 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243037747,"pid":1,"msg":"::1 - - [28/Feb/2026:01:43:57 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243067839,"pid":1,"msg":"::1 - - [28/Feb/2026:01:44:27 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:37928 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60376 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58818 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:53060 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46814 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40900 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57218 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41438 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33518 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48304 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:53128 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44930 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:55768 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:53728 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:42422 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60540 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39030 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772243097918,"pid":1,"msg":"::1 - - [28/Feb/2026:01:44:57 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243128021,"pid":1,"msg":"::1 - - [28/Feb/2026:01:45:28 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243158113,"pid":1,"msg":"::1 - - [28/Feb/2026:01:45:58 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243188225,"pid":1,"msg":"::1 - - [28/Feb/2026:01:46:28 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243218325,"pid":1,"msg":"::1 - - [28/Feb/2026:01:46:58 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243248413,"pid":1,"msg":"::1 - - [28/Feb/2026:01:47:28 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243278517,"pid":1,"msg":"::1 - - [28/Feb/2026:01:47:58 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243308615,"pid":1,"msg":"::1 - - [28/Feb/2026:01:48:28 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243338703,"pid":1,"msg":"::1 - - [28/Feb/2026:01:48:58 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243368786,"pid":1,"msg":"::1 - - [28/Feb/2026:01:49:28 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243398874,"pid":1,"msg":"::1 - - [28/Feb/2026:01:49:58 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243428975,"pid":1,"msg":"::1 - - [28/Feb/2026:01:50:28 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243459063,"pid":1,"msg":"::1 - - [28/Feb/2026:01:50:59 +0000] \"HEAD /health HTTP/1.1\" 200 129 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243489155,"pid":1,"msg":"::1 - - [28/Feb/2026:01:51:29 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243519252,"pid":1,"msg":"::1 - - [28/Feb/2026:01:51:59 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243549374,"pid":1,"msg":"::1 - - [28/Feb/2026:01:52:29 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243579473,"pid":1,"msg":"::1 - - [28/Feb/2026:01:52:59 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:33128 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45726 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:49006 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41954 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46588 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772243609560,"pid":1,"msg":"::1 - - [28/Feb/2026:01:53:29 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243639667,"pid":1,"msg":"::1 - - [28/Feb/2026:01:53:59 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243669763,"pid":1,"msg":"::1 - - [28/Feb/2026:01:54:29 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243699871,"pid":1,"msg":"::1 - - [28/Feb/2026:01:54:59 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243729952,"pid":1,"msg":"::1 - - [28/Feb/2026:01:55:29 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243760055,"pid":1,"msg":"::1 - - [28/Feb/2026:01:56:00 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243790158,"pid":1,"msg":"::1 - - [28/Feb/2026:01:56:30 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243820251,"pid":1,"msg":"::1 - - [28/Feb/2026:01:57:00 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243850355,"pid":1,"msg":"::1 - - [28/Feb/2026:01:57:30 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243880510,"pid":1,"msg":"::1 - - [28/Feb/2026:01:58:00 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243910625,"pid":1,"msg":"::1 - - [28/Feb/2026:01:58:30 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243940720,"pid":1,"msg":"::1 - - [28/Feb/2026:01:59:00 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772243970814,"pid":1,"msg":"::1 - - [28/Feb/2026:01:59:30 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244000906,"pid":1,"msg":"::1 - - [28/Feb/2026:02:00:00 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244030996,"pid":1,"msg":"::1 - - [28/Feb/2026:02:00:30 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244061076,"pid":1,"msg":"::1 - - [28/Feb/2026:02:01:01 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244091169,"pid":1,"msg":"::1 - - [28/Feb/2026:02:01:31 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:39376 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772244121295,"pid":1,"msg":"::1 - - [28/Feb/2026:02:02:01 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:57170 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46004 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54230 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47396 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56258 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46056 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48708 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41894 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33926 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:49268 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44498 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51378 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47804 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43502 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:42602 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:50590 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35596 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:36984 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33276 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44988 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37780 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46178 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56334 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51706 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772244151385,"pid":1,"msg":"::1 - - [28/Feb/2026:02:02:31 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244181473,"pid":1,"msg":"::1 - - [28/Feb/2026:02:03:01 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244211580,"pid":1,"msg":"::1 - - [28/Feb/2026:02:03:31 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:55524 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58748 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:50692 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57718 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:36912 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59450 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:52448 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40836 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37278 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43794 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58206 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48544 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772244241654,"pid":1,"msg":"::1 - - [28/Feb/2026:02:04:01 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244271736,"pid":1,"msg":"::1 - - [28/Feb/2026:02:04:31 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244301832,"pid":1,"msg":"::1 - - [28/Feb/2026:02:05:01 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244331917,"pid":1,"msg":"::1 - - [28/Feb/2026:02:05:31 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244362035,"pid":1,"msg":"::1 - - [28/Feb/2026:02:06:02 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244392126,"pid":1,"msg":"::1 - - [28/Feb/2026:02:06:32 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244422238,"pid":1,"msg":"::1 - - [28/Feb/2026:02:07:02 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244452331,"pid":1,"msg":"::1 - - [28/Feb/2026:02:07:32 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244482430,"pid":1,"msg":"::1 - - [28/Feb/2026:02:08:02 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244512519,"pid":1,"msg":"::1 - - [28/Feb/2026:02:08:32 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244542599,"pid":1,"msg":"::1 - - [28/Feb/2026:02:09:02 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244572692,"pid":1,"msg":"::1 - - [28/Feb/2026:02:09:32 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244602797,"pid":1,"msg":"::1 - - [28/Feb/2026:02:10:02 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244632876,"pid":1,"msg":"::1 - - [28/Feb/2026:02:10:32 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244662976,"pid":1,"msg":"::1 - - [28/Feb/2026:02:11:02 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244693064,"pid":1,"msg":"::1 - - [28/Feb/2026:02:11:33 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244723164,"pid":1,"msg":"::1 - - [28/Feb/2026:02:12:03 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244753268,"pid":1,"msg":"::1 - - [28/Feb/2026:02:12:33 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244783355,"pid":1,"msg":"::1 - - [28/Feb/2026:02:13:03 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:56916 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772244813443,"pid":1,"msg":"::1 - - [28/Feb/2026:02:13:33 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244843549,"pid":1,"msg":"::1 - - [28/Feb/2026:02:14:03 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244873656,"pid":1,"msg":"::1 - - [28/Feb/2026:02:14:33 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244903736,"pid":1,"msg":"::1 - - [28/Feb/2026:02:15:03 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:34272 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:53848 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43246 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57950 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43472 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59698 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57146 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:38736 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43272 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772244933843,"pid":1,"msg":"::1 - - [28/Feb/2026:02:15:33 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244963934,"pid":1,"msg":"::1 - - [28/Feb/2026:02:16:03 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772244994036,"pid":1,"msg":"::1 - - [28/Feb/2026:02:16:34 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245024125,"pid":1,"msg":"::1 - - [28/Feb/2026:02:17:04 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245054225,"pid":1,"msg":"::1 - - [28/Feb/2026:02:17:34 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245084325,"pid":1,"msg":"::1 - - [28/Feb/2026:02:18:04 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245114421,"pid":1,"msg":"::1 - - [28/Feb/2026:02:18:34 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245144526,"pid":1,"msg":"::1 - - [28/Feb/2026:02:19:04 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245174631,"pid":1,"msg":"::1 - - [28/Feb/2026:02:19:34 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:58032 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43068 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33342 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56100 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:36574 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60432 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40016 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51628 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772245204719,"pid":1,"msg":"::1 - - [28/Feb/2026:02:20:04 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245234837,"pid":1,"msg":"::1 - - [28/Feb/2026:02:20:34 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245264933,"pid":1,"msg":"::1 - - [28/Feb/2026:02:21:04 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245295065,"pid":1,"msg":"::1 - - [28/Feb/2026:02:21:35 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245325167,"pid":1,"msg":"::1 - - [28/Feb/2026:02:22:05 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245355258,"pid":1,"msg":"::1 - - [28/Feb/2026:02:22:35 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:58282 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772245385341,"pid":1,"msg":"::1 - - [28/Feb/2026:02:23:05 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245415432,"pid":1,"msg":"::1 - - [28/Feb/2026:02:23:35 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245445519,"pid":1,"msg":"::1 - - [28/Feb/2026:02:24:05 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245475604,"pid":1,"msg":"::1 - - [28/Feb/2026:02:24:35 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:39820 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772245505709,"pid":1,"msg":"::1 - - [28/Feb/2026:02:25:05 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:56426 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:49532 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44638 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41224 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772245535804,"pid":1,"msg":"::1 - - [28/Feb/2026:02:25:35 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:54316 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44580 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41438 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:32804 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:55352 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51516 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772245565916,"pid":1,"msg":"::1 - - [28/Feb/2026:02:26:05 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245596008,"pid":1,"msg":"::1 - - [28/Feb/2026:02:26:36 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245626113,"pid":1,"msg":"::1 - - [28/Feb/2026:02:27:06 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245656195,"pid":1,"msg":"::1 - - [28/Feb/2026:02:27:36 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245686291,"pid":1,"msg":"::1 - - [28/Feb/2026:02:28:06 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245716397,"pid":1,"msg":"::1 - - [28/Feb/2026:02:28:36 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245746497,"pid":1,"msg":"::1 - - [28/Feb/2026:02:29:06 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245776589,"pid":1,"msg":"::1 - - [28/Feb/2026:02:29:36 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:37210 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54494 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57824 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:38634 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772245806693,"pid":1,"msg":"::1 - - [28/Feb/2026:02:30:06 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:52416 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772245836794,"pid":1,"msg":"::1 - - [28/Feb/2026:02:30:36 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:60776 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44414 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772245866878,"pid":1,"msg":"::1 - - [28/Feb/2026:02:31:06 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245896986,"pid":1,"msg":"::1 - - [28/Feb/2026:02:31:36 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245927086,"pid":1,"msg":"::1 - - [28/Feb/2026:02:32:07 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245957178,"pid":1,"msg":"::1 - - [28/Feb/2026:02:32:37 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772245987268,"pid":1,"msg":"::1 - - [28/Feb/2026:02:33:07 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246017360,"pid":1,"msg":"::1 - - [28/Feb/2026:02:33:37 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246047447,"pid":1,"msg":"::1 - - [28/Feb/2026:02:34:07 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246077561,"pid":1,"msg":"::1 - - [28/Feb/2026:02:34:37 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:45532 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246107651,"pid":1,"msg":"::1 - - [28/Feb/2026:02:35:07 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:41336 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47124 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40332 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246137769,"pid":1,"msg":"::1 - - [28/Feb/2026:02:35:37 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246167863,"pid":1,"msg":"::1 - - [28/Feb/2026:02:36:07 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246197956,"pid":1,"msg":"::1 - - [28/Feb/2026:02:36:37 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:36388 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:42416 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54366 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246228048,"pid":1,"msg":"::1 - - [28/Feb/2026:02:37:08 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246258144,"pid":1,"msg":"::1 - - [28/Feb/2026:02:37:38 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:44934 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246288236,"pid":1,"msg":"::1 - - [28/Feb/2026:02:38:08 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246318334,"pid":1,"msg":"::1 - - [28/Feb/2026:02:38:38 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:48846 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:34328 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41620 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246348427,"pid":1,"msg":"::1 - - [28/Feb/2026:02:39:08 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:52440 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246378517,"pid":1,"msg":"::1 - - [28/Feb/2026:02:39:38 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:60516 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33572 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57008 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47422 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35684 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57692 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54712 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60358 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47936 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246408610,"pid":1,"msg":"::1 - - [28/Feb/2026:02:40:08 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:37896 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246438716,"pid":1,"msg":"::1 - - [28/Feb/2026:02:40:38 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:35360 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39548 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246468812,"pid":1,"msg":"::1 - - [28/Feb/2026:02:41:08 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246498923,"pid":1,"msg":"::1 - - [28/Feb/2026:02:41:38 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246529020,"pid":1,"msg":"::1 - - [28/Feb/2026:02:42:09 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246559120,"pid":1,"msg":"::1 - - [28/Feb/2026:02:42:39 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246589220,"pid":1,"msg":"::1 - - [28/Feb/2026:02:43:09 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246619313,"pid":1,"msg":"::1 - - [28/Feb/2026:02:43:39 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246649410,"pid":1,"msg":"::1 - - [28/Feb/2026:02:44:09 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246679509,"pid":1,"msg":"::1 - - [28/Feb/2026:02:44:39 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246709594,"pid":1,"msg":"::1 - - [28/Feb/2026:02:45:09 +0000] \"HEAD /health HTTP/1.1\" 200 129 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:50768 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39504 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246739699,"pid":1,"msg":"::1 - - [28/Feb/2026:02:45:39 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:36384 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37836 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246769799,"pid":1,"msg":"::1 - - [28/Feb/2026:02:46:09 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246799913,"pid":1,"msg":"::1 - - [28/Feb/2026:02:46:39 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246829995,"pid":1,"msg":"::1 - - [28/Feb/2026:02:47:09 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:59260 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246860083,"pid":1,"msg":"::1 - - [28/Feb/2026:02:47:40 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:53204 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772246890172,"pid":1,"msg":"::1 - - [28/Feb/2026:02:48:10 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246920259,"pid":1,"msg":"::1 - - [28/Feb/2026:02:48:40 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246950368,"pid":1,"msg":"::1 - - [28/Feb/2026:02:49:10 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772246980454,"pid":1,"msg":"::1 - - [28/Feb/2026:02:49:40 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247010555,"pid":1,"msg":"::1 - - [28/Feb/2026:02:50:10 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247040653,"pid":1,"msg":"::1 - - [28/Feb/2026:02:50:40 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247070745,"pid":1,"msg":"::1 - - [28/Feb/2026:02:51:10 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247100829,"pid":1,"msg":"::1 - - [28/Feb/2026:02:51:40 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247130917,"pid":1,"msg":"::1 - - [28/Feb/2026:02:52:10 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:34888 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:52736 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41854 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47738 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47966 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57180 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:42450 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60050 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48424 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43714 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37316 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772247161019,"pid":1,"msg":"::1 - - [28/Feb/2026:02:52:41 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247191112,"pid":1,"msg":"::1 - - [28/Feb/2026:02:53:11 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247221223,"pid":1,"msg":"::1 - - [28/Feb/2026:02:53:41 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247251323,"pid":1,"msg":"::1 - - [28/Feb/2026:02:54:11 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:55032 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772247281437,"pid":1,"msg":"::1 - - [28/Feb/2026:02:54:41 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247311527,"pid":1,"msg":"::1 - - [28/Feb/2026:02:55:11 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:36276 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47624 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772247341635,"pid":1,"msg":"::1 - - [28/Feb/2026:02:55:41 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247371741,"pid":1,"msg":"::1 - - [28/Feb/2026:02:56:11 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247401833,"pid":1,"msg":"::1 - - [28/Feb/2026:02:56:41 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247431927,"pid":1,"msg":"::1 - - [28/Feb/2026:02:57:11 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:48392 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772247462032,"pid":1,"msg":"::1 - - [28/Feb/2026:02:57:42 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247492138,"pid":1,"msg":"::1 - - [28/Feb/2026:02:58:12 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247522242,"pid":1,"msg":"::1 - - [28/Feb/2026:02:58:42 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247552344,"pid":1,"msg":"::1 - - [28/Feb/2026:02:59:12 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247582452,"pid":1,"msg":"::1 - - [28/Feb/2026:02:59:42 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247612564,"pid":1,"msg":"::1 - - [28/Feb/2026:03:00:12 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247642678,"pid":1,"msg":"::1 - - [28/Feb/2026:03:00:42 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247672770,"pid":1,"msg":"::1 - - [28/Feb/2026:03:01:12 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247702865,"pid":1,"msg":"::1 - - [28/Feb/2026:03:01:42 +0000] \"HEAD /health HTTP/1.1\" 200 129 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247732977,"pid":1,"msg":"::1 - - [28/Feb/2026:03:02:12 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:50118 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772247763068,"pid":1,"msg":"::1 - - [28/Feb/2026:03:02:43 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:33990 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39092 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772247793180,"pid":1,"msg":"::1 - - [28/Feb/2026:03:03:13 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:50992 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:55274 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772247823303,"pid":1,"msg":"::1 - - [28/Feb/2026:03:03:43 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247853394,"pid":1,"msg":"::1 - - [28/Feb/2026:03:04:13 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247883507,"pid":1,"msg":"::1 - - [28/Feb/2026:03:04:43 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772247913604,"pid":1,"msg":"::1 - - [28/Feb/2026:03:05:13 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:35538 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43714 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772247943695,"pid":1,"msg":"::1 - - [28/Feb/2026:03:05:43 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:59712 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39420 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54806 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39528 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57382 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35980 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:42038 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772247973776,"pid":1,"msg":"::1 - - [28/Feb/2026:03:06:13 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:34016 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51172 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248003870,"pid":1,"msg":"::1 - - [28/Feb/2026:03:06:43 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248033977,"pid":1,"msg":"::1 - - [28/Feb/2026:03:07:13 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248064060,"pid":1,"msg":"::1 - - [28/Feb/2026:03:07:44 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:50094 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57278 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248094165,"pid":1,"msg":"::1 - - [28/Feb/2026:03:08:14 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:44288 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248124269,"pid":1,"msg":"::1 - - [28/Feb/2026:03:08:44 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248154369,"pid":1,"msg":"::1 - - [28/Feb/2026:03:09:14 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248184472,"pid":1,"msg":"::1 - - [28/Feb/2026:03:09:44 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:56170 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51046 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248214568,"pid":1,"msg":"::1 - - [28/Feb/2026:03:10:14 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:58724 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248244702,"pid":1,"msg":"::1 - - [28/Feb/2026:03:10:44 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:44302 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248274794,"pid":1,"msg":"::1 - - [28/Feb/2026:03:11:14 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:51300 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35330 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248304896,"pid":1,"msg":"::1 - - [28/Feb/2026:03:11:44 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248334984,"pid":1,"msg":"::1 - - [28/Feb/2026:03:12:14 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248365114,"pid":1,"msg":"::1 - - [28/Feb/2026:03:12:45 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248395226,"pid":1,"msg":"::1 - - [28/Feb/2026:03:13:15 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:55188 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51264 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57110 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248425322,"pid":1,"msg":"::1 - - [28/Feb/2026:03:13:45 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248455423,"pid":1,"msg":"::1 - - [28/Feb/2026:03:14:15 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:59054 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248485531,"pid":1,"msg":"::1 - - [28/Feb/2026:03:14:45 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:58026 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57218 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:50610 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58406 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54172 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45448 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33708 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40148 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60566 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43178 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248515645,"pid":1,"msg":"::1 - - [28/Feb/2026:03:15:15 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248545732,"pid":1,"msg":"::1 - - [28/Feb/2026:03:15:45 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248575833,"pid":1,"msg":"::1 - - [28/Feb/2026:03:16:15 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248605921,"pid":1,"msg":"::1 - - [28/Feb/2026:03:16:45 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248636035,"pid":1,"msg":"::1 - - [28/Feb/2026:03:17:16 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248666138,"pid":1,"msg":"::1 - - [28/Feb/2026:03:17:46 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:52240 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248696245,"pid":1,"msg":"::1 - - [28/Feb/2026:03:18:16 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:50248 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45698 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:52636 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:34346 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37866 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39830 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248726354,"pid":1,"msg":"::1 - - [28/Feb/2026:03:18:46 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248756458,"pid":1,"msg":"::1 - - [28/Feb/2026:03:19:16 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248786557,"pid":1,"msg":"::1 - - [28/Feb/2026:03:19:46 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248816656,"pid":1,"msg":"::1 - - [28/Feb/2026:03:20:16 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248846770,"pid":1,"msg":"::1 - - [28/Feb/2026:03:20:46 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:36276 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41990 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51592 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43348 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47902 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248876921,"pid":1,"msg":"::1 - - [28/Feb/2026:03:21:16 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248907027,"pid":1,"msg":"::1 - - [28/Feb/2026:03:21:47 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:49756 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772248937126,"pid":1,"msg":"::1 - - [28/Feb/2026:03:22:17 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248967218,"pid":1,"msg":"::1 - - [28/Feb/2026:03:22:47 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772248997325,"pid":1,"msg":"::1 - - [28/Feb/2026:03:23:17 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:34172 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:52048 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249027436,"pid":1,"msg":"::1 - - [28/Feb/2026:03:23:47 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:43046 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249057526,"pid":1,"msg":"::1 - - [28/Feb/2026:03:24:17 +0000] \"HEAD /health HTTP/1.1\" 200 129 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249087628,"pid":1,"msg":"::1 - - [28/Feb/2026:03:24:47 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249117728,"pid":1,"msg":"::1 - - [28/Feb/2026:03:25:17 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249147814,"pid":1,"msg":"::1 - - [28/Feb/2026:03:25:47 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:33896 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249177901,"pid":1,"msg":"::1 - - [28/Feb/2026:03:26:17 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:32938 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43664 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47742 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48482 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249208023,"pid":1,"msg":"::1 - - [28/Feb/2026:03:26:48 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249238116,"pid":1,"msg":"::1 - - [28/Feb/2026:03:27:18 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249268199,"pid":1,"msg":"::1 - - [28/Feb/2026:03:27:48 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:41100 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249298306,"pid":1,"msg":"::1 - - [28/Feb/2026:03:28:18 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249328410,"pid":1,"msg":"::1 - - [28/Feb/2026:03:28:48 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249358518,"pid":1,"msg":"::1 - - [28/Feb/2026:03:29:18 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249388632,"pid":1,"msg":"::1 - - [28/Feb/2026:03:29:48 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249418722,"pid":1,"msg":"::1 - - [28/Feb/2026:03:30:18 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:37378 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47076 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41796 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58136 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39384 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249448809,"pid":1,"msg":"::1 - - [28/Feb/2026:03:30:48 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249478905,"pid":1,"msg":"::1 - - [28/Feb/2026:03:31:18 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:50178 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46322 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:53976 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:53146 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33820 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249508998,"pid":1,"msg":"::1 - - [28/Feb/2026:03:31:48 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249539095,"pid":1,"msg":"::1 - - [28/Feb/2026:03:32:19 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249569186,"pid":1,"msg":"::1 - - [28/Feb/2026:03:32:49 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:33644 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57492 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249599279,"pid":1,"msg":"::1 - - [28/Feb/2026:03:33:19 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249629376,"pid":1,"msg":"::1 - - [28/Feb/2026:03:33:49 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249659469,"pid":1,"msg":"::1 - - [28/Feb/2026:03:34:19 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:41646 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51268 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249689563,"pid":1,"msg":"::1 - - [28/Feb/2026:03:34:49 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249719663,"pid":1,"msg":"::1 - - [28/Feb/2026:03:35:19 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:50822 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:49166 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44978 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54226 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249749776,"pid":1,"msg":"::1 - - [28/Feb/2026:03:35:49 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249779883,"pid":1,"msg":"::1 - - [28/Feb/2026:03:36:19 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249809984,"pid":1,"msg":"::1 - - [28/Feb/2026:03:36:49 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249840081,"pid":1,"msg":"::1 - - [28/Feb/2026:03:37:20 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:57788 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60362 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772249870173,"pid":1,"msg":"::1 - - [28/Feb/2026:03:37:50 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249900276,"pid":1,"msg":"::1 - - [28/Feb/2026:03:38:20 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249930359,"pid":1,"msg":"::1 - - [28/Feb/2026:03:38:50 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249960445,"pid":1,"msg":"::1 - - [28/Feb/2026:03:39:20 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772249990558,"pid":1,"msg":"::1 - - [28/Feb/2026:03:39:50 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250020678,"pid":1,"msg":"::1 - - [28/Feb/2026:03:40:20 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250050765,"pid":1,"msg":"::1 - - [28/Feb/2026:03:40:50 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250068684,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:41:08 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250068694,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:41:08 +0000] \"GET /api/groups/invitations/pending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250068709,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:41:08 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250080868,"pid":1,"msg":"::1 - - [28/Feb/2026:03:41:20 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250089357,"pid":1,"context":"auth","userId":"44d9089a-719b-4285-adf7-fcfb4bba7b5c","msg":"User logged out"}
+openresearch-server  | {"level":"INFO","time":1772250089365,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:41:29 +0000] \"POST /api/auth/logout HTTP/1.1\" 200 37 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250110987,"pid":1,"msg":"::1 - - [28/Feb/2026:03:41:50 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:40182 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57502 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250129627,"pid":1,"context":"auth","userId":"f784ab32-337e-4f6c-8b0b-410f8cd0eccb","email":"track3b@test.com","msg":"User registered successfully"}
+openresearch-ai      | INFO:     127.0.0.1:53982 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37516 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54858 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39866 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250129630,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:09 +0000] \"POST /api/auth/register HTTP/1.1\" 201 813 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:45736 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:50036 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250129665,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:09 +0000] \"GET /api/auth/me HTTP/1.1\" 200 230 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250141090,"pid":1,"msg":"::1 - - [28/Feb/2026:03:42:21 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:33446 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46648 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45950 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250158225,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:38 +0000] \"POST /api/groups HTTP/1.1\" 201 379 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250158243,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:38 +0000] \"GET /api/groups HTTP/1.1\" 200 467 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250159663,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:39 +0000] \"GET /api/groups/invitations/pending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250164581,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:44 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 200 405 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250164592,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:44 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250164628,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:44 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 200 235 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250164645,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:44 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 200 2 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250170922,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:50 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:33264 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47086 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250170925,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:50 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:33994 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250170927,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:50 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 200 2 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:51692 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51930 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39746 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250171177,"pid":1,"msg":"::1 - - [28/Feb/2026:03:42:51 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250176792,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:56 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250176794,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:56 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:59232 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35844 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250176813,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:42:56 +0000] \"GET /api/recommendations/trending HTTP/1.1\" 200 32292 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250184316,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:04 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250191746,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:11 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:38238 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250191770,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:11 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:43822 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45254 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:38726 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:34904 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250191777,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:11 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:57742 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250191783,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:11 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250197661,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:17 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250197662,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:17 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:52808 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44916 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:36912 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59062 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33430 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35380 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250197670,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:17 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250201256,"pid":1,"msg":"::1 - - [28/Feb/2026:03:43:21 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250204821,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:24 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250204824,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:24 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:42510 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250204830,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:24 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250204848,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:24 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:39912 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:32778 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:38204 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59522 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54482 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:55798 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250217522,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:37 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:48590 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43196 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:32804 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35918 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250217530,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:37 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250217535,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:37 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250230742,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:50 +0000] \"GET /api/recommendations/trending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250230748,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:50 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250230750,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:50 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:34206 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44068 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:36502 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47322 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43344 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45216 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41622 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35916 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250231355,"pid":1,"msg":"::1 - - [28/Feb/2026:03:43:51 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250238365,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:58 +0000] \"GET /api/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250238375,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:58 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250238377,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:43:58 +0000] \"GET /api/papers/saved HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:45872 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46900 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54112 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48498 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250253730,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:13 +0000] \"GET /api/papers/search/external?query=1706.03762&limit=10 HTTP/1.1\" 200 11006 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250261442,"pid":1,"msg":"::1 - - [28/Feb/2026:03:44:21 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:36962 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:49186 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44684 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59626 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43060 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250264664,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:24 +0000] \"GET /api/papers/search/external?query=1706.03762&limit=10 HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250268355,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:28 +0000] \"GET /api/groups/invitations/pending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250272710,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:32 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:35450 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250278911,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:38 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250278972,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:38 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:42866 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250278974,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:38 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250278987,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:38 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250285541,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:45 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250285544,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:45 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250285553,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:45 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:54448 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250291526,"pid":1,"msg":"::1 - - [28/Feb/2026:03:44:51 +0000] \"HEAD /health HTTP/1.1\" 200 130 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250292891,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:52 +0000] \"GET /api/recommendations/trending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:43380 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250292895,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:52 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250292901,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:44:52 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250319268,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:19 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250319269,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:19 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250321603,"pid":1,"msg":"::1 - - [28/Feb/2026:03:45:21 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:49804 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59940 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39460 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250325939,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:25 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:60192 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41176 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48468 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41044 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:34668 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250325959,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:25 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250325970,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:25 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:47882 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33832 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:38478 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59200 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250325984,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:25 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250333125,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:33 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:37532 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46568 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:55374 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37288 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41602 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51944 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250333134,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:33 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250333138,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:33 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250347170,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:47 +0000] \"GET /api/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250347176,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:47 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250347179,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:45:47 +0000] \"GET /api/papers/saved HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250351678,"pid":1,"msg":"::1 - - [28/Feb/2026:03:45:51 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250361915,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:01 +0000] \"GET /api/papers/search/external?query=1706.03762&limit=10 HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:39154 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250371108,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:11 +0000] \"GET /api/papers/search/external?query=Attention+Is+All+You+Need&limit=10 HTTP/1.1\" 200 13092 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:60174 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46638 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:42402 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56146 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250377140,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:17 +0000] \"GET /api/groups/invitations/pending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250378101,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:18 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250381767,"pid":1,"msg":"::1 - - [28/Feb/2026:03:46:21 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250384498,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:24 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:38780 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:53296 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33542 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47208 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47976 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60182 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43552 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250384522,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:24 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250384530,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:24 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250384534,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:24 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250390950,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:30 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250390953,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:30 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250390955,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:30 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250397379,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:37 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:33824 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54280 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56648 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51808 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40488 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250397382,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:37 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250397389,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:37 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250397407,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:37 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250405054,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:45 +0000] \"GET /api/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250405061,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:45 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:35492 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47322 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:41854 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250405066,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:45 +0000] \"GET /api/papers/saved HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250411842,"pid":1,"msg":"::1 - - [28/Feb/2026:03:46:51 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:47108 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48808 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46588 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40706 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57294 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250418525,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:46:58 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250424802,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:04 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250424820,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:04 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250424844,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:04 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250424846,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:04 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:38884 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46806 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60494 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250432105,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:12 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250432108,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:12 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250432120,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:12 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250439902,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:19 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250439905,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:19 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250439909,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:19 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250439927,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:19 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250441937,"pid":1,"msg":"::1 - - [28/Feb/2026:03:47:21 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:44198 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43526 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47272 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250453380,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:33 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:47718 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40652 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250453392,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:33 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:48312 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33076 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33872 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250453398,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:33 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250460318,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:40 +0000] \"GET /api/recommendations/trending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:50466 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39928 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:53734 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250460325,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:40 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250460328,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:40 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250468316,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:48 +0000] \"GET /api/papers/saved HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250468318,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:48 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250468326,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:48 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250472025,"pid":1,"msg":"::1 - - [28/Feb/2026:03:47:52 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:34784 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:38384 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35848 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45632 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:36262 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250474869,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:54 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:39516 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:53464 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44906 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:32890 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:49198 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:33150 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59194 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:38692 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:36484 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47858 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44218 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39594 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56546 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51560 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:50704 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:34264 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56104 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58870 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59348 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:50112 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250474870,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:54 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:41872 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250474878,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:54 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250474897,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:47:54 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:57896 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45078 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:55898 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250482412,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:02 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250482413,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:02 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:38226 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250482418,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:02 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250491929,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:11 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:49970 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40952 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250491953,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:11 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:34176 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:55626 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:42382 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250498957,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:18 +0000] \"GET /api/groups/invitations/pending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250498969,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:18 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250498992,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:18 +0000] \"GET /api/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250498994,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:18 +0000] \"GET /api/papers/saved HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:49786 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:50350 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250502113,"pid":1,"msg":"::1 - - [28/Feb/2026:03:48:22 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:60736 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250512063,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:32 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250512089,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:32 +0000] \"GET /api/papers/saved HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:39252 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250512091,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:32 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250518958,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:38 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250525476,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:45 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250525506,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:45 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250525511,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:45 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:33230 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:49656 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56622 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250525518,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:48:45 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:50302 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58042 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37358 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56188 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250532201,"pid":1,"msg":"::1 - - [28/Feb/2026:03:48:52 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250541646,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:01 +0000] \"POST /api/sessions HTTP/1.1\" 201 235 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:44892 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54392 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59582 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250548756,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:08 +0000] \"GET /api/sessions/9c5b6257-6727-4d8d-982b-89dc9ae2d52c HTTP/1.1\" 200 235 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250548803,"pid":1,"context":"socket","userId":"f784ab32-337e-4f6c-8b0b-410f8cd0eccb","msg":"User connected"}
+openresearch-ai      | INFO:     127.0.0.1:36982 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45434 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250548808,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:08 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250548812,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:08 +0000] \"GET /api/sessions/9c5b6257-6727-4d8d-982b-89dc9ae2d52c/messages?limit=50&offset=0 HTTP/1.1\" 200 2 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:48382 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60328 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250548833,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:08 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250562295,"pid":1,"msg":"::1 - - [28/Feb/2026:03:49:22 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:52636 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250564710,"pid":1,"context":"socket","userId":"f784ab32-337e-4f6c-8b0b-410f8cd0eccb","msg":"User disconnected"}
+openresearch-ai      | INFO:     127.0.0.1:44204 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46736 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58328 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60674 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:50594 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57054 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47952 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250564733,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:24 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:41386 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54266 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250571300,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:31 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250571331,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:31 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:55298 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:34414 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60070 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59654 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:52854 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:53142 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57812 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60920 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60120 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35676 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58592 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60652 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250571335,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:31 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 200 237 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250571339,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:31 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250579290,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:39 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:49444 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47878 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250579297,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:39 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250579298,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:39 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250590000,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:50 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250590004,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:50 +0000] \"GET /api/recommendations/trending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250590017,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:50 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:53960 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56132 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250592380,"pid":1,"msg":"::1 - - [28/Feb/2026:03:49:52 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250599449,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:59 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250599457,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:59 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250599461,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:49:59 +0000] \"GET /api/papers/saved HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250606070,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:06 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250606078,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:06 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250606085,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:06 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250606086,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:06 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:59704 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40794 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250613263,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:13 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250613270,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:13 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250613272,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:13 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:48674 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250620781,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:20 +0000] \"GET /api/groups/invitations/pending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250620791,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:20 +0000] \"GET /api/recommendations/trending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:35730 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250620792,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:20 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:54678 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250620797,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:20 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250622468,"pid":1,"msg":"::1 - - [28/Feb/2026:03:50:22 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:40830 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:40542 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:49732 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250637408,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:37 +0000] \"GET /api/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:43104 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60542 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250637412,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:37 +0000] \"GET /api/papers/saved HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250637414,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:37 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250646071,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:46 +0000] \"GET /api/papers/search/external?query=1706.03762&limit=10 HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250652569,"pid":1,"msg":"::1 - - [28/Feb/2026:03:50:52 +0000] \"HEAD /health HTTP/1.1\" 200 129 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250653465,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:53 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250653488,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:50:53 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250660721,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:51:00 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250660722,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:51:00 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:57390 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:38068 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35736 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250660747,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:51:00 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250660751,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:51:00 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250667112,"pid":1,"context":"socket","userId":"f784ab32-337e-4f6c-8b0b-410f8cd0eccb","msg":"User connected"}
+openresearch-server  | {"level":"INFO","time":1772250667128,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:51:07 +0000] \"GET /api/sessions/9c5b6257-6727-4d8d-982b-89dc9ae2d52c HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:46206 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39232 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:47486 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250667146,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:51:07 +0000] \"GET /api/sessions/9c5b6257-6727-4d8d-982b-89dc9ae2d52c/messages?limit=50&offset=0 HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250667149,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:51:07 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250667174,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:51:07 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250682672,"pid":1,"msg":"::1 - - [28/Feb/2026:03:51:22 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250712768,"pid":1,"msg":"::1 - - [28/Feb/2026:03:51:52 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:55032 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56078 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250721602,"pid":1,"context":"socket","userId":"f784ab32-337e-4f6c-8b0b-410f8cd0eccb","msg":"User disconnected"}
+openresearch-ai      | INFO:     127.0.0.1:33876 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250721633,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:01 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:48742 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58900 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250727981,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:07 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250728011,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:08 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250728018,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:08 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250728020,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:08 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:44390 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35692 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48472 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37232 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250736569,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:16 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:45872 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35368 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54806 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46070 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45694 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59270 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250736580,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:16 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250736582,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:16 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250742855,"pid":1,"msg":"::1 - - [28/Feb/2026:03:52:22 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:49344 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250746406,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:26 +0000] \"GET /api/groups/invitations/pending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250746419,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:26 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250746425,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:26 +0000] \"GET /api/papers/saved HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:53840 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:51730 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:38552 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37336 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:58266 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39130 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39768 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:42320 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250746427,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:26 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250753826,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:33 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250753831,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:33 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250753836,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:33 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250753855,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:33 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250760542,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:40 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250760552,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:40 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250760557,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:52:40 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250772946,"pid":1,"msg":"::1 - - [28/Feb/2026:03:52:52 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250781260,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:01 +0000] \"GET /api/recommendations/trending HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250781284,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:01 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250781285,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:01 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250788768,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:08 +0000] \"GET /api/groups HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:54212 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250788777,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:08 +0000] \"GET /api/papers/saved HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250788782,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:08 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:52288 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250795839,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:15 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250795843,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:15 +0000] \"GET /api/sessions/group/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250795871,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:15 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/members HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250795875,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:15 +0000] \"GET /api/auth/me HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250803055,"pid":1,"msg":"::1 - - [28/Feb/2026:03:53:23 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250814068,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:34 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed/papers HTTP/1.1\" 429 79 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250814073,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:34 +0000] \"GET /api/auth/me HTTP/1.1\" 429 79 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-server  | {"level":"INFO","time":1772250814085,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:34 +0000] \"POST /api/auth/refresh HTTP/1.1\" 429 79 \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:38714 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250814098,"pid":1,"msg":"::ffff:172.18.0.1 - - [28/Feb/2026:03:53:34 +0000] \"GET /api/groups/1d4f4d41-5a84-4d32-aebf-fd7e165200ed HTTP/1.1\" 304 - \"http://localhost:3000/\" \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/145.0.0.0 Safari/537.36\""}
+openresearch-ai      | INFO:     127.0.0.1:56580 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:38122 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:42082 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56474 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:55316 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:43490 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57294 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:36430 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37098 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:50896 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:56418 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37400 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54516 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:45164 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:42462 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59076 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54756 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:44618 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:39982 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:60150 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:50054 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:48616 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:57518 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:34808 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:49230 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:35258 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:46834 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:54312 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:59796 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250833157,"pid":1,"msg":"::1 - - [28/Feb/2026:03:53:53 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250863245,"pid":1,"msg":"::1 - - [28/Feb/2026:03:54:23 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-ai      | INFO:     127.0.0.1:60068 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai      | INFO:     127.0.0.1:37912 - "GET /health HTTP/1.1" 200 OK
+openresearch-server  | {"level":"INFO","time":1772250893335,"pid":1,"msg":"::1 - - [28/Feb/2026:03:54:53 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250923425,"pid":1,"msg":"::1 - - [28/Feb/2026:03:55:23 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250953827,"pid":1,"msg":"::1 - - [28/Feb/2026:03:55:53 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772250983945,"pid":1,"msg":"::1 - - [28/Feb/2026:03:56:23 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251014046,"pid":1,"msg":"::1 - - [28/Feb/2026:03:56:54 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251044146,"pid":1,"msg":"::1 - - [28/Feb/2026:03:57:24 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251074251,"pid":1,"msg":"::1 - - [28/Feb/2026:03:57:54 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251104362,"pid":1,"msg":"::1 - - [28/Feb/2026:03:58:24 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251134468,"pid":1,"msg":"::1 - - [28/Feb/2026:03:58:54 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251164550,"pid":1,"msg":"::1 - - [28/Feb/2026:03:59:24 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251194660,"pid":1,"msg":"::1 - - [28/Feb/2026:03:59:54 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251224751,"pid":1,"msg":"::1 - - [28/Feb/2026:04:00:24 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251254870,"pid":1,"msg":"::1 - - [28/Feb/2026:04:00:54 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251284968,"pid":1,"msg":"::1 - - [28/Feb/2026:04:01:24 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251315066,"pid":1,"msg":"::1 - - [28/Feb/2026:04:01:55 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251345154,"pid":1,"msg":"::1 - - [28/Feb/2026:04:02:25 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251375243,"pid":1,"msg":"::1 - - [28/Feb/2026:04:02:55 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251405339,"pid":1,"msg":"::1 - - [28/Feb/2026:04:03:25 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251435435,"pid":1,"msg":"::1 - - [28/Feb/2026:04:03:55 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251465538,"pid":1,"msg":"::1 - - [28/Feb/2026:04:04:25 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251495632,"pid":1,"msg":"::1 - - [28/Feb/2026:04:04:55 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}
+openresearch-server  | {"level":"INFO","time":1772251525735,"pid":1,"msg":"::1 - - [28/Feb/2026:04:05:25 +0000] \"HEAD /health HTTP/1.1\" 200 131 \"-\" \"Wget/1.25.0\""}

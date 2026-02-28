@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import copy
+import datetime
 import logging
 import time
 import json
@@ -124,6 +125,7 @@ class AgenticService:
         if create_react_agent is None:
             raise RuntimeError("LangGraph dependencies not available")
 
+        current_date_str = datetime.date.today().isoformat()
         primary_system_prompt = (
             "You are the Primary Orchestrator. You have access to specialized tools for "
             "various research tasks.\n\n"
@@ -645,15 +647,27 @@ class AgenticService:
     # Agent Tools
     # ------------------------------------------------------------------
 
-    async def _tool_retrieve_papers(self, query: str, config: RunnableConfig) -> str:
-        """Search for relevant academic papers from arXiv (read-only, no auto-save to group)."""
+    async def _tool_retrieve_papers(
+        self, 
+        query: str, 
+        config: RunnableConfig, 
+        start_date: Optional[str] = None, 
+        end_date: Optional[str] = None
+    ) -> str:
+        """Search for relevant academic papers from arXiv (read-only, no auto-save to group).
+        start_date and end_date should be in YYYY-MM-DD format if requested (e.g., "past 2 years").
+        """
         group_id = config.get("configurable", {}).get("group_id")
         try:
             papers: list[dict] = []
 
             # Search arXiv — results are returned as context only, NOT persisted
             try:
-                mcp_response = await search_arxiv(query=query, limit=10)
+                # If the query itself seems to imply a date constraint, sorting by date might help, but 
+                # we increase the limit to 40 to ensure broader coverage before formatting top 8.
+                mcp_response = await search_arxiv(
+                    query=query, limit=40, start_date=start_date, end_date=end_date
+                )
                 arxiv_papers = mcp_response.get("papers", [])
                 papers.extend(arxiv_papers)
             except Exception as exc:
@@ -673,154 +687,166 @@ class AgenticService:
 
     async def _tool_survey_literature(self, query: str, config: RunnableConfig) -> str:
         """Synthesize retrieved papers into a structured literature review."""
-        group_id = config.get("configurable", {}).get("group_id")
-        if not group_id:
-            return "Error: group_id is required."
-
-        # Generate sub-queries for RAG and ArXiv
-        query_gen_system = (
-            "You are an expert academic librarian. Extract a clean arXiv search query, 3-5 specific vector "
-            "database sub-queries, and any explicit time constraints (e.g. 'past 2 years', 'since 2021', "
-            "or 'None') from the user's research topic. \n"
-            "Return ONLY a JSON object with this exact structure:\n"
-            '{"arxiv_query": "clean keywords only", "vector_queries": ["query1", "query2"], "time_constraint": "None"}'
-        )
-        query_data = await self._call_llm_json(
-            system_prompt=query_gen_system,
-            user_prompt=f"Topic: {query}",
-            temperature=0.2,
-        )
-        
-        # Default fallbacks if parsing fails
-        arxiv_query = query
-        sub_queries = [query]
-        time_constraint = "None"
-        
-        if isinstance(query_data, dict):
-            arxiv_query = query_data.get("arxiv_query", query)
-            sub_queries = query_data.get("vector_queries", [query])
-            time_constraint = query_data.get("time_constraint", "None")
-
         try:
-            papers = await self._get_group_papers(group_id)
-            arxiv_papers_fetched = []
-            if len(papers) < 3:
-                logger.info("Only %d papers found, auto-retrieving more from arXiv...", len(papers))
+            group_id = config.get("configurable", {}).get("group_id")
+            if not group_id:
+                return "Error: group_id is required."
+
+            # Generate sub-queries for RAG and ArXiv
+            current_date_str = datetime.date.today().isoformat()
+            query_gen_system = (
+                f"You are an expert academic librarian. The current date is {current_date_str}. Extract a clean arXiv search query, 3-5 specific vector "
+                "database sub-queries, and any explicit time constraints (e.g. 'past 2 years', 'since 2021') from the user's research topic. \n"
+                "If a time constraint is requested, compute the exact 'start_date' and 'end_date' in 'YYYY-MM-DD' format. If not requested, leave them null.\n"
+                "Return ONLY a JSON object with this exact structure:\n"
+                '{"arxiv_query": "clean keywords only", "vector_queries": ["query1", "query2"], "start_date": "2022-01-01", "end_date": "2024-01-01"}'
+            )
+            query_data = await self._call_llm_json(
+                system_prompt=query_gen_system,
+                user_prompt=f"Topic: {query}",
+                temperature=0.2,
+            )
+            
+            # Default fallbacks if parsing fails
+            arxiv_query = query
+            sub_queries = [query]
+            start_date = None
+            end_date = None
+            
+            if isinstance(query_data, dict):
+                arxiv_query = query_data.get("arxiv_query", query)
+                sub_queries = query_data.get("vector_queries", [query])
+                start_date = query_data.get("start_date")
+                end_date = query_data.get("end_date")
+
+            time_constraint = f"between {start_date} and {end_date}" if start_date or end_date else "None"
+
+            try:
+                papers = await self._get_group_papers(group_id)
+                arxiv_papers_fetched = []
+                # Always search ArXiv to supplement group papers with external results
                 try:
-                    mcp_response = await search_arxiv(query=arxiv_query, limit=10)
+                    sort_by = "submittedDate" if start_date or end_date else "relevance"
+                    fetch_limit = 40 if start_date or end_date else 20
+                    mcp_response = await search_arxiv(
+                        query=arxiv_query, limit=fetch_limit, sort_by=sort_by, start_date=start_date, end_date=end_date
+                    )
                     arxiv_papers_fetched = mcp_response.get("papers", [])
                     if arxiv_papers_fetched:
                         logger.info("Successfully fetched %d papers from arXiv.", len(arxiv_papers_fetched))
-                        # Append the fetched arXiv papers to the in-memory papers list
                         papers.extend(arxiv_papers_fetched)
                 except Exception as exc:
                     logger.warning("Auto-retrieve from ArXiv failed: %s", exc)
 
-            if not papers:
-                return "No papers available to survey even after retrieval attempt."
+                if not papers:
+                    return "No papers available to survey even after retrieval attempt."
+
+            except Exception as exc:
+                logger.error("Failed to retrieve papers: %s", exc)
+                return "Error retrieving papers."
+
+            # Vector search for relevant chunks
+            all_chunks = []
+            seen_chunk_ids = set()
+
+            # Inject the dynamically fetched arXiv papers as high-priority chunks
+            for i, p in enumerate(arxiv_papers_fetched):
+                chunk_id = f"arxiv_auto_{i}"
+                seen_chunk_ids.add(chunk_id)
+                all_chunks.append({
+                    "id": chunk_id,
+                    "paper_id": p.get("title", "ArXiv Paper"),
+                    "content": f"{p.get('title', '')}\n{p.get('abstract', '')}\nPublished: {p.get('published', 'Unknown')}",
+                    "published_date": p.get("published"),
+                    "similarity": 1.0,
+                    "url": p.get("url", "")
+                })
+
+            settings = get_settings()
+            if vector_store.is_connected:
+                for sq in sub_queries:
+                    results = await vector_store.search_group_vectors(
+                        group_id=group_id,
+                        query=str(sq),
+                        limit=settings.rag_chunks_per_query,
+                    )
+                    for res in results:
+                        if res["id"] not in seen_chunk_ids:
+                            # Skip chunks with very low vector similarity
+                            similarity = res.get("similarity", 0)
+                            if similarity < settings.rag_similarity_threshold:
+                                continue
+                            seen_chunk_ids.add(res["id"])
+                            all_chunks.append(res)
+
+            # Rerank chunks using cross-encoder if available
+            if len(all_chunks) > 1 and reranker.is_available:
+                try:
+                    all_chunks = await reranker.rerank(
+                        query=query,
+                        results=all_chunks,
+                        top_k=min(len(all_chunks), settings.rag_reranker_top_k),
+                        content_key="content",
+                    )
+                    all_chunks = [c for c in all_chunks if c.get("rerank_score", 0) > settings.rag_reranker_score_threshold]
+                except Exception as exc:
+                    logger.warning("Reranking literature chunks failed: %s", exc)
+
+            if all_chunks:
+                all_chunks = await self._filter_relevant_items(
+                    query=query, items=all_chunks,
+                    title_key="paper_id", content_key="content",
+                    time_constraint=time_constraint,
+                )
+
+            if all_chunks:
+                context_lines = []
+                for i, chunk in enumerate(all_chunks[:settings.rag_max_context_chunks]):
+                    context_lines.append(f"--- Excerpt {i+1} ---")
+                    context_lines.append(f"Content: {chunk.get('content', '')}")
+                context_text = "\n".join(context_lines)
+            else:
+                # Fallback: filter group papers by LLM relevance
+                paper_items = [
+                    {
+                        "title": p.get("title", "Untitled"),
+                        "content": f"{p.get('title', '')} {p.get('abstract', '')}",
+                    }
+                    for p in papers
+                ]
+                paper_items = await self._filter_relevant_items(
+                    query=query, items=paper_items,
+                    title_key="title", content_key="content",
+                )
+
+                if paper_items:
+                    context_text = "\n".join(
+                        f"- {p['title']}: {p['content'][:400]}" for p in paper_items
+                    )
+                else:
+                    context_text = (
+                        "No papers in the current group are relevant to this topic. "
+                        "The review should state that no relevant papers were found "
+                        "and suggest the user add papers on this topic to the group."
+                    )
+
+            system_prompt = (
+                "You are an expert Academic Reviewer. Synthesize the provided paper excerpts into a comprehensive, deeply detailed structured literature review. "
+                "You MUST include a Markdown table comparing the key innovations, methods, or findings of the papers discussed. "
+                "Structure the review with clear thematic sections and a conclusion."
+            )
+
+            user_prompt = (
+                f"User topic: {query}\n\n"
+                f"Retrieved Research Excerpts:\n{context_text}\n\n"
+                "Please write the detailed literature review now, ensuring to include the comparative Markdown table."
+            )
+
+            return await self._call_llm(system_prompt, user_prompt, temperature=0.3)
 
         except Exception as exc:
-            logger.error("Failed to retrieve papers: %s", exc)
-            return "Error retrieving papers."
-
-        # Vector search for relevant chunks
-        all_chunks = []
-        seen_chunk_ids = set()
-
-        # Inject the dynamically fetched arXiv papers as high-priority chunks
-        for i, p in enumerate(arxiv_papers_fetched):
-            chunk_id = f"arxiv_auto_{i}"
-            seen_chunk_ids.add(chunk_id)
-            all_chunks.append({
-                "id": chunk_id,
-                "paper_id": p.get("title", "ArXiv Paper"),
-                "content": f"{p.get('title', '')}\n{p.get('abstract', '')}\nPublished: {p.get('published', 'Unknown')}",
-                "similarity": 1.0,
-                "url": p.get("url", "")
-            })
-
-        settings = get_settings()
-        if vector_store.is_connected:
-            for sq in sub_queries:
-                results = await vector_store.search_group_vectors(
-                    group_id=group_id,
-                    query=str(sq),
-                    limit=settings.rag_chunks_per_query,
-                )
-                for res in results:
-                    if res["id"] not in seen_chunk_ids:
-                        # Skip chunks with very low vector similarity
-                        similarity = res.get("similarity", 0)
-                        if similarity < settings.rag_similarity_threshold:
-                            continue
-                        seen_chunk_ids.add(res["id"])
-                        all_chunks.append(res)
-
-        # Rerank chunks using cross-encoder if available
-        if len(all_chunks) > 1 and reranker.is_available:
-            try:
-                all_chunks = await reranker.rerank(
-                    query=query,
-                    results=all_chunks,
-                    top_k=min(len(all_chunks), settings.rag_reranker_top_k),
-                    content_key="content",
-                )
-                all_chunks = [c for c in all_chunks if c.get("rerank_score", 0) > settings.rag_reranker_score_threshold]
-            except Exception as exc:
-                logger.warning("Reranking literature chunks failed: %s", exc)
-
-        if all_chunks:
-            all_chunks = await self._filter_relevant_items(
-                query=query, items=all_chunks,
-                title_key="paper_id", content_key="content",
-                time_constraint=time_constraint,
-            )
-
-        if all_chunks:
-            context_lines = []
-            for i, chunk in enumerate(all_chunks[:settings.rag_max_context_chunks]):
-                context_lines.append(f"--- Excerpt {i+1} ---")
-                context_lines.append(f"Content: {chunk.get('content', '')}")
-            context_text = "\n".join(context_lines)
-        else:
-            # Fallback: filter group papers by LLM relevance
-            paper_items = [
-                {
-                    "title": p.get("title", "Untitled"),
-                    "content": f"{p.get('title', '')} {p.get('abstract', '')}",
-                }
-                for p in papers
-            ]
-            paper_items = await self._filter_relevant_items(
-                query=query, items=paper_items,
-                title_key="title", content_key="content",
-            )
-
-            if paper_items:
-                context_text = "\n".join(
-                    f"- {p['title']}: {p['content'][:400]}" for p in paper_items
-                )
-            else:
-                context_text = (
-                    "No papers in the current group are relevant to this topic. "
-                    "The review should state that no relevant papers were found "
-                    "and suggest the user add papers on this topic to the group."
-                )
-
-        system_prompt = (
-            "You are an expert Academic Reviewer. Synthesize the provided paper excerpts into a comprehensive, deeply detailed structured literature review. "
-            "You MUST include a Markdown table comparing the key innovations, methods, or findings of the papers discussed. "
-            "Structure the review with clear thematic sections and a conclusion."
-        )
-
-        user_prompt = (
-            f"User topic: {query}\n\n"
-            f"Retrieved Research Excerpts:\n{context_text}\n\n"
-            "Please write the detailed literature review now, ensuring to include the comparative Markdown table."
-        )
-
-        return await self._call_llm(system_prompt, user_prompt, temperature=0.3)
-
+            logger.error("_tool_survey_literature failed: %s", exc, exc_info=True)
+            return f"Error surveying literature: {exc}"
     async def _tool_analyze_gaps(self, literature_review_context: str, config: RunnableConfig) -> str:
         """Identify research gaps, unresolved debates, and underexplored areas."""
         group_id = config.get("configurable", {}).get("group_id")
@@ -1314,15 +1340,36 @@ class AgenticService:
 
                 yield yield_progress()
 
-                # Step 1
-                query_gen_system = "You are an expert academic librarian. Break down the user's research topic into 3 to 5 highly specific search queries for retrieving relevant chunks from a vector database of research papers."
-                sub_queries = await self._call_llm_json(
+                # Step 1: Generate ArXiv query, vector sub-queries, and date constraints
+                current_date_str = datetime.date.today().isoformat()
+                query_gen_system = (
+                    f"You are an expert academic librarian. The current date is {current_date_str}. Extract a clean arXiv search query, 3-5 specific vector "
+                    "database sub-queries, and any explicit time constraints (e.g. 'past 2 years', 'since 2021') from the user's research topic. \n"
+                    "If a time constraint is requested, compute the exact 'start_date' and 'end_date' in 'YYYY-MM-DD' format. If not requested, leave them null.\n"
+                    "Return ONLY a JSON object with this exact structure:\n"
+                    '{"arxiv_query": "clean keywords only", "vector_queries": ["query1", "query2"], "start_date": "2022-01-01", "end_date": "2024-01-01"}'
+                )
+                query_data = await self._call_llm_json(
                     system_prompt=query_gen_system,
                     user_prompt=f"Topic: {query}",
                     temperature=0.2,
                 )
-                if not isinstance(sub_queries, list):
-                    sub_queries = [query]
+
+                # Default fallbacks if parsing fails
+                arxiv_query = query
+                sub_queries = [query]
+                start_date = None
+                end_date = None
+
+                if isinstance(query_data, dict):
+                    arxiv_query = query_data.get("arxiv_query", query)
+                    sub_queries = query_data.get("vector_queries", [query])
+                    start_date = query_data.get("start_date")
+                    end_date = query_data.get("end_date")
+                elif isinstance(query_data, list):
+                    sub_queries = query_data
+
+                time_constraint = f"between {start_date} and {end_date}" if start_date or end_date else "None"
                 
                 steps[0]["status"] = "done"
                 steps[0]["detail"] = f"Generated {len(sub_queries)} queries"
@@ -1334,9 +1381,9 @@ class AgenticService:
                 all_chunks = []
                 seen_chunk_ids = set()
                 papers = []
+                settings = get_settings()
                 if group_id:
                     papers = await self._get_group_papers(group_id)
-                    settings = get_settings()
                     if vector_store.is_connected:
                         for sq in sub_queries:
                             results = await vector_store.search_group_vectors(group_id=group_id, query=str(sq), limit=settings.rag_chunks_per_query)
@@ -1355,17 +1402,43 @@ class AgenticService:
                 steps[2]["detail"] = "Checking if external papers are needed..."
                 yield yield_progress()
 
-                # Step 3
-                if len(papers) < 3:
-                    steps[2]["detail"] = "Fetching external papers from Arxiv..."
-                    yield yield_progress()
-                    await self._tool_retrieve_papers(query, RunnableConfig(configurable={"group_id": group_id}))
-                    if group_id:
-                        papers = await self._get_group_papers(group_id)
-                    steps[2]["detail"] = f"Retrieved combined {len(papers)} papers."
-                else:
-                    steps[2]["detail"] = "Sufficient papers found in DB."
+                # Step 3: Always fetch from ArXiv to supplement context
+                arxiv_papers_fetched = []
+                steps[2]["detail"] = "Fetching external papers from Arxiv..."
+                yield yield_progress()
+                try:
+                    sort_by = "submittedDate" if start_date or end_date else "relevance"
+                    fetch_limit = 40 if start_date or end_date else 20
+                    mcp_response = await search_arxiv(
+                        query=arxiv_query, limit=fetch_limit, sort_by=sort_by,
+                        start_date=start_date, end_date=end_date,
+                    )
+                    arxiv_papers_fetched = mcp_response.get("papers", [])
+                    if arxiv_papers_fetched:
+                        papers.extend(arxiv_papers_fetched)
+                        # Inject ArXiv papers as high-priority chunks
+                        for i, p in enumerate(arxiv_papers_fetched):
+                            chunk_id = f"arxiv_stream_{i}"
+                            if chunk_id not in seen_chunk_ids:
+                                seen_chunk_ids.add(chunk_id)
+                                all_chunks.append({
+                                    "id": chunk_id,
+                                    "paper_id": p.get("title", "ArXiv Paper"),
+                                    "content": f"{p.get('title', '')}\n{p.get('abstract', '')}\nPublished: {p.get('published', 'Unknown')}",
+                                    "published_date": p.get("published"),
+                                    "similarity": 1.0,
+                                    "url": p.get("url", ""),
+                                })
+                        steps[2]["detail"] = f"Fetched {len(arxiv_papers_fetched)} papers from ArXiv."
+                    else:
+                        steps[2]["detail"] = "No ArXiv results found."
+                except Exception as exc:
+                    logger.warning("ArXiv search failed in stream: %s", exc)
+                    steps[2]["detail"] = "ArXiv search failed, using DB papers."
                 
+                if not papers:
+                    steps[2]["detail"] += " No papers available."
+
                 steps[2]["status"] = "done"
                 steps[3]["status"] = "active"
                 steps[3]["detail"] = "Filtering relevant excerpts..."
@@ -1376,6 +1449,7 @@ class AgenticService:
                     all_chunks = await self._filter_relevant_items(
                         query=query, items=all_chunks,
                         title_key="paper_id", content_key="content",
+                        time_constraint=time_constraint,
                     )
 
                 if all_chunks:
