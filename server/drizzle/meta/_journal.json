@@ -8,6 +8,13 @@
       "when": 1766897397315,
       "tag": "0000_bizarre_power_man",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772210839376,
+      "tag": "0001_chief_silhouette",
+      "breakpoints": true
     }
   ]
 }

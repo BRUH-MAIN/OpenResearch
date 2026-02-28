@@ -1120,20 +1120,8 @@ async def generate_report(group_id: str, request: GenerateReportRequest):
             custom_prompt=request.prompt
         )
         
-        # Store report metadata
-        report_id = await database.store_report_metadata(
-            group_id=group_id,
-            generated_by=request.user_id,
-            title=f"Group Report - {group_info.get('name', 'Unknown')}",
-            file_path=filepath,
-            file_size=file_size,
-            include_sessions=request.include_sessions,
-            include_papers=request.include_papers,
-            include_summaries=request.include_summaries
-        )
-        
         return ReportResponse(
-            id=report_id or str(uuid.uuid4()),
+            id=str(uuid.uuid4()),
             url=f"/reports/{filename}",
             filename=filename,
             file_size=file_size,

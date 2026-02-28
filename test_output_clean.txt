@@ -1,0 +1,23 @@
+﻿=== Testing All AI Agents ===
+--- Testing Agent: Paper Retrieval ---
+node : Γ¥î Failed with status 500: 
+   cified: (Γ¥î Failed with...NTERN  
+    + FullyQualifiedErrorId : Native 
+   CommandError
+--- Testing Agent: Literature Survey ---
+Γ£à Success in 34410ms!
+--- Testing Agent: Gap Analysis ---
+Γ£à Success in 7290ms!
+--- Testing Agent: Fact Check ---
+Γ£à Success in 78763ms!
+--- Testing Agent: Novelty Assessment ---
+Γ£à Success in 21563ms!
+--- Testing Agent: Research Mentor ---
+Γ£à Success in 37202ms!
+--- Testing Agent: Paper Writing ---
+Γ£à Success in 53547ms!
+--- Testing Agent: Research Planning ---
+Γ¥î Failed with status 500: 
+--- Testing Agent: Deep Research ---
+Γ£à Success in 14753ms!
+=== Final Report ===

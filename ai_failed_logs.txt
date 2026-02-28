@@ -1,0 +1,997 @@
+openresearch-ai  | INFO:     127.0.0.1:37256 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47392 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48794 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39946 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36636 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58408 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50414 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60888 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40012 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47518 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56932 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45064 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58182 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45910 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54110 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36040 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59182 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45290 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37878 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36134 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60854 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42632 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57948 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41054 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52574 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37636 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37364 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45610 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50136 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44146 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51568 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37288 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52996 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50392 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39558 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51160 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57084 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47912 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33162 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58546 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49342 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40434 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42014 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54442 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46162 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39028 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46580 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45774 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56854 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33126 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52582 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38750 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51324 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56584 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42596 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48302 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50210 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40046 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52648 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60036 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52070 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40944 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59144 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60372 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49734 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57100 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41614 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57898 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50256 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50818 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46280 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46954 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37600 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41978 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51310 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40102 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55544 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56672 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33336 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35776 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:32804 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39240 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44876 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49634 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58946 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52868 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39342 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58370 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50746 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47092 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55922 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59756 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60450 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50906 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44780 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38962 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55890 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46026 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56640 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36488 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37838 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39724 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60808 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59086 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48964 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51830 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37316 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51806 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60454 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50272 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35592 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43458 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50904 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56064 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51392 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50800 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50526 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48076 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57264 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38046 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41230 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47038 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58226 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33922 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50444 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55098 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41074 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36646 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58288 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57350 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33540 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49902 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39678 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53354 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48482 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43800 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36382 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60230 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34072 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60386 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44318 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44566 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42036 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51652 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46416 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41488 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36252 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45660 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53732 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51554 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60156 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46658 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55586 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     Started server process [1]
+openresearch-ai  | INFO:     Waiting for application startup.
+openresearch-ai  | 
+openresearch-ai  | ============================================================
+openresearch-ai  |   🚀  OpenResearch AI Service — Starting up
+openresearch-ai  | ============================================================
+openresearch-ai  | 
+openresearch-ai  | [1/5]  Initializing Groq AI client …
+openresearch-ai  |   ✅  Groq ready (0.3s)
+openresearch-ai  | 
+openresearch-ai  | [2/5]  Loading embedding model (SPECTER2) …
+openresearch-ai  |          This may take a minute on first run while weights are downloaded.
+openresearch-ai  | No sentence-transformers model found with name allenai/specter2. Creating a new one with mean pooling.
+openresearch-ai  | Failed to load SPECTER2: The PeftConfig config that is trying to be loaded is missing required keys: {'peft_type'}.
+openresearch-ai  | No sentence-transformers model found with name allenai/specter2_base. Creating a new one with mean pooling.
+openresearch-ai  | Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]Loading weights:   1%|          | 1/199 [00:00<00:00, 7781.64it/s, Materializing param=embeddings.LayerNorm.bias]Loading weights:   1%|          | 1/199 [00:00<00:00, 3548.48it/s, Materializing param=embeddings.LayerNorm.bias]Loading weights:   1%|          | 2/199 [00:00<00:00, 2391.96it/s, Materializing param=embeddings.LayerNorm.weight]Loading weights:   1%|          | 2/199 [00:00<00:00, 1451.57it/s, Materializing param=embeddings.LayerNorm.weight]Loading weights:   2%|▏         | 3/199 [00:00<00:00, 1738.69it/s, Materializing param=embeddings.position_embeddings.weight]Loading weights:   2%|▏         | 3/199 [00:00<00:00, 1595.20it/s, Materializing param=embeddings.position_embeddings.weight]Loading weights:   2%|▏         | 4/199 [00:00<00:00, 1816.70it/s, Materializing param=embeddings.token_type_embeddings.weight]Loading weights:   2%|▏         | 4/199 [00:00<00:00, 1598.90it/s, Materializing param=embeddings.token_type_embeddings.weight]Loading weights:   3%|▎         | 5/199 [00:00<00:00, 1696.18it/s, Materializing param=embeddings.word_embeddings.weight]      Loading weights:   3%|▎         | 5/199 [00:00<00:00, 1583.23it/s, Materializing param=embeddings.word_embeddings.weight]Loading weights:   3%|▎         | 6/199 [00:00<00:00, 1400.83it/s, Materializing param=encoder.layer.0.attention.output.LayerNorm.bias]Loading weights:   3%|▎         | 6/199 [00:00<00:00, 1295.07it/s, Materializing param=encoder.layer.0.attention.output.LayerNorm.bias]Loading weights:   4%|▎         | 7/199 [00:00<00:00, 1247.14it/s, Materializing param=encoder.layer.0.attention.output.LayerNorm.weight]Loading weights:   4%|▎         | 7/199 [00:00<00:00, 1166.43it/s, Materializing param=encoder.layer.0.attention.output.LayerNorm.weight]Loading weights:   4%|▍         | 8/199 [00:00<00:00, 1188.86it/s, Materializing param=encoder.layer.0.attention.output.dense.bias]      Loading weights:   4%|▍         | 8/199 [00:00<00:00, 976.02it/s, Materializing param=encoder.layer.0.attention.output.dense.bias] Loading weights:   5%|▍         | 9/199 [00:00<00:00, 888.81it/s, Materializing param=encoder.layer.0.attention.output.dense.weight]Loading weights:   5%|▍         | 9/199 [00:00<00:00, 817.92it/s, Materializing param=encoder.layer.0.attention.output.dense.weight]Loading weights:   5%|▌         | 10/199 [00:00<00:00, 878.68it/s, Materializing param=encoder.layer.0.attention.self.key.bias]     Loading weights:   5%|▌         | 10/199 [00:00<00:00, 855.37it/s, Materializing param=encoder.layer.0.attention.self.key.bias]Loading weights:   6%|▌         | 11/199 [00:00<00:00, 880.60it/s, Materializing param=encoder.layer.0.attention.self.key.weight]Loading weights:   6%|▌         | 11/199 [00:00<00:00, 767.37it/s, Materializing param=encoder.layer.0.attention.self.key.weight]Loading weights:   6%|▌         | 12/199 [00:00<00:00, 817.05it/s, Materializing param=encoder.layer.0.attention.self.query.bias]Loading weights:   6%|▌         | 12/199 [00:00<00:00, 808.68it/s, Materializing param=encoder.layer.0.attention.self.query.bias]Loading weights:   7%|▋         | 13/199 [00:00<00:00, 855.11it/s, Materializing param=encoder.layer.0.attention.self.query.weight]Loading weights:   7%|▋         | 13/199 [00:00<00:00, 837.16it/s, Materializing param=encoder.layer.0.attention.self.query.weight]Loading weights:   7%|▋         | 14/199 [00:00<00:00, 865.31it/s, Materializing param=encoder.layer.0.attention.self.value.bias]  Loading weights:   7%|▋         | 14/199 [00:00<00:00, 772.95it/s, Materializing param=encoder.layer.0.attention.self.value.bias]Loading weights:   8%|▊         | 15/199 [00:00<00:00, 796.17it/s, Materializing param=encoder.layer.0.attention.self.value.weight]Loading weights:   8%|▊         | 15/199 [00:00<00:00, 787.80it/s, Materializing param=encoder.layer.0.attention.self.value.weight]Loading weights:   8%|▊         | 16/199 [00:00<00:00, 829.59it/s, Materializing param=encoder.layer.0.intermediate.dense.bias]    Loading weights:   8%|▊         | 16/199 [00:00<00:00, 822.31it/s, Materializing param=encoder.layer.0.intermediate.dense.bias]Loading weights:   9%|▊         | 17/199 [00:00<00:00, 861.18it/s, Materializing param=encoder.layer.0.intermediate.dense.weight]Loading weights:   9%|▊         | 17/199 [00:00<00:00, 852.73it/s, Materializing param=encoder.layer.0.intermediate.dense.weight]Loading weights:   9%|▉         | 18/199 [00:00<00:00, 889.63it/s, Materializing param=encoder.layer.0.output.LayerNorm.bias]    Loading weights:   9%|▉         | 18/199 [00:00<00:00, 881.40it/s, Materializing param=encoder.layer.0.output.LayerNorm.bias]Loading weights:  10%|▉         | 19/199 [00:00<00:00, 917.67it/s, Materializing param=encoder.layer.0.output.LayerNorm.weight]Loading weights:  10%|▉         | 19/199 [00:00<00:00, 911.38it/s, Materializing param=encoder.layer.0.output.LayerNorm.weight]Loading weights:  10%|█         | 20/199 [00:00<00:00, 947.19it/s, Materializing param=encoder.layer.0.output.dense.bias]      Loading weights:  10%|█         | 20/199 [00:00<00:00, 939.73it/s, Materializing param=encoder.layer.0.output.dense.bias]Loading weights:  11%|█         | 21/199 [00:00<00:00, 973.10it/s, Materializing param=encoder.layer.0.output.dense.weight]Loading weights:  11%|█         | 21/199 [00:00<00:00, 965.93it/s, Materializing param=encoder.layer.0.output.dense.weight]Loading weights:  11%|█         | 22/199 [00:00<00:00, 998.70it/s, Materializing param=encoder.layer.1.attention.output.LayerNorm.bias]Loading weights:  11%|█         | 22/199 [00:00<00:00, 993.08it/s, Materializing param=encoder.layer.1.attention.output.LayerNorm.bias]Loading weights:  12%|█▏        | 23/199 [00:00<00:00, 1028.85it/s, Materializing param=encoder.layer.1.attention.output.LayerNorm.weight]Loading weights:  12%|█▏        | 23/199 [00:00<00:00, 1024.03it/s, Materializing param=encoder.layer.1.attention.output.LayerNorm.weight]Loading weights:  12%|█▏        | 24/199 [00:00<00:00, 1059.73it/s, Materializing param=encoder.layer.1.attention.output.dense.bias]      Loading weights:  12%|█▏        | 24/199 [00:00<00:00, 1054.73it/s, Materializing param=encoder.layer.1.attention.output.dense.bias]Loading weights:  13%|█▎        | 25/199 [00:00<00:00, 1090.37it/s, Materializing param=encoder.layer.1.attention.output.dense.weight]Loading weights:  13%|█▎        | 25/199 [00:00<00:00, 1085.62it/s, Materializing param=encoder.layer.1.attention.output.dense.weight]Loading weights:  13%|█▎        | 26/199 [00:00<00:00, 1121.98it/s, Materializing param=encoder.layer.1.attention.self.key.bias]      Loading weights:  13%|█▎        | 26/199 [00:00<00:00, 1117.19it/s, Materializing param=encoder.layer.1.attention.self.key.bias]Loading weights:  14%|█▎        | 27/199 [00:00<00:00, 1148.20it/s, Materializing param=encoder.layer.1.attention.self.key.weight]Loading weights:  14%|█▎        | 27/199 [00:00<00:00, 1140.26it/s, Materializing param=encoder.layer.1.attention.self.key.weight]Loading weights:  14%|█▍        | 28/199 [00:00<00:00, 1166.64it/s, Materializing param=encoder.layer.1.attention.self.query.bias]Loading weights:  14%|█▍        | 28/199 [00:00<00:00, 1158.98it/s, Materializing param=encoder.layer.1.attention.self.query.bias]Loading weights:  15%|█▍        | 29/199 [00:00<00:00, 1191.38it/s, Materializing param=encoder.layer.1.attention.self.query.weight]Loading weights:  15%|█▍        | 29/199 [00:00<00:00, 1179.18it/s, Materializing param=encoder.layer.1.attention.self.query.weight]Loading weights:  15%|█▌        | 30/199 [00:00<00:00, 1206.29it/s, Materializing param=encoder.layer.1.attention.self.value.bias]  Loading weights:  15%|█▌        | 30/199 [00:00<00:00, 1199.23it/s, Materializing param=encoder.layer.1.attention.self.value.bias]Loading weights:  16%|█▌        | 31/199 [00:00<00:00, 1226.90it/s, Materializing param=encoder.layer.1.attention.self.value.weight]Loading weights:  16%|█▌        | 31/199 [00:00<00:00, 1219.59it/s, Materializing param=encoder.layer.1.attention.self.value.weight]Loading weights:  16%|█▌        | 32/199 [00:00<00:00, 1245.67it/s, Materializing param=encoder.layer.1.intermediate.dense.bias]    Loading weights:  16%|█▌        | 32/199 [00:00<00:00, 1238.77it/s, Materializing param=encoder.layer.1.intermediate.dense.bias]Loading weights:  17%|█▋        | 33/199 [00:00<00:00, 1267.17it/s, Materializing param=encoder.layer.1.intermediate.dense.weight]Loading weights:  17%|█▋        | 33/199 [00:00<00:00, 1260.64it/s, Materializing param=encoder.layer.1.intermediate.dense.weight]Loading weights:  17%|█▋        | 34/199 [00:00<00:00, 1286.81it/s, Materializing param=encoder.layer.1.output.LayerNorm.bias]    Loading weights:  17%|█▋        | 34/199 [00:00<00:00, 1278.99it/s, Materializing param=encoder.layer.1.output.LayerNorm.bias]Loading weights:  18%|█▊        | 35/199 [00:00<00:00, 1304.78it/s, Materializing param=encoder.layer.1.output.LayerNorm.weight]Loading weights:  18%|█▊        | 35/199 [00:00<00:00, 1298.58it/s, Materializing param=encoder.layer.1.output.LayerNorm.weight]Loading weights:  18%|█▊        | 36/199 [00:00<00:00, 1323.99it/s, Materializing param=encoder.layer.1.output.dense.bias]      Loading weights:  18%|█▊        | 36/199 [00:00<00:00, 1318.57it/s, Materializing param=encoder.layer.1.output.dense.bias]Loading weights:  19%|█▊        | 37/199 [00:00<00:00, 1344.69it/s, Materializing param=encoder.layer.1.output.dense.weight]Loading weights:  19%|█▊        | 37/199 [00:00<00:00, 1339.58it/s, Materializing param=encoder.layer.1.output.dense.weight]Loading weights:  19%|█▉        | 38/199 [00:00<00:00, 1367.61it/s, Materializing param=encoder.layer.2.attention.output.LayerNorm.bias]Loading weights:  19%|█▉        | 38/199 [00:00<00:00, 1361.87it/s, Materializing param=encoder.layer.2.attention.output.LayerNorm.bias]Loading weights:  20%|█▉        | 39/199 [00:00<00:00, 1388.69it/s, Materializing param=encoder.layer.2.attention.output.LayerNorm.weight]Loading weights:  20%|█▉        | 39/199 [00:00<00:00, 1383.72it/s, Materializing param=encoder.layer.2.attention.output.LayerNorm.weight]Loading weights:  20%|██        | 40/199 [00:00<00:00, 1410.92it/s, Materializing param=encoder.layer.2.attention.output.dense.bias]      Loading weights:  20%|██        | 40/199 [00:00<00:00, 1405.99it/s, Materializing param=encoder.layer.2.attention.output.dense.bias]Loading weights:  21%|██        | 41/199 [00:00<00:00, 1431.80it/s, Materializing param=encoder.layer.2.attention.output.dense.weight]Loading weights:  21%|██        | 41/199 [00:00<00:00, 1426.63it/s, Materializing param=encoder.layer.2.attention.output.dense.weight]Loading weights:  21%|██        | 42/199 [00:00<00:00, 1454.20it/s, Materializing param=encoder.layer.2.attention.self.key.bias]      Loading weights:  21%|██        | 42/199 [00:00<00:00, 1449.41it/s, Materializing param=encoder.layer.2.attention.self.key.bias]Loading weights:  22%|██▏       | 43/199 [00:00<00:00, 1475.49it/s, Materializing param=encoder.layer.2.attention.self.key.weight]Loading weights:  22%|██▏       | 43/199 [00:00<00:00, 1469.62it/s, Materializing param=encoder.layer.2.attention.self.key.weight]Loading weights:  22%|██▏       | 44/199 [00:00<00:00, 1495.34it/s, Materializing param=encoder.layer.2.attention.self.query.bias]Loading weights:  22%|██▏       | 44/199 [00:00<00:00, 1489.60it/s, Materializing param=encoder.layer.2.attention.self.query.bias]Loading weights:  23%|██▎       | 45/199 [00:00<00:00, 1509.29it/s, Materializing param=encoder.layer.2.attention.self.query.weight]Loading weights:  23%|██▎       | 45/199 [00:00<00:00, 1503.73it/s, Materializing param=encoder.layer.2.attention.self.query.weight]Loading weights:  23%|██▎       | 46/199 [00:00<00:00, 1529.60it/s, Materializing param=encoder.layer.2.attention.self.value.bias]  Loading weights:  23%|██▎       | 46/199 [00:00<00:00, 1524.74it/s, Materializing param=encoder.layer.2.attention.self.value.bias]Loading weights:  24%|██▎       | 47/199 [00:00<00:00, 1549.42it/s, Materializing param=encoder.layer.2.attention.self.value.weight]Loading weights:  24%|██▎       | 47/199 [00:00<00:00, 1544.42it/s, Materializing param=encoder.layer.2.attention.self.value.weight]Loading weights:  24%|██▍       | 48/199 [00:00<00:00, 1569.88it/s, Materializing param=encoder.layer.2.intermediate.dense.bias]    Loading weights:  24%|██▍       | 48/199 [00:00<00:00, 1565.06it/s, Materializing param=encoder.layer.2.intermediate.dense.bias]Loading weights:  25%|██▍       | 49/199 [00:00<00:00, 1589.03it/s, Materializing param=encoder.layer.2.intermediate.dense.weight]Loading weights:  25%|██▍       | 49/199 [00:00<00:00, 1583.90it/s, Materializing param=encoder.layer.2.intermediate.dense.weight]Loading weights:  25%|██▌       | 50/199 [00:00<00:00, 1608.90it/s, Materializing param=encoder.layer.2.output.LayerNorm.bias]    Loading weights:  25%|██▌       | 50/199 [00:00<00:00, 1603.83it/s, Materializing param=encoder.layer.2.output.LayerNorm.bias]Loading weights:  26%|██▌       | 51/199 [00:00<00:00, 1627.70it/s, Materializing param=encoder.layer.2.output.LayerNorm.weight]Loading weights:  26%|██▌       | 51/199 [00:00<00:00, 1620.87it/s, Materializing param=encoder.layer.2.output.LayerNorm.weight]Loading weights:  26%|██▌       | 52/199 [00:00<00:00, 1642.37it/s, Materializing param=encoder.layer.2.output.dense.bias]      Loading weights:  26%|██▌       | 52/199 [00:00<00:00, 1637.21it/s, Materializing param=encoder.layer.2.output.dense.bias]Loading weights:  27%|██▋       | 53/199 [00:00<00:00, 1650.63it/s, Materializing param=encoder.layer.2.output.dense.weight]Loading weights:  27%|██▋       | 53/199 [00:00<00:00, 1629.51it/s, Materializing param=encoder.layer.2.output.dense.weight]Loading weights:  27%|██▋       | 54/199 [00:00<00:00, 1646.28it/s, Materializing param=encoder.layer.3.attention.output.LayerNorm.bias]Loading weights:  27%|██▋       | 54/199 [00:00<00:00, 1636.48it/s, Materializing param=encoder.layer.3.attention.output.LayerNorm.bias]Loading weights:  28%|██▊       | 55/199 [00:00<00:00, 1648.68it/s, Materializing param=encoder.layer.3.attention.output.LayerNorm.weight]Loading weights:  28%|██▊       | 55/199 [00:00<00:00, 1642.17it/s, Materializing param=encoder.layer.3.attention.output.LayerNorm.weight]Loading weights:  28%|██▊       | 56/199 [00:00<00:00, 1661.78it/s, Materializing param=encoder.layer.3.attention.output.dense.bias]      Loading weights:  28%|██▊       | 56/199 [00:00<00:00, 1655.79it/s, Materializing param=encoder.layer.3.attention.output.dense.bias]Loading weights:  29%|██▊       | 57/199 [00:00<00:00, 1674.68it/s, Materializing param=encoder.layer.3.attention.output.dense.weight]Loading weights:  29%|██▊       | 57/199 [00:00<00:00, 1669.00it/s, Materializing param=encoder.layer.3.attention.output.dense.weight]Loading weights:  29%|██▉       | 58/199 [00:00<00:00, 1687.90it/s, Materializing param=encoder.layer.3.attention.self.key.bias]      Loading weights:  29%|██▉       | 58/199 [00:00<00:00, 1679.96it/s, Materializing param=encoder.layer.3.attention.self.key.bias]Loading weights:  30%|██▉       | 59/199 [00:00<00:00, 1694.85it/s, Materializing param=encoder.layer.3.attention.self.key.weight]Loading weights:  30%|██▉       | 59/199 [00:00<00:00, 1689.25it/s, Materializing param=encoder.layer.3.attention.self.key.weight]Loading weights:  30%|███       | 60/199 [00:00<00:00, 1706.84it/s, Materializing param=encoder.layer.3.attention.self.query.bias]Loading weights:  30%|███       | 60/199 [00:00<00:00, 1699.51it/s, Materializing param=encoder.layer.3.attention.self.query.bias]Loading weights:  31%|███       | 61/199 [00:00<00:00, 1715.25it/s, Materializing param=encoder.layer.3.attention.self.query.weight]Loading weights:  31%|███       | 61/199 [00:00<00:00, 1708.26it/s, Materializing param=encoder.layer.3.attention.self.query.weight]Loading weights:  31%|███       | 62/199 [00:00<00:00, 1720.00it/s, Materializing param=encoder.layer.3.attention.self.value.bias]  Loading weights:  31%|███       | 62/199 [00:00<00:00, 1711.94it/s, Materializing param=encoder.layer.3.attention.self.value.bias]Loading weights:  32%|███▏      | 63/199 [00:00<00:00, 1725.50it/s, Materializing param=encoder.layer.3.attention.self.value.weight]Loading weights:  32%|███▏      | 63/199 [00:00<00:00, 1720.05it/s, Materializing param=encoder.layer.3.attention.self.value.weight]Loading weights:  32%|███▏      | 64/199 [00:00<00:00, 1736.78it/s, Materializing param=encoder.layer.3.intermediate.dense.bias]    Loading weights:  32%|███▏      | 64/199 [00:00<00:00, 1731.45it/s, Materializing param=encoder.layer.3.intermediate.dense.bias]Loading weights:  33%|███▎      | 65/199 [00:00<00:00, 1751.08it/s, Materializing param=encoder.layer.3.intermediate.dense.weight]Loading weights:  33%|███▎      | 65/199 [00:00<00:00, 1744.47it/s, Materializing param=encoder.layer.3.intermediate.dense.weight]Loading weights:  33%|███▎      | 66/199 [00:00<00:00, 1761.56it/s, Materializing param=encoder.layer.3.output.LayerNorm.bias]    Loading weights:  33%|███▎      | 66/199 [00:00<00:00, 1755.73it/s, Materializing param=encoder.layer.3.output.LayerNorm.bias]Loading weights:  34%|███▎      | 67/199 [00:00<00:00, 1770.16it/s, Materializing param=encoder.layer.3.output.LayerNorm.weight]Loading weights:  34%|███▎      | 67/199 [00:00<00:00, 1764.66it/s, Materializing param=encoder.layer.3.output.LayerNorm.weight]Loading weights:  34%|███▍      | 68/199 [00:00<00:00, 1783.01it/s, Materializing param=encoder.layer.3.output.dense.bias]      Loading weights:  34%|███▍      | 68/199 [00:00<00:00, 1778.34it/s, Materializing param=encoder.layer.3.output.dense.bias]Loading weights:  35%|███▍      | 69/199 [00:00<00:00, 1796.74it/s, Materializing param=encoder.layer.3.output.dense.weight]Loading weights:  35%|███▍      | 69/199 [00:00<00:00, 1791.86it/s, Materializing param=encoder.layer.3.output.dense.weight]Loading weights:  35%|███▌      | 70/199 [00:00<00:00, 1811.10it/s, Materializing param=encoder.layer.4.attention.output.LayerNorm.bias]Loading weights:  35%|███▌      | 70/199 [00:00<00:00, 1806.55it/s, Materializing param=encoder.layer.4.attention.output.LayerNorm.bias]Loading weights:  36%|███▌      | 71/199 [00:00<00:00, 1825.42it/s, Materializing param=encoder.layer.4.attention.output.LayerNorm.weight]Loading weights:  36%|███▌      | 71/199 [00:00<00:00, 1820.90it/s, Materializing param=encoder.layer.4.attention.output.LayerNorm.weight]Loading weights:  36%|███▌      | 72/199 [00:00<00:00, 1838.48it/s, Materializing param=encoder.layer.4.attention.output.dense.bias]      Loading weights:  36%|███▌      | 72/199 [00:00<00:00, 1832.62it/s, Materializing param=encoder.layer.4.attention.output.dense.bias]Loading weights:  37%|███▋      | 73/199 [00:00<00:00, 1844.76it/s, Materializing param=encoder.layer.4.attention.output.dense.weight]Loading weights:  37%|███▋      | 73/199 [00:00<00:00, 1839.44it/s, Materializing param=encoder.layer.4.attention.output.dense.weight]Loading weights:  37%|███▋      | 74/199 [00:00<00:00, 1854.86it/s, Materializing param=encoder.layer.4.attention.self.key.bias]      Loading weights:  37%|███▋      | 74/199 [00:00<00:00, 1847.92it/s, Materializing param=encoder.layer.4.attention.self.key.bias]Loading weights:  38%|███▊      | 75/199 [00:00<00:00, 1862.13it/s, Materializing param=encoder.layer.4.attention.self.key.weight]Loading weights:  38%|███▊      | 75/199 [00:00<00:00, 1854.99it/s, Materializing param=encoder.layer.4.attention.self.key.weight]Loading weights:  38%|███▊      | 76/199 [00:00<00:00, 1865.75it/s, Materializing param=encoder.layer.4.attention.self.query.bias]Loading weights:  38%|███▊      | 76/199 [00:00<00:00, 1858.25it/s, Materializing param=encoder.layer.4.attention.self.query.bias]Loading weights:  39%|███▊      | 77/199 [00:00<00:00, 1870.10it/s, Materializing param=encoder.layer.4.attention.self.query.weight]Loading weights:  39%|███▊      | 77/199 [00:00<00:00, 1863.29it/s, Materializing param=encoder.layer.4.attention.self.query.weight]Loading weights:  39%|███▉      | 78/199 [00:00<00:00, 1874.28it/s, Materializing param=encoder.layer.4.attention.self.value.bias]  Loading weights:  39%|███▉      | 78/199 [00:00<00:00, 1867.48it/s, Materializing param=encoder.layer.4.attention.self.value.bias]Loading weights:  40%|███▉      | 79/199 [00:00<00:00, 1883.43it/s, Materializing param=encoder.layer.4.attention.self.value.weight]Loading weights:  40%|███▉      | 79/199 [00:00<00:00, 1876.55it/s, Materializing param=encoder.layer.4.attention.self.value.weight]Loading weights:  40%|████      | 80/199 [00:00<00:00, 1888.65it/s, Materializing param=encoder.layer.4.intermediate.dense.bias]    Loading weights:  40%|████      | 80/199 [00:00<00:00, 1882.68it/s, Materializing param=encoder.layer.4.intermediate.dense.bias]Loading weights:  41%|████      | 81/199 [00:00<00:00, 1895.82it/s, Materializing param=encoder.layer.4.intermediate.dense.weight]Loading weights:  41%|████      | 81/199 [00:00<00:00, 1890.84it/s, Materializing param=encoder.layer.4.intermediate.dense.weight]Loading weights:  41%|████      | 82/199 [00:00<00:00, 1906.86it/s, Materializing param=encoder.layer.4.output.LayerNorm.bias]    Loading weights:  41%|████      | 82/199 [00:00<00:00, 1901.02it/s, Materializing param=encoder.layer.4.output.LayerNorm.bias]Loading weights:  42%|████▏     | 83/199 [00:00<00:00, 1914.27it/s, Materializing param=encoder.layer.4.output.LayerNorm.weight]Loading weights:  42%|████▏     | 83/199 [00:00<00:00, 1909.36it/s, Materializing param=encoder.layer.4.output.LayerNorm.weight]Loading weights:  42%|████▏     | 84/199 [00:00<00:00, 1921.93it/s, Materializing param=encoder.layer.4.output.dense.bias]      Loading weights:  42%|████▏     | 84/199 [00:00<00:00, 1916.99it/s, Materializing param=encoder.layer.4.output.dense.bias]Loading weights:  43%|████▎     | 85/199 [00:00<00:00, 1930.04it/s, Materializing param=encoder.layer.4.output.dense.weight]Loading weights:  43%|████▎     | 85/199 [00:00<00:00, 1924.88it/s, Materializing param=encoder.layer.4.output.dense.weight]Loading weights:  43%|████▎     | 86/199 [00:00<00:00, 1940.49it/s, Materializing param=encoder.layer.5.attention.output.LayerNorm.bias]Loading weights:  43%|████▎     | 86/199 [00:00<00:00, 1934.42it/s, Materializing param=encoder.layer.5.attention.output.LayerNorm.bias]Loading weights:  44%|████▎     | 87/199 [00:00<00:00, 1948.83it/s, Materializing param=encoder.layer.5.attention.output.LayerNorm.weight]Loading weights:  44%|████▎     | 87/199 [00:00<00:00, 1944.34it/s, Materializing param=encoder.layer.5.attention.output.LayerNorm.weight]Loading weights:  44%|████▍     | 88/199 [00:00<00:00, 1959.91it/s, Materializing param=encoder.layer.5.attention.output.dense.bias]      Loading weights:  44%|████▍     | 88/199 [00:00<00:00, 1953.45it/s, Materializing param=encoder.layer.5.attention.output.dense.bias]Loading weights:  45%|████▍     | 89/199 [00:00<00:00, 1967.32it/s, Materializing param=encoder.layer.5.attention.output.dense.weight]Loading weights:  45%|████▍     | 89/199 [00:00<00:00, 1961.17it/s, Materializing param=encoder.layer.5.attention.output.dense.weight]Loading weights:  45%|████▌     | 90/199 [00:00<00:00, 1974.10it/s, Materializing param=encoder.layer.5.attention.self.key.bias]      Loading weights:  45%|████▌     | 90/199 [00:00<00:00, 1969.42it/s, Materializing param=encoder.layer.5.attention.self.key.bias]Loading weights:  46%|████▌     | 91/199 [00:00<00:00, 1983.07it/s, Materializing param=encoder.layer.5.attention.self.key.weight]Loading weights:  46%|████▌     | 91/199 [00:00<00:00, 1976.40it/s, Materializing param=encoder.layer.5.attention.self.key.weight]Loading weights:  46%|████▌     | 92/199 [00:00<00:00, 1989.97it/s, Materializing param=encoder.layer.5.attention.self.query.bias]Loading weights:  46%|████▌     | 92/199 [00:00<00:00, 1986.73it/s, Materializing param=encoder.layer.5.attention.self.query.bias]Loading weights:  47%|████▋     | 93/199 [00:00<00:00, 2002.72it/s, Materializing param=encoder.layer.5.attention.self.query.weight]Loading weights:  47%|████▋     | 93/199 [00:00<00:00, 1999.83it/s, Materializing param=encoder.layer.5.attention.self.query.weight]Loading weights:  47%|████▋     | 94/199 [00:00<00:00, 2014.35it/s, Materializing param=encoder.layer.5.attention.self.value.bias]  Loading weights:  47%|████▋     | 94/199 [00:00<00:00, 2011.41it/s, Materializing param=encoder.layer.5.attention.self.value.bias]Loading weights:  48%|████▊     | 95/199 [00:00<00:00, 2027.45it/s, Materializing param=encoder.layer.5.attention.self.value.weight]Loading weights:  48%|████▊     | 95/199 [00:00<00:00, 2021.32it/s, Materializing param=encoder.layer.5.attention.self.value.weight]Loading weights:  48%|████▊     | 96/199 [00:00<00:00, 2030.78it/s, Materializing param=encoder.layer.5.intermediate.dense.bias]    Loading weights:  48%|████▊     | 96/199 [00:00<00:00, 2024.48it/s, Materializing param=encoder.layer.5.intermediate.dense.bias]Loading weights:  49%|████▊     | 97/199 [00:00<00:00, 2036.66it/s, Materializing param=encoder.layer.5.intermediate.dense.weight]Loading weights:  49%|████▊     | 97/199 [00:00<00:00, 2031.94it/s, Materializing param=encoder.layer.5.intermediate.dense.weight]Loading weights:  49%|████▉     | 98/199 [00:00<00:00, 2039.79it/s, Materializing param=encoder.layer.5.output.LayerNorm.bias]    Loading weights:  49%|████▉     | 98/199 [00:00<00:00, 2033.35it/s, Materializing param=encoder.layer.5.output.LayerNorm.bias]Loading weights:  50%|████▉     | 99/199 [00:00<00:00, 2045.25it/s, Materializing param=encoder.layer.5.output.LayerNorm.weight]Loading weights:  50%|████▉     | 99/199 [00:00<00:00, 2037.96it/s, Materializing param=encoder.layer.5.output.LayerNorm.weight]Loading weights:  50%|█████     | 100/199 [00:00<00:00, 2046.79it/s, Materializing param=encoder.layer.5.output.dense.bias]     Loading weights:  50%|█████     | 100/199 [00:00<00:00, 2034.85it/s, Materializing param=encoder.layer.5.output.dense.bias]Loading weights:  51%|█████     | 101/199 [00:00<00:00, 2032.79it/s, Materializing param=encoder.layer.5.output.dense.weight]Loading weights:  51%|█████     | 101/199 [00:00<00:00, 2027.21it/s, Materializing param=encoder.layer.5.output.dense.weight]Loading weights:  51%|█████▏    | 102/199 [00:00<00:00, 2039.48it/s, Materializing param=encoder.layer.6.attention.output.LayerNorm.bias]Loading weights:  51%|█████▏    | 102/199 [00:00<00:00, 2034.42it/s, Materializing param=encoder.layer.6.attention.output.LayerNorm.bias]Loading weights:  52%|█████▏    | 103/199 [00:00<00:00, 2028.40it/s, Materializing param=encoder.layer.6.attention.output.LayerNorm.weight]Loading weights:  52%|█████▏    | 103/199 [00:00<00:00, 2020.59it/s, Materializing param=encoder.layer.6.attention.output.LayerNorm.weight]Loading weights:  52%|█████▏    | 104/199 [00:00<00:00, 2014.82it/s, Materializing param=encoder.layer.6.attention.output.dense.bias]      Loading weights:  52%|█████▏    | 104/199 [00:00<00:00, 2009.53it/s, Materializing param=encoder.layer.6.attention.output.dense.bias]Loading weights:  53%|█████▎    | 105/199 [00:00<00:00, 2013.53it/s, Materializing param=encoder.layer.6.attention.output.dense.weight]Loading weights:  53%|█████▎    | 105/199 [00:00<00:00, 2008.40it/s, Materializing param=encoder.layer.6.attention.output.dense.weight]Loading weights:  53%|█████▎    | 106/199 [00:00<00:00, 2016.74it/s, Materializing param=encoder.layer.6.attention.self.key.bias]      Loading weights:  53%|█████▎    | 106/199 [00:00<00:00, 2011.03it/s, Materializing param=encoder.layer.6.attention.self.key.bias]Loading weights:  54%|█████▍    | 107/199 [00:00<00:00, 2020.23it/s, Materializing param=encoder.layer.6.attention.self.key.weight]Loading weights:  54%|█████▍    | 107/199 [00:00<00:00, 2015.09it/s, Materializing param=encoder.layer.6.attention.self.key.weight]Loading weights:  54%|█████▍    | 108/199 [00:00<00:00, 2026.91it/s, Materializing param=encoder.layer.6.attention.self.query.bias]Loading weights:  54%|█████▍    | 108/199 [00:00<00:00, 2021.98it/s, Materializing param=encoder.layer.6.attention.self.query.bias]Loading weights:  55%|█████▍    | 109/199 [00:00<00:00, 2031.11it/s, Materializing param=encoder.layer.6.attention.self.query.weight]Loading weights:  55%|█████▍    | 109/199 [00:00<00:00, 2026.08it/s, Materializing param=encoder.layer.6.attention.self.query.weight]Loading weights:  55%|█████▌    | 110/199 [00:00<00:00, 2031.35it/s, Materializing param=encoder.layer.6.attention.self.value.bias]  Loading weights:  55%|█████▌    | 110/199 [00:00<00:00, 2025.21it/s, Materializing param=encoder.layer.6.attention.self.value.bias]Loading weights:  56%|█████▌    | 111/199 [00:00<00:00, 2030.14it/s, Materializing param=encoder.layer.6.attention.self.value.weight]Loading weights:  56%|█████▌    | 111/199 [00:00<00:00, 2025.19it/s, Materializing param=encoder.layer.6.attention.self.value.weight]Loading weights:  56%|█████▋    | 112/199 [00:00<00:00, 2031.42it/s, Materializing param=encoder.layer.6.intermediate.dense.bias]    Loading weights:  56%|█████▋    | 112/199 [00:00<00:00, 2027.29it/s, Materializing param=encoder.layer.6.intermediate.dense.bias]Loading weights:  57%|█████▋    | 113/199 [00:00<00:00, 2039.75it/s, Materializing param=encoder.layer.6.intermediate.dense.weight]Loading weights:  57%|█████▋    | 113/199 [00:00<00:00, 2035.78it/s, Materializing param=encoder.layer.6.intermediate.dense.weight]Loading weights:  57%|█████▋    | 114/199 [00:00<00:00, 2044.26it/s, Materializing param=encoder.layer.6.output.LayerNorm.bias]    Loading weights:  57%|█████▋    | 114/199 [00:00<00:00, 2037.42it/s, Materializing param=encoder.layer.6.output.LayerNorm.bias]Loading weights:  58%|█████▊    | 115/199 [00:00<00:00, 2046.16it/s, Materializing param=encoder.layer.6.output.LayerNorm.weight]Loading weights:  58%|█████▊    | 115/199 [00:00<00:00, 2041.97it/s, Materializing param=encoder.layer.6.output.LayerNorm.weight]Loading weights:  58%|█████▊    | 116/199 [00:00<00:00, 2054.06it/s, Materializing param=encoder.layer.6.output.dense.bias]      Loading weights:  58%|█████▊    | 116/199 [00:00<00:00, 2050.48it/s, Materializing param=encoder.layer.6.output.dense.bias]Loading weights:  59%|█████▉    | 117/199 [00:00<00:00, 2061.61it/s, Materializing param=encoder.layer.6.output.dense.weight]Loading weights:  59%|█████▉    | 117/199 [00:00<00:00, 2057.92it/s, Materializing param=encoder.layer.6.output.dense.weight]Loading weights:  59%|█████▉    | 118/199 [00:00<00:00, 2070.23it/s, Materializing param=encoder.layer.7.attention.output.LayerNorm.bias]Loading weights:  59%|█████▉    | 118/199 [00:00<00:00, 2066.69it/s, Materializing param=encoder.layer.7.attention.output.LayerNorm.bias]Loading weights:  60%|█████▉    | 119/199 [00:00<00:00, 2077.82it/s, Materializing param=encoder.layer.7.attention.output.LayerNorm.weight]Loading weights:  60%|█████▉    | 119/199 [00:00<00:00, 2074.13it/s, Materializing param=encoder.layer.7.attention.output.LayerNorm.weight]Loading weights:  60%|██████    | 120/199 [00:00<00:00, 2085.80it/s, Materializing param=encoder.layer.7.attention.output.dense.bias]      Loading weights:  60%|██████    | 120/199 [00:00<00:00, 2082.18it/s, Materializing param=encoder.layer.7.attention.output.dense.bias]Loading weights:  61%|██████    | 121/199 [00:00<00:00, 2094.26it/s, Materializing param=encoder.layer.7.attention.output.dense.weight]Loading weights:  61%|██████    | 121/199 [00:00<00:00, 2090.54it/s, Materializing param=encoder.layer.7.attention.output.dense.weight]Loading weights:  61%|██████▏   | 122/199 [00:00<00:00, 2100.65it/s, Materializing param=encoder.layer.7.attention.self.key.bias]      Loading weights:  61%|██████▏   | 122/199 [00:00<00:00, 2095.87it/s, Materializing param=encoder.layer.7.attention.self.key.bias]Loading weights:  62%|██████▏   | 123/199 [00:00<00:00, 2106.61it/s, Materializing param=encoder.layer.7.attention.self.key.weight]Loading weights:  62%|██████▏   | 123/199 [00:00<00:00, 2102.95it/s, Materializing param=encoder.layer.7.attention.self.key.weight]Loading weights:  62%|██████▏   | 124/199 [00:00<00:00, 2114.68it/s, Materializing param=encoder.layer.7.attention.self.query.bias]Loading weights:  62%|██████▏   | 124/199 [00:00<00:00, 2111.10it/s, Materializing param=encoder.layer.7.attention.self.query.bias]Loading weights:  63%|██████▎   | 125/199 [00:00<00:00, 2121.34it/s, Materializing param=encoder.layer.7.attention.self.query.weight]Loading weights:  63%|██████▎   | 125/199 [00:00<00:00, 2117.14it/s, Materializing param=encoder.layer.7.attention.self.query.weight]Loading weights:  63%|██████▎   | 126/199 [00:00<00:00, 2128.27it/s, Materializing param=encoder.layer.7.attention.self.value.bias]  Loading weights:  63%|██████▎   | 126/199 [00:00<00:00, 2124.65it/s, Materializing param=encoder.layer.7.attention.self.value.bias]Loading weights:  64%|██████▍   | 127/199 [00:00<00:00, 2135.52it/s, Materializing param=encoder.layer.7.attention.self.value.weight]Loading weights:  64%|██████▍   | 127/199 [00:00<00:00, 2131.99it/s, Materializing param=encoder.layer.7.attention.self.value.weight]Loading weights:  64%|██████▍   | 128/199 [00:00<00:00, 2143.72it/s, Materializing param=encoder.layer.7.intermediate.dense.bias]    Loading weights:  64%|██████▍   | 128/199 [00:00<00:00, 2140.39it/s, Materializing param=encoder.layer.7.intermediate.dense.bias]Loading weights:  65%|██████▍   | 129/199 [00:00<00:00, 2149.96it/s, Materializing param=encoder.layer.7.intermediate.dense.weight]Loading weights:  65%|██████▍   | 129/199 [00:00<00:00, 2146.39it/s, Materializing param=encoder.layer.7.intermediate.dense.weight]Loading weights:  65%|██████▌   | 130/199 [00:00<00:00, 2158.02it/s, Materializing param=encoder.layer.7.output.LayerNorm.bias]    Loading weights:  65%|██████▌   | 130/199 [00:00<00:00, 2154.70it/s, Materializing param=encoder.layer.7.output.LayerNorm.bias]Loading weights:  66%|██████▌   | 131/199 [00:00<00:00, 2165.47it/s, Materializing param=encoder.layer.7.output.LayerNorm.weight]Loading weights:  66%|██████▌   | 131/199 [00:00<00:00, 2162.01it/s, Materializing param=encoder.layer.7.output.LayerNorm.weight]Loading weights:  66%|██████▋   | 132/199 [00:00<00:00, 2173.62it/s, Materializing param=encoder.layer.7.output.dense.bias]      Loading weights:  66%|██████▋   | 132/199 [00:00<00:00, 2170.37it/s, Materializing param=encoder.layer.7.output.dense.bias]Loading weights:  67%|██████▋   | 133/199 [00:00<00:00, 2181.10it/s, Materializing param=encoder.layer.7.output.dense.weight]Loading weights:  67%|██████▋   | 133/199 [00:00<00:00, 2177.69it/s, Materializing param=encoder.layer.7.output.dense.weight]Loading weights:  67%|██████▋   | 134/199 [00:00<00:00, 2188.26it/s, Materializing param=encoder.layer.8.attention.output.LayerNorm.bias]Loading weights:  67%|██████▋   | 134/199 [00:00<00:00, 2184.71it/s, Materializing param=encoder.layer.8.attention.output.LayerNorm.bias]Loading weights:  68%|██████▊   | 135/199 [00:00<00:00, 2194.85it/s, Materializing param=encoder.layer.8.attention.output.LayerNorm.weight]Loading weights:  68%|██████▊   | 135/199 [00:00<00:00, 2191.19it/s, Materializing param=encoder.layer.8.attention.output.LayerNorm.weight]Loading weights:  68%|██████▊   | 136/199 [00:00<00:00, 2199.83it/s, Materializing param=encoder.layer.8.attention.output.dense.bias]      Loading weights:  68%|██████▊   | 136/199 [00:00<00:00, 2192.82it/s, Materializing param=encoder.layer.8.attention.output.dense.bias]Loading weights:  69%|██████▉   | 137/199 [00:00<00:00, 2200.22it/s, Materializing param=encoder.layer.8.attention.output.dense.weight]Loading weights:  69%|██████▉   | 137/199 [00:00<00:00, 2196.25it/s, Materializing param=encoder.layer.8.attention.output.dense.weight]Loading weights:  69%|██████▉   | 138/199 [00:00<00:00, 2206.86it/s, Materializing param=encoder.layer.8.attention.self.key.bias]      Loading weights:  69%|██████▉   | 138/199 [00:00<00:00, 2203.48it/s, Materializing param=encoder.layer.8.attention.self.key.bias]Loading weights:  70%|██████▉   | 139/199 [00:00<00:00, 2212.71it/s, Materializing param=encoder.layer.8.attention.self.key.weight]Loading weights:  70%|██████▉   | 139/199 [00:00<00:00, 2209.23it/s, Materializing param=encoder.layer.8.attention.self.key.weight]Loading weights:  70%|███████   | 140/199 [00:00<00:00, 2220.11it/s, Materializing param=encoder.layer.8.attention.self.query.bias]Loading weights:  70%|███████   | 140/199 [00:00<00:00, 2216.82it/s, Materializing param=encoder.layer.8.attention.self.query.bias]Loading weights:  71%|███████   | 141/199 [00:00<00:00, 2227.66it/s, Materializing param=encoder.layer.8.attention.self.query.weight]Loading weights:  71%|███████   | 141/199 [00:00<00:00, 2224.38it/s, Materializing param=encoder.layer.8.attention.self.query.weight]Loading weights:  71%|███████▏  | 142/199 [00:00<00:00, 2234.31it/s, Materializing param=encoder.layer.8.attention.self.value.bias]  Loading weights:  71%|███████▏  | 142/199 [00:00<00:00, 2230.63it/s, Materializing param=encoder.layer.8.attention.self.value.bias]Loading weights:  72%|███████▏  | 143/199 [00:00<00:00, 2239.57it/s, Materializing param=encoder.layer.8.attention.self.value.weight]Loading weights:  72%|███████▏  | 143/199 [00:00<00:00, 2232.86it/s, Materializing param=encoder.layer.8.attention.self.value.weight]Loading weights:  72%|███████▏  | 144/199 [00:00<00:00, 2231.91it/s, Materializing param=encoder.layer.8.intermediate.dense.bias]    Loading weights:  72%|███████▏  | 144/199 [00:00<00:00, 2227.65it/s, Materializing param=encoder.layer.8.intermediate.dense.bias]Loading weights:  73%|███████▎  | 145/199 [00:00<00:00, 2237.06it/s, Materializing param=encoder.layer.8.intermediate.dense.weight]Loading weights:  73%|███████▎  | 145/199 [00:00<00:00, 2233.60it/s, Materializing param=encoder.layer.8.intermediate.dense.weight]Loading weights:  73%|███████▎  | 146/199 [00:00<00:00, 2243.32it/s, Materializing param=encoder.layer.8.output.LayerNorm.bias]    Loading weights:  73%|███████▎  | 146/199 [00:00<00:00, 2239.95it/s, Materializing param=encoder.layer.8.output.LayerNorm.bias]Loading weights:  74%|███████▍  | 147/199 [00:00<00:00, 2248.31it/s, Materializing param=encoder.layer.8.output.LayerNorm.weight]Loading weights:  74%|███████▍  | 147/199 [00:00<00:00, 2243.98it/s, Materializing param=encoder.layer.8.output.LayerNorm.weight]Loading weights:  74%|███████▍  | 148/199 [00:00<00:00, 2249.98it/s, Materializing param=encoder.layer.8.output.dense.bias]      Loading weights:  74%|███████▍  | 148/199 [00:00<00:00, 2245.27it/s, Materializing param=encoder.layer.8.output.dense.bias]Loading weights:  75%|███████▍  | 149/199 [00:00<00:00, 2251.69it/s, Materializing param=encoder.layer.8.output.dense.weight]Loading weights:  75%|███████▍  | 149/199 [00:00<00:00, 2247.97it/s, Materializing param=encoder.layer.8.output.dense.weight]Loading weights:  75%|███████▌  | 150/199 [00:00<00:00, 2255.06it/s, Materializing param=encoder.layer.9.attention.output.LayerNorm.bias]Loading weights:  75%|███████▌  | 150/199 [00:00<00:00, 2250.40it/s, Materializing param=encoder.layer.9.attention.output.LayerNorm.bias]Loading weights:  76%|███████▌  | 151/199 [00:00<00:00, 2259.73it/s, Materializing param=encoder.layer.9.attention.output.LayerNorm.weight]Loading weights:  76%|███████▌  | 151/199 [00:00<00:00, 2255.15it/s, Materializing param=encoder.layer.9.attention.output.LayerNorm.weight]Loading weights:  76%|███████▋  | 152/199 [00:00<00:00, 2261.52it/s, Materializing param=encoder.layer.9.attention.output.dense.bias]      Loading weights:  76%|███████▋  | 152/199 [00:00<00:00, 2256.39it/s, Materializing param=encoder.layer.9.attention.output.dense.bias]Loading weights:  77%|███████▋  | 153/199 [00:00<00:00, 2264.95it/s, Materializing param=encoder.layer.9.attention.output.dense.weight]Loading weights:  77%|███████▋  | 153/199 [00:00<00:00, 2259.87it/s, Materializing param=encoder.layer.9.attention.output.dense.weight]Loading weights:  77%|███████▋  | 154/199 [00:00<00:00, 2261.79it/s, Materializing param=encoder.layer.9.attention.self.key.bias]      Loading weights:  77%|███████▋  | 154/199 [00:00<00:00, 2256.41it/s, Materializing param=encoder.layer.9.attention.self.key.bias]Loading weights:  78%|███████▊  | 155/199 [00:00<00:00, 2257.40it/s, Materializing param=encoder.layer.9.attention.self.key.weight]Loading weights:  78%|███████▊  | 155/199 [00:00<00:00, 2250.45it/s, Materializing param=encoder.layer.9.attention.self.key.weight]Loading weights:  78%|███████▊  | 156/199 [00:00<00:00, 2252.27it/s, Materializing param=encoder.layer.9.attention.self.query.bias]Loading weights:  78%|███████▊  | 156/199 [00:00<00:00, 2246.88it/s, Materializing param=encoder.layer.9.attention.self.query.bias]Loading weights:  79%|███████▉  | 157/199 [00:00<00:00, 2248.67it/s, Materializing param=encoder.layer.9.attention.self.query.weight]Loading weights:  79%|███████▉  | 157/199 [00:00<00:00, 2244.69it/s, Materializing param=encoder.layer.9.attention.self.query.weight]Loading weights:  79%|███████▉  | 158/199 [00:00<00:00, 2251.63it/s, Materializing param=encoder.layer.9.attention.self.value.bias]  Loading weights:  79%|███████▉  | 158/199 [00:00<00:00, 2247.94it/s, Materializing param=encoder.layer.9.attention.self.value.bias]Loading weights:  80%|███████▉  | 159/199 [00:00<00:00, 2255.14it/s, Materializing param=encoder.layer.9.attention.self.value.weight]Loading weights:  80%|███████▉  | 159/199 [00:00<00:00, 2251.49it/s, Materializing param=encoder.layer.9.attention.self.value.weight]Loading weights:  80%|████████  | 160/199 [00:00<00:00, 2258.89it/s, Materializing param=encoder.layer.9.intermediate.dense.bias]    Loading weights:  80%|████████  | 160/199 [00:00<00:00, 2255.32it/s, Materializing param=encoder.layer.9.intermediate.dense.bias]Loading weights:  81%|████████  | 161/199 [00:00<00:00, 2262.52it/s, Materializing param=encoder.layer.9.intermediate.dense.weight]Loading weights:  81%|████████  | 161/199 [00:00<00:00, 2259.08it/s, Materializing param=encoder.layer.9.intermediate.dense.weight]Loading weights:  81%|████████▏ | 162/199 [00:00<00:00, 2266.77it/s, Materializing param=encoder.layer.9.output.LayerNorm.bias]    Loading weights:  81%|████████▏ | 162/199 [00:00<00:00, 2263.39it/s, Materializing param=encoder.layer.9.output.LayerNorm.bias]Loading weights:  82%|████████▏ | 163/199 [00:00<00:00, 2271.92it/s, Materializing param=encoder.layer.9.output.LayerNorm.weight]Loading weights:  82%|████████▏ | 163/199 [00:00<00:00, 2268.61it/s, Materializing param=encoder.layer.9.output.LayerNorm.weight]Loading weights:  82%|████████▏ | 164/199 [00:00<00:00, 2272.90it/s, Materializing param=encoder.layer.9.output.dense.bias]      Loading weights:  82%|████████▏ | 164/199 [00:00<00:00, 2264.91it/s, Materializing param=encoder.layer.9.output.dense.bias]Loading weights:  83%|████████▎ | 165/199 [00:00<00:00, 2269.72it/s, Materializing param=encoder.layer.9.output.dense.weight]Loading weights:  83%|████████▎ | 165/199 [00:00<00:00, 2265.58it/s, Materializing param=encoder.layer.9.output.dense.weight]Loading weights:  83%|████████▎ | 166/199 [00:00<00:00, 2272.62it/s, Materializing param=encoder.layer.10.attention.output.LayerNorm.bias]Loading weights:  83%|████████▎ | 166/199 [00:00<00:00, 2268.00it/s, Materializing param=encoder.layer.10.attention.output.LayerNorm.bias]Loading weights:  84%|████████▍ | 167/199 [00:00<00:00, 2275.09it/s, Materializing param=encoder.layer.10.attention.output.LayerNorm.weight]Loading weights:  84%|████████▍ | 167/199 [00:00<00:00, 2270.38it/s, Materializing param=encoder.layer.10.attention.output.LayerNorm.weight]Loading weights:  84%|████████▍ | 168/199 [00:00<00:00, 2279.00it/s, Materializing param=encoder.layer.10.attention.output.dense.bias]      Loading weights:  84%|████████▍ | 168/199 [00:00<00:00, 2275.57it/s, Materializing param=encoder.layer.10.attention.output.dense.bias]Loading weights:  85%|████████▍ | 169/199 [00:00<00:00, 2281.79it/s, Materializing param=encoder.layer.10.attention.output.dense.weight]Loading weights:  85%|████████▍ | 169/199 [00:00<00:00, 2277.55it/s, Materializing param=encoder.layer.10.attention.output.dense.weight]Loading weights:  85%|████████▌ | 170/199 [00:00<00:00, 2284.55it/s, Materializing param=encoder.layer.10.attention.self.key.bias]      Loading weights:  85%|████████▌ | 170/199 [00:00<00:00, 2280.99it/s, Materializing param=encoder.layer.10.attention.self.key.bias]Loading weights:  86%|████████▌ | 171/199 [00:00<00:00, 2288.28it/s, Materializing param=encoder.layer.10.attention.self.key.weight]Loading weights:  86%|████████▌ | 171/199 [00:00<00:00, 2284.79it/s, Materializing param=encoder.layer.10.attention.self.key.weight]Loading weights:  86%|████████▋ | 172/199 [00:00<00:00, 2291.91it/s, Materializing param=encoder.layer.10.attention.self.query.bias]Loading weights:  86%|████████▋ | 172/199 [00:00<00:00, 2288.52it/s, Materializing param=encoder.layer.10.attention.self.query.bias]Loading weights:  87%|████████▋ | 173/199 [00:00<00:00, 2295.90it/s, Materializing param=encoder.layer.10.attention.self.query.weight]Loading weights:  87%|████████▋ | 173/199 [00:00<00:00, 2292.38it/s, Materializing param=encoder.layer.10.attention.self.query.weight]Loading weights:  87%|████████▋ | 174/199 [00:00<00:00, 2300.39it/s, Materializing param=encoder.layer.10.attention.self.value.bias]  Loading weights:  87%|████████▋ | 174/199 [00:00<00:00, 2297.35it/s, Materializing param=encoder.layer.10.attention.self.value.bias]Loading weights:  88%|████████▊ | 175/199 [00:00<00:00, 2304.59it/s, Materializing param=encoder.layer.10.attention.self.value.weight]Loading weights:  88%|████████▊ | 175/199 [00:00<00:00, 2301.36it/s, Materializing param=encoder.layer.10.attention.self.value.weight]Loading weights:  88%|████████▊ | 176/199 [00:00<00:00, 2310.07it/s, Materializing param=encoder.layer.10.intermediate.dense.bias]    Loading weights:  88%|████████▊ | 176/199 [00:00<00:00, 2307.15it/s, Materializing param=encoder.layer.10.intermediate.dense.bias]Loading weights:  89%|████████▉ | 177/199 [00:00<00:00, 2315.79it/s, Materializing param=encoder.layer.10.intermediate.dense.weight]Loading weights:  89%|████████▉ | 177/199 [00:00<00:00, 2312.93it/s, Materializing param=encoder.layer.10.intermediate.dense.weight]Loading weights:  89%|████████▉ | 178/199 [00:00<00:00, 2321.80it/s, Materializing param=encoder.layer.10.output.LayerNorm.bias]    Loading weights:  89%|████████▉ | 178/199 [00:00<00:00, 2312.19it/s, Materializing param=encoder.layer.10.output.LayerNorm.bias]Loading weights:  90%|████████▉ | 179/199 [00:00<00:00, 2312.42it/s, Materializing param=encoder.layer.10.output.LayerNorm.weight]Loading weights:  90%|████████▉ | 179/199 [00:00<00:00, 2308.65it/s, Materializing param=encoder.layer.10.output.LayerNorm.weight]Loading weights:  90%|█████████ | 180/199 [00:00<00:00, 2315.97it/s, Materializing param=encoder.layer.10.output.dense.bias]      Loading weights:  90%|█████████ | 180/199 [00:00<00:00, 2312.79it/s, Materializing param=encoder.layer.10.output.dense.bias]Loading weights:  91%|█████████ | 181/199 [00:00<00:00, 2319.81it/s, Materializing param=encoder.layer.10.output.dense.weight]Loading weights:  91%|█████████ | 181/199 [00:00<00:00, 2316.77it/s, Materializing param=encoder.layer.10.output.dense.weight]Loading weights:  91%|█████████▏| 182/199 [00:00<00:00, 2324.53it/s, Materializing param=encoder.layer.11.attention.output.LayerNorm.bias]Loading weights:  91%|█████████▏| 182/199 [00:00<00:00, 2321.51it/s, Materializing param=encoder.layer.11.attention.output.LayerNorm.bias]Loading weights:  92%|█████████▏| 183/199 [00:00<00:00, 2329.72it/s, Materializing param=encoder.layer.11.attention.output.LayerNorm.weight]Loading weights:  92%|█████████▏| 183/199 [00:00<00:00, 2326.82it/s, Materializing param=encoder.layer.11.attention.output.LayerNorm.weight]Loading weights:  92%|█████████▏| 184/199 [00:00<00:00, 2335.17it/s, Materializing param=encoder.layer.11.attention.output.dense.bias]      Loading weights:  92%|█████████▏| 184/199 [00:00<00:00, 2332.35it/s, Materializing param=encoder.layer.11.attention.output.dense.bias]Loading weights:  93%|█████████▎| 185/199 [00:00<00:00, 2340.80it/s, Materializing param=encoder.layer.11.attention.output.dense.weight]Loading weights:  93%|█████████▎| 185/199 [00:00<00:00, 2338.00it/s, Materializing param=encoder.layer.11.attention.output.dense.weight]Loading weights:  93%|█████████▎| 186/199 [00:00<00:00, 2345.69it/s, Materializing param=encoder.layer.11.attention.self.key.bias]      Loading weights:  93%|█████████▎| 186/199 [00:00<00:00, 2342.65it/s, Materializing param=encoder.layer.11.attention.self.key.bias]Loading weights:  94%|█████████▍| 187/199 [00:00<00:00, 2348.00it/s, Materializing param=encoder.layer.11.attention.self.key.weight]Loading weights:  94%|█████████▍| 187/199 [00:00<00:00, 2344.11it/s, Materializing param=encoder.layer.11.attention.self.key.weight]Loading weights:  94%|█████████▍| 188/199 [00:00<00:00, 2350.01it/s, Materializing param=encoder.layer.11.attention.self.query.bias]Loading weights:  94%|█████████▍| 188/199 [00:00<00:00, 2345.14it/s, Materializing param=encoder.layer.11.attention.self.query.bias]Loading weights:  95%|█████████▍| 189/199 [00:00<00:00, 2349.20it/s, Materializing param=encoder.layer.11.attention.self.query.weight]Loading weights:  95%|█████████▍| 189/199 [00:00<00:00, 2344.39it/s, Materializing param=encoder.layer.11.attention.self.query.weight]Loading weights:  95%|█████████▌| 190/199 [00:00<00:00, 2349.99it/s, Materializing param=encoder.layer.11.attention.self.value.bias]  Loading weights:  95%|█████████▌| 190/199 [00:00<00:00, 2346.38it/s, Materializing param=encoder.layer.11.attention.self.value.bias]Loading weights:  96%|█████████▌| 191/199 [00:00<00:00, 2351.17it/s, Materializing param=encoder.layer.11.attention.self.value.weight]Loading weights:  96%|█████████▌| 191/199 [00:00<00:00, 2347.04it/s, Materializing param=encoder.layer.11.attention.self.value.weight]Loading weights:  96%|█████████▋| 192/199 [00:00<00:00, 2354.04it/s, Materializing param=encoder.layer.11.intermediate.dense.bias]    Loading weights:  96%|█████████▋| 192/199 [00:00<00:00, 2351.12it/s, Materializing param=encoder.layer.11.intermediate.dense.bias]Loading weights:  97%|█████████▋| 193/199 [00:00<00:00, 2356.11it/s, Materializing param=encoder.layer.11.intermediate.dense.weight]Loading weights:  97%|█████████▋| 193/199 [00:00<00:00, 2352.25it/s, Materializing param=encoder.layer.11.intermediate.dense.weight]Loading weights:  97%|█████████▋| 194/199 [00:00<00:00, 2359.13it/s, Materializing param=encoder.layer.11.output.LayerNorm.bias]    Loading weights:  97%|█████████▋| 194/199 [00:00<00:00, 2355.71it/s, Materializing param=encoder.layer.11.output.LayerNorm.bias]Loading weights:  98%|█████████▊| 195/199 [00:00<00:00, 2363.42it/s, Materializing param=encoder.layer.11.output.LayerNorm.weight]Loading weights:  98%|█████████▊| 195/199 [00:00<00:00, 2360.63it/s, Materializing param=encoder.layer.11.output.LayerNorm.weight]Loading weights:  98%|█████████▊| 196/199 [00:00<00:00, 2365.53it/s, Materializing param=encoder.layer.11.output.dense.bias]      Loading weights:  98%|█████████▊| 196/199 [00:00<00:00, 2361.48it/s, Materializing param=encoder.layer.11.output.dense.bias]Loading weights:  99%|█████████▉| 197/199 [00:00<00:00, 2366.65it/s, Materializing param=encoder.layer.11.output.dense.weight]Loading weights:  99%|█████████▉| 197/199 [00:00<00:00, 2363.54it/s, Materializing param=encoder.layer.11.output.dense.weight]Loading weights:  99%|█████████▉| 198/199 [00:00<00:00, 2370.12it/s, Materializing param=pooler.dense.bias]                   Loading weights:  99%|█████████▉| 198/199 [00:00<00:00, 2366.92it/s, Materializing param=pooler.dense.bias]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 2374.56it/s, Materializing param=pooler.dense.weight]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 2370.15it/s, Materializing param=pooler.dense.weight]Loading weights: 100%|██████████| 199/199 [00:00<00:00, 2361.66it/s, Materializing param=pooler.dense.weight]
+openresearch-ai  | [1mBertModel LOAD REPORT[0m from: allenai/specter2_base
+openresearch-ai  | Key                     | Status     |  | 
+openresearch-ai  | ------------------------+------------+--+-
+openresearch-ai  | embeddings.position_ids | UNEXPECTED |  | 
+openresearch-ai  | 
+openresearch-ai  | [3mNotes:
+openresearch-ai  | - UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+openresearch-ai  |   ✅  Embedding model ready (12.5s)
+openresearch-ai  | 
+openresearch-ai  | [3/5]  Connecting to database …
+openresearch-ai  |   ✅  Database connected (0.3s)
+openresearch-ai  | 
+openresearch-ai  | [4/5]  Connecting to vector store …
+openresearch-ai  |   ✅  Vector store connected (0.1s)
+openresearch-ai  | 
+openresearch-ai  | [5/5]  Initializing agentic orchestration …
+openresearch-ai  |   ✅  Agentic orchestration ready (0.0s)
+openresearch-ai  | 
+openresearch-ai  | ============================================================
+openresearch-ai  |   ✅  5/5 services initialized
+openresearch-ai  |       ✅  Groq AI client (0.3s)
+openresearch-ai  |       ✅  Embedding model (12.5s)
+openresearch-ai  |       ✅  Database (0.3s)
+openresearch-ai  |       ✅  Vector store (0.1s)
+openresearch-ai  |       ✅  Agentic orchestration (0.0s)
+openresearch-ai  | ============================================================
+openresearch-ai  | 
+openresearch-ai  | INFO:     Application startup complete.
+openresearch-ai  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+openresearch-ai  | INFO:     127.0.0.1:45432 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51740 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42634 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37586 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45496 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56698 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60460 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60346 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48558 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57640 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51042 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41478 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58078 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36796 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44786 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52896 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44102 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58524 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52480 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60778 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38076 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55918 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34060 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33694 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45352 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46588 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55088 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49902 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40014 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50002 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42482 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46126 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46790 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:32958 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48244 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51574 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33186 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60238 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38168 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55858 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60922 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56798 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40560 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40854 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43338 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49512 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33422 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54970 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54842 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51484 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34556 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34576 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40036 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50950 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42192 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37554 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42770 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59920 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50258 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52676 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36568 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41962 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34092 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45776 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58458 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43374 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41506 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57178 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56736 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53846 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39922 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49856 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35900 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42740 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52374 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50224 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51168 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48920 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53576 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48312 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51686 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59738 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54794 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50932 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50772 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59544 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49994 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42792 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36000 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54996 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46098 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48560 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51598 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54996 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37930 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37088 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48772 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56108 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47758 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52548 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47054 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40596 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54290 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60968 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42456 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33892 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54904 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33444 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35050 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55864 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52012 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46046 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49636 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58164 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57508 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54768 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49868 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50866 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38402 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40070 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37410 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38568 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57644 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60568 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52038 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59494 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49478 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52940 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37456 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42560 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58484 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46206 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43174 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47486 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37258 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39914 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49466 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39706 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41194 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46604 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48238 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45738 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34452 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34598 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60850 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55858 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54250 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50434 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43606 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55462 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41270 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45120 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48100 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54042 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36768 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37272 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58346 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35256 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39456 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34360 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54326 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51088 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39930 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57094 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36626 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33522 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52168 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47900 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37982 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48358 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57762 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46232 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39896 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57684 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35712 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53974 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38770 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57138 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34568 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35172 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51872 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56060 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50060 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58538 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35636 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44102 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59368 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56810 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46396 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57738 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40096 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36036 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58032 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37658 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53964 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42194 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45236 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52478 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53632 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59284 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51712 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34624 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34220 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33606 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57766 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39686 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45530 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51996 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35084 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45894 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33026 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55592 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33684 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38608 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52444 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46754 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45542 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55710 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49882 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40654 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58672 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36050 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35020 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55120 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36926 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38388 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47160 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57254 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59164 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60754 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45794 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45192 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36204 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41342 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37392 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33616 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38262 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48330 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48538 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42706 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46948 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55624 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57344 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:32804 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42070 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54016 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46964 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48856 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47252 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59740 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53694 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51302 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40938 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50874 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53576 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33068 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38006 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60518 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34232 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43076 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57540 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55084 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53290 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49390 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33850 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34886 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49276 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59558 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46310 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37248 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58390 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:59958 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:59958 - "POST /papers/summarize HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60962 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47744 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41918 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41468 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58612 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50890 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47954 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42086 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43766 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44972 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40972 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42542 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60610 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51758 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56172 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59806 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41836 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35092 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52938 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34764 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55924 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49572 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52556 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44136 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:39078 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58788 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41370 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57024 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:53948 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:53948 - "POST /papers/summarize HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47692 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36658 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41358 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58258 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43282 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53160 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60794 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50146 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41002 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:58218 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:58218 - "POST /papers/summarize HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43274 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34718 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59382 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38052 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51184 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41612 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40412 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42382 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49380 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43386 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:53736 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55566 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43858 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37906 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | DeepAgent stream execution failed: Failed to call a function. Please adjust your prompt. See 'failed_generation' for more details.
+openresearch-ai  | Traceback (most recent call last):
+openresearch-ai  |   File "/app/app/agentic.py", line 1648, in stream_task_events
+openresearch-ai  |     async for event in agent.astream_events(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1516, in astream_events
+openresearch-ai  |     async for event in event_stream:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 1100, in _astream_events_implementation_v2
+openresearch-ai  |     await task
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 1055, in consume_astream
+openresearch-ai  |     async for _ in event_streamer.tap_output_aiter(run_id, stream):
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 222, in tap_output_aiter
+openresearch-ai  |     async for chunk in output:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2974, in astream
+openresearch-ai  |     async for _ in runner.atick(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/pregel/_runner.py", line 304, in atick
+openresearch-ai  |     await arun_with_retry(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/pregel/_retry.py", line 133, in arun_with_retry
+openresearch-ai  |     async for _ in task.proc.astream(task.input, config):
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 839, in astream
+openresearch-ai  |     output = await asyncio.create_task(
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 904, in _consume_aiter
+openresearch-ai  |     async for chunk in it:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 199, in tap_output_aiter
+openresearch-ai  |     first = await anext(output, sentinel)
+openresearch-ai  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1589, in atransform
+openresearch-ai  |     async for ichunk in input:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1589, in atransform
+openresearch-ai  |     async for ichunk in input:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1170, in astream
+openresearch-ai  |     yield await self.ainvoke(input, config, **kwargs)
+openresearch-ai  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 464, in ainvoke
+openresearch-ai  |     ret = await asyncio.create_task(coro, context=context)
+openresearch-ai  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/prebuilt/chat_agent_executor.py", line 707, in acall_model
+openresearch-ai  |     response = cast(AIMessage, await static_model.ainvoke(model_input, config))  # type: ignore[union-attr]
+openresearch-ai  |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3197, in ainvoke
+openresearch-ai  |     input_ = await coro_with_context(part(), context, create_task=True)
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 5708, in ainvoke
+openresearch-ai  |     return await self.bound.ainvoke(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 425, in ainvoke
+openresearch-ai  |     llm_result = await self.agenerate_prompt(
+openresearch-ai  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1134, in agenerate_prompt
+openresearch-ai  |     return await self.agenerate(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1092, in agenerate
+openresearch-ai  |     raise exceptions[0]
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1318, in _agenerate_with_cache
+openresearch-ai  |     async for chunk in self._astream(messages, stop=stop, **kwargs):
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_groq/chat_models.py", line 709, in _astream
+openresearch-ai  |     async for chunk in await self.async_client.create(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/_streaming.py", line 146, in __aiter__
+openresearch-ai  |     async for item in self._iterator:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/_streaming.py", line 192, in __stream__
+openresearch-ai  |     raise APIError(
+openresearch-ai  | groq.APIError: Failed to call a function. Please adjust your prompt. See 'failed_generation' for more details.
+openresearch-ai  | During task with name 'agent' and id '472adb72-a977-cba2-cb13-5f6aa2ec54ea'
+openresearch-ai  | INFO:     172.18.0.2:53736 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35822 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40276 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:53736 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56034 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38122 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:53736 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:33552 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48134 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:33552 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:33552 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45922 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:33552 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40222 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:34286 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55798 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | _tool_plan_research failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5030, Requested 3074. Please try again in 21.04s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | Traceback (most recent call last):
+openresearch-ai  |   File "/app/app/agentic.py", line 1099, in _tool_plan_research
+openresearch-ai  |     raw = await self._call_llm(system_prompt, user_prompt)
+openresearch-ai  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 193, in async_wrapped
+openresearch-ai  |     return await copy(fn, *args, **kwargs)
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+openresearch-ai  |     do = await self.iter(retry_state=retry_state)
+openresearch-ai  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+openresearch-ai  |     result = await action(retry_state)
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, in inner
+openresearch-ai  |     return call(*args, **kwargs)
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 393, in <lambda>
+openresearch-ai  |     self._add_action_func(lambda rs: rs.outcome.result())
+openresearch-ai  |                                      ^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+openresearch-ai  |     return self.__get_result()
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+openresearch-ai  |     raise self._exception
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+openresearch-ai  |     result = await fn(*args, **kwargs)
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/app/app/agentic.py", line 204, in _call_llm
+openresearch-ai  |     response = await asyncio.wait_for(
+openresearch-ai  |                ^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+openresearch-ai  |     return await fut
+openresearch-ai  |            ^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 425, in ainvoke
+openresearch-ai  |     llm_result = await self.agenerate_prompt(
+openresearch-ai  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1134, in agenerate_prompt
+openresearch-ai  |     return await self.agenerate(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1092, in agenerate
+openresearch-ai  |     raise exceptions[0]
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1361, in _agenerate_with_cache
+openresearch-ai  |     result = await self._agenerate(
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_groq/chat_models.py", line 642, in _agenerate
+openresearch-ai  |     response = await self.async_client.create(messages=message_dicts, **params)
+openresearch-ai  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/resources/chat/completions.py", line 941, in create
+openresearch-ai  |     return await self._post(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/_base_client.py", line 1762, in post
+openresearch-ai  |     return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/_base_client.py", line 1576, in request
+openresearch-ai  |     raise self._make_status_error_from_response(err.response) from None
+openresearch-ai  | groq.RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5030, Requested 3074. Please try again in 21.04s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | INFO:     172.18.0.2:33552 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36256 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | Failed to summarize source 6 (0d35140a-c492-540f-a996-6c78651fbdac): Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5948, Requested 200. Please try again in 1.48s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | Failed to summarize source 8 (0d35140a-c492-540f-a996-6c78651fbdac): Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5948, Requested 200. Please try again in 1.48s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | INFO:     127.0.0.1:53648 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | DeepAgent stream execution failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5507, Requested 2907. Please try again in 24.14s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | Traceback (most recent call last):
+openresearch-ai  |   File "/app/app/agentic.py", line 1648, in stream_task_events
+openresearch-ai  |     async for event in agent.astream_events(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1516, in astream_events
+openresearch-ai  |     async for event in event_stream:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 1100, in _astream_events_implementation_v2
+openresearch-ai  |     await task
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 1055, in consume_astream
+openresearch-ai  |     async for _ in event_streamer.tap_output_aiter(run_id, stream):
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 222, in tap_output_aiter
+openresearch-ai  |     async for chunk in output:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2974, in astream
+openresearch-ai  |     async for _ in runner.atick(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/pregel/_runner.py", line 304, in atick
+openresearch-ai  |     await arun_with_retry(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/pregel/_retry.py", line 133, in arun_with_retry
+openresearch-ai  |     async for _ in task.proc.astream(task.input, config):
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 839, in astream
+openresearch-ai  |     output = await asyncio.create_task(
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 904, in _consume_aiter
+openresearch-ai  |     async for chunk in it:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 199, in tap_output_aiter
+openresearch-ai  |     first = await anext(output, sentinel)
+openresearch-ai  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1589, in atransform
+openresearch-ai  |     async for ichunk in input:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1589, in atransform
+openresearch-ai  |     async for ichunk in input:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1170, in astream
+openresearch-ai  |     yield await self.ainvoke(input, config, **kwargs)
+openresearch-ai  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 464, in ainvoke
+openresearch-ai  |     ret = await asyncio.create_task(coro, context=context)
+openresearch-ai  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/prebuilt/chat_agent_executor.py", line 707, in acall_model
+openresearch-ai  |     response = cast(AIMessage, await static_model.ainvoke(model_input, config))  # type: ignore[union-attr]
+openresearch-ai  |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3197, in ainvoke
+openresearch-ai  |     input_ = await coro_with_context(part(), context, create_task=True)
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 5708, in ainvoke
+openresearch-ai  |     return await self.bound.ainvoke(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 425, in ainvoke
+openresearch-ai  |     llm_result = await self.agenerate_prompt(
+openresearch-ai  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1134, in agenerate_prompt
+openresearch-ai  |     return await self.agenerate(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1092, in agenerate
+openresearch-ai  |     raise exceptions[0]
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1318, in _agenerate_with_cache
+openresearch-ai  |     async for chunk in self._astream(messages, stop=stop, **kwargs):
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_groq/chat_models.py", line 709, in _astream
+openresearch-ai  |     async for chunk in await self.async_client.create(
+openresearch-ai  |                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/resources/chat/completions.py", line 941, in create
+openresearch-ai  |     return await self._post(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/_base_client.py", line 1762, in post
+openresearch-ai  |     return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/_base_client.py", line 1576, in request
+openresearch-ai  |     raise self._make_status_error_from_response(err.response) from None
+openresearch-ai  | groq.RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5507, Requested 2907. Please try again in 24.14s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | During task with name 'agent' and id '7819f129-13bc-0216-4bde-c929465f8567'
+openresearch-ai  | INFO:     172.18.0.2:38938 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46152 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54980 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:38938 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41538 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:38938 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:55280 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36180 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57422 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | _tool_fact_check failed: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5406, Requested 2342. Please try again in 17.48s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | Traceback (most recent call last):
+openresearch-ai  |   File "/app/app/agentic.py", line 927, in _tool_fact_check
+openresearch-ai  |     raw = await self._call_llm(system_prompt, user_prompt)
+openresearch-ai  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 193, in async_wrapped
+openresearch-ai  |     return await copy(fn, *args, **kwargs)
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 112, in __call__
+openresearch-ai  |     do = await self.iter(retry_state=retry_state)
+openresearch-ai  |          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 157, in iter
+openresearch-ai  |     result = await action(retry_state)
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, in inner
+openresearch-ai  |     return call(*args, **kwargs)
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 393, in <lambda>
+openresearch-ai  |     self._add_action_func(lambda rs: rs.outcome.result())
+openresearch-ai  |                                      ^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in result
+openresearch-ai  |     return self.__get_result()
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in __get_result
+openresearch-ai  |     raise self._exception
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", line 116, in __call__
+openresearch-ai  |     result = await fn(*args, **kwargs)
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/app/app/agentic.py", line 204, in _call_llm
+openresearch-ai  |     response = await asyncio.wait_for(
+openresearch-ai  |                ^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+openresearch-ai  |     return await fut
+openresearch-ai  |            ^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 425, in ainvoke
+openresearch-ai  |     llm_result = await self.agenerate_prompt(
+openresearch-ai  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1134, in agenerate_prompt
+openresearch-ai  |     return await self.agenerate(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1092, in agenerate
+openresearch-ai  |     raise exceptions[0]
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1361, in _agenerate_with_cache
+openresearch-ai  |     result = await self._agenerate(
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_groq/chat_models.py", line 642, in _agenerate
+openresearch-ai  |     response = await self.async_client.create(messages=message_dicts, **params)
+openresearch-ai  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/resources/chat/completions.py", line 941, in create
+openresearch-ai  |     return await self._post(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/_base_client.py", line 1762, in post
+openresearch-ai  |     return await self.request(cast_to, opts, stream=stream, stream_cls=stream_cls)
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/_base_client.py", line 1576, in request
+openresearch-ai  |     raise self._make_status_error_from_response(err.response) from None
+openresearch-ai  | groq.RateLimitError: Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5406, Requested 2342. Please try again in 17.48s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | INFO:     172.18.0.2:38938 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59678 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:38938 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48176 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:38938 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34788 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:38938 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33446 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:38938 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | Failed to summarize source 4 (0d35140a-c492-540f-a996-6c78651fbdac): Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5945, Requested 206. Please try again in 1.51s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | Failed to summarize source 3 (0d35140a-c492-540f-a996-6c78651fbdac): Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5945, Requested 200. Please try again in 1.45s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | Failed to summarize source 5 (0d35140a-c492-540f-a996-6c78651fbdac): Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5936, Requested 200. Please try again in 1.36s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | Failed to summarize source 9 (0d35140a-c492-540f-a996-6c78651fbdac): Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5826, Requested 200. Please try again in 260ms. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | Failed to summarize source 8 (0d35140a-c492-540f-a996-6c78651fbdac): Error code: 429 - {'error': {'message': 'Rate limit reached for model `llama-3.1-8b-instant` in organization `org_01jnzbwaptee1s9tnfbn21hknk` service tier `on_demand` on tokens per minute (TPM): Limit 6000, Used 5907, Requested 206. Please try again in 1.13s. Need more tokens? Upgrade to Dev Tier today at https://console.groq.com/settings/billing', 'type': 'tokens', 'code': 'rate_limit_exceeded'}}
+openresearch-ai  | INFO:     127.0.0.1:52798 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43102 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52834 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46016 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46032 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40010 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36200 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47336 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43602 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40550 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50822 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40304 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:47504 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55320 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45866 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51262 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | DeepAgent stream execution failed: Failed to call a function. Please adjust your prompt. See 'failed_generation' for more details.
+openresearch-ai  | Traceback (most recent call last):
+openresearch-ai  |   File "/app/app/agentic.py", line 1648, in stream_task_events
+openresearch-ai  |     async for event in agent.astream_events(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1516, in astream_events
+openresearch-ai  |     async for event in event_stream:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 1100, in _astream_events_implementation_v2
+openresearch-ai  |     await task
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 1055, in consume_astream
+openresearch-ai  |     async for _ in event_streamer.tap_output_aiter(run_id, stream):
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 222, in tap_output_aiter
+openresearch-ai  |     async for chunk in output:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/pregel/main.py", line 2974, in astream
+openresearch-ai  |     async for _ in runner.atick(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/pregel/_runner.py", line 304, in atick
+openresearch-ai  |     await arun_with_retry(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/pregel/_retry.py", line 133, in arun_with_retry
+openresearch-ai  |     async for _ in task.proc.astream(task.input, config):
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 839, in astream
+openresearch-ai  |     output = await asyncio.create_task(
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 904, in _consume_aiter
+openresearch-ai  |     async for chunk in it:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/tracers/event_stream.py", line 199, in tap_output_aiter
+openresearch-ai  |     first = await anext(output, sentinel)
+openresearch-ai  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1589, in atransform
+openresearch-ai  |     async for ichunk in input:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1589, in atransform
+openresearch-ai  |     async for ichunk in input:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 1170, in astream
+openresearch-ai  |     yield await self.ainvoke(input, config, **kwargs)
+openresearch-ai  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/_internal/_runnable.py", line 464, in ainvoke
+openresearch-ai  |     ret = await asyncio.create_task(coro, context=context)
+openresearch-ai  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langgraph/prebuilt/chat_agent_executor.py", line 707, in acall_model
+openresearch-ai  |     response = cast(AIMessage, await static_model.ainvoke(model_input, config))  # type: ignore[union-attr]
+openresearch-ai  |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 3197, in ainvoke
+openresearch-ai  |     input_ = await coro_with_context(part(), context, create_task=True)
+openresearch-ai  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/runnables/base.py", line 5708, in ainvoke
+openresearch-ai  |     return await self.bound.ainvoke(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 425, in ainvoke
+openresearch-ai  |     llm_result = await self.agenerate_prompt(
+openresearch-ai  |                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1134, in agenerate_prompt
+openresearch-ai  |     return await self.agenerate(
+openresearch-ai  |            ^^^^^^^^^^^^^^^^^^^^^
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1092, in agenerate
+openresearch-ai  |     raise exceptions[0]
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/chat_models.py", line 1318, in _agenerate_with_cache
+openresearch-ai  |     async for chunk in self._astream(messages, stop=stop, **kwargs):
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/langchain_groq/chat_models.py", line 709, in _astream
+openresearch-ai  |     async for chunk in await self.async_client.create(
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/_streaming.py", line 146, in __aiter__
+openresearch-ai  |     async for item in self._iterator:
+openresearch-ai  |   File "/usr/local/lib/python3.12/site-packages/groq/_streaming.py", line 192, in __stream__
+openresearch-ai  |     raise APIError(
+openresearch-ai  | groq.APIError: Failed to call a function. Please adjust your prompt. See 'failed_generation' for more details.
+openresearch-ai  | During task with name 'agent' and id 'b75586b1-682d-27a8-9187-8b51caaf0ea1'
+openresearch-ai  | INFO:     127.0.0.1:44876 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:59900 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44590 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40182 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:58022 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:38712 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:52994 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56794 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34024 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | ArXiv search failed for 'comparison of neighborhood attention and self attention speed': 
+openresearch-ai  | INFO:     127.0.0.1:47156 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | ArXiv search failed for 'attention mechanism neighborhood vs global': 
+openresearch-ai  | ArXiv search failed for 'neighborhood attention speed comparison': Client error '429 Unknown Error' for url 'https://export.arxiv.org/api/query?search_query=all%3A%28neighborhood+AND+attention+AND+speed+AND+comparison%29&start=0&max_results=3&sortBy=relevance&sortOrder=descending'
+openresearch-ai  | For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
+openresearch-ai  | INFO:     127.0.0.1:52508 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:33554 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46908 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | ArXiv search failed for 'innovative AI methods in scientific studies': [Errno -2] Name or service not known
+openresearch-ai  | ArXiv search failed for 'originality of AI applications in academic papers': Client error '429 Unknown Error' for url 'https://export.arxiv.org/api/query?search_query=all%3A%28originality+AND+AI+AND+applications+AND+academic+AND+papers%29&start=0&max_results=3&sortBy=relevance&sortOrder=descending'
+openresearch-ai  | For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
+openresearch-ai  | INFO:     127.0.0.1:52094 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:43812 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36876 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | ArXiv search failed for 'tips for presenting data analysis results': 
+openresearch-ai  | INFO:     127.0.0.1:36588 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35528 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:41562 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:53240 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44940 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:55036 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:55712 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | ArXiv search failed for 'sparse attention experiments': 
+openresearch-ai  | INFO:     127.0.0.1:52950 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | ArXiv search failed for 'sparse attention mechanisms for natural language processing': Client error '429 Too Many Requests' for url 'https://export.arxiv.org/api/query?search_query=all%3A%28sparse+AND+attention+AND+mechanisms+AND+natural+AND+language+AND+processing%29&start=0&max_results=3&sortBy=relevance&sortOrder=descending'
+openresearch-ai  | For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429
+openresearch-ai  | INFO:     127.0.0.1:36074 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | ArXiv search failed for 'sparse attention experiments': 
+openresearch-ai  | INFO:     127.0.0.1:55080 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | ArXiv search failed for 'sparse attention methodologies': 
+openresearch-ai  | INFO:     127.0.0.1:45322 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41302 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     172.18.0.2:37452 - "POST /agentic/stream HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48644 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47594 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40884 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48838 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46858 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46248 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42728 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:33536 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50254 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42080 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41320 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36942 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48270 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37028 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41370 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44708 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49408 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:32996 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54732 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59408 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:47850 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51170 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:52610 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56168 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37100 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34026 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:49536 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48422 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34008 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:40594 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:35962 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54028 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:46614 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:44618 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56460 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45248 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:41130 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:34712 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:36270 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:37522 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50040 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:48246 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42402 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57794 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54630 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:60280 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:50078 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58290 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:56172 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58834 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43612 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57356 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:42248 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45088 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:54262 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:57520 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:58218 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:45136 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:59346 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:43770 - "GET /health HTTP/1.1" 200 OK
+openresearch-ai  | INFO:     127.0.0.1:51344 - "GET /health HTTP/1.1" 200 OK

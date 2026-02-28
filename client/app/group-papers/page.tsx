@@ -103,13 +103,14 @@ function GroupPapersPageContent() {
     }
   };
 
-  const handleSummarize = async () => {
-    if (!accessToken || !groupId || !selectedPaper) return;
+  const handleSummarize = async (paperIdParam?: string) => {
+    const targetPaperId = paperIdParam || selectedPaper?.paperId;
+    if (!accessToken || !groupId || !targetPaperId) return;
 
     try {
       setIsAsking(true);
       setQaResponse(null);
-      const response = await api.summarizePaper(accessToken, groupId, selectedPaper.paperId);
+      const response = await api.summarizePaper(accessToken, groupId, targetPaperId);
       setQaResponse({
         summary: response.summary,
         keyPoints: response.key_points
@@ -127,12 +128,7 @@ function GroupPapersPageContent() {
     setQaResponse(null);
     setQuestion('');
     if (mode === 'summarize') {
-      // Auto-trigger summarization
-      setTimeout(() => {
-        if (mode === 'summarize') {
-          handleSummarize();
-        }
-      }, 100);
+      handleSummarize(paper.paperId);
     }
   };
 

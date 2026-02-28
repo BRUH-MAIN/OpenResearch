@@ -1,0 +1,6 @@
+﻿openresearch-client  |    Γû▓ Next.js 16.0.6
+openresearch-client  |    - Local:         http://localhost:3000
+openresearch-client  |    - Network:       http://0.0.0.0:3000
+openresearch-client  | 
+openresearch-client  |  Γ£ô Starting...
+openresearch-client  |  Γ£ô Ready in 184ms

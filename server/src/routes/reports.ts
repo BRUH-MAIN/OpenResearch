@@ -75,6 +75,7 @@ router.post('/group/:groupId/generate', reportLimiter, async (req: AuthRequest, 
     try {
       const reportResponse = await aiClient.generateReport({
         group_id: groupId,
+        user_id: userId,
         report_type: reportType || 'weekly',
         date_range: dateRange,
         sections: sections || ['overview', 'papers', 'discussions', 'insights'],
