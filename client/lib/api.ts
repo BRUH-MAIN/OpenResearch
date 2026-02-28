@@ -399,8 +399,25 @@ class ApiClient {
     });
   }
 
-  getReportDownloadUrl(reportId: string): string {
-    return `${this.baseUrl}/api/reports/${reportId}/download`;
+  async downloadReport(token: string, reportId: string): Promise<void> {
+    const url = `${this.baseUrl}/api/reports/${reportId}/download`;
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.statusText}`);
+    }
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = blobUrl;
+    const disposition = response.headers.get('Content-Disposition');
+    const filenameMatch = disposition?.match(/filename="?(.+?)"?$/);
+    a.download = filenameMatch?.[1] || `report-${reportId}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(blobUrl);
   }
 }
 

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuthStore } from '@/lib/auth';
+import { useAuthStore, waitForHydration } from '@/lib/auth';
 import { api } from '@/lib/api';
 
 interface AuthContextType {
@@ -30,6 +30,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     async function checkAuth() {
+      // Wait for Zustand persist to rehydrate from localStorage
+      // This prevents premature redirects before tokens are loaded
+      await waitForHydration();
+
+      // Re-read token after hydration (may have changed)
+      const currentToken = useAuthStore.getState().accessToken;
+
       // Skip auth check for public routes
       if (publicRoutes.includes(pathname)) {
         setIsLoading(false);
@@ -37,9 +44,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // If we have a token, try to get user info
-      if (accessToken) {
+      if (currentToken) {
         try {
-          const user = await api.getMe(accessToken);
+          const user = await api.getMe(currentToken);
           setUser(user);
           setIsLoading(false);
           return;

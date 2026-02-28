@@ -191,7 +191,7 @@ Vector embeddings for group-isolated RAG.
 | `content_id` | TEXT | Reference to source artifact |
 | `chunk_index` | INTEGER | Chunk number for large content |
 | `content` | TEXT | Text content |
-| `embedding` | VECTOR(1536) | OpenAI embedding vector |
+| `embedding` | VECTOR(768) | SPECTER2 embedding vector |
 | `metadata` | JSONB | Additional metadata |
 | `created_at` | TIMESTAMP | Creation time |
 
@@ -430,13 +430,13 @@ Critical indexes for performance:
 ### Vector Store Size
 
 Estimated storage per vector:
-- Vector (1536 dim float32): ~6 KB
+- Vector (768 dim float32): ~3 KB
 - Content text: varies
 - Metadata: ~1 KB
-- **Total per vector**: ~8-10 KB
+- **Total per vector**: ~5-7 KB
 
 For 10,000 papers with 5 chunks each:
-- 50,000 vectors × 10 KB = ~500 MB
+- 50,000 vectors × 7 KB = ~350 MB
 
 ## Backup
 

@@ -290,9 +290,9 @@ class TestEmbeddingsEndpoint:
             assert response.status_code in [200, 500, 503]
 
     def test_embeddings_returns_correct_dimensions(self):
-        """Test embeddings returns 1536-dimensional vector"""
+        """Test embeddings returns 768-dimensional vector (SPECTER2)"""
         with patch("app.main.embedding_service") as mock_es:
-            expected_embedding = [0.1] * 1536
+            expected_embedding = [0.1] * 768
             mock_es.generate_embedding = AsyncMock(return_value=expected_embedding)
 
             response = client.post(
@@ -305,7 +305,7 @@ class TestEmbeddingsEndpoint:
             if response.status_code == 200:
                 data = response.json()
                 assert "embedding" in data
-                assert len(data["embedding"]) == 1536
+                assert len(data["embedding"]) == 768
 
 
 class TestVectorSearchEndpoint:
@@ -375,11 +375,12 @@ class TestInputValidation:
 
     def test_missing_required_fields(self):
         """Test missing required fields are rejected"""
+        # user_id is now optional, but prompt is still required
         response = client.post(
             f"/groups/{GROUP_ID}/ai-chat",
             json={
-                "prompt": "@ai test",
-                # Missing user_id
+                # Missing prompt (required)
+                "user_id": USER_ID,
             },
         )
         assert response.status_code == 422

@@ -84,8 +84,8 @@ class TestClassifyIntent:
     @patch("app.intent_classifier._initialized", False)
     @patch("app.intent_classifier._intent_embeddings", {})
     def test_classify_returns_none_when_not_initialized(self, mock_emb):
-        mock_emb.is_initialized = False
-        mock_emb.generate_embedding_sync.return_value = None
+        mock_emb.is_configured = False
+        mock_emb._sync_embed.return_value = None
         intent, score, phrase = classify_intent("@ai find papers about NLP")
         assert intent is None
         assert score == 0.0
@@ -107,7 +107,7 @@ class TestClassifyIntent:
             "paper_retrieval": [known_vec],
             "deep_research": [np.array([0.0, 1.0, 0.0])],
         }):
-            mock_emb.generate_embedding_sync.return_value = [1.0, 0.0, 0.0]
+            mock_emb._sync_embed.return_value = [1.0, 0.0, 0.0]
             intent, score, phrase = classify_intent("@ai find papers about NLP")
             assert intent == "paper_retrieval"
             assert score >= INTENT_THRESHOLD
@@ -120,7 +120,7 @@ class TestClassifyIntent:
             "paper_retrieval": [np.array([1.0, 0.0, 0.0])],
         }):
             # Orthogonal vector → similarity ≈ 0
-            mock_emb.generate_embedding_sync.return_value = [0.0, 1.0, 0.0]
+            mock_emb._sync_embed.return_value = [0.0, 1.0, 0.0]
             intent, score, phrase = classify_intent("@ai completely unrelated query")
             assert intent is None
             assert score < INTENT_THRESHOLD

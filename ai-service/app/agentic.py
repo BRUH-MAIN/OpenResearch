@@ -180,7 +180,7 @@ class AgenticService:
     @retry(
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=1, max=10),
-        retry=retry_if_exception_type((ConnectionError, TimeoutError, asyncio.TimeoutError)),
+        retry=retry_if_exception_type(ConnectionError),
     )
     async def _call_llm(
         self,
@@ -528,51 +528,73 @@ class AgenticService:
             })
 
         # 1) Vector store search (hybrid: vector + BM25 + RRF)
-        if vector_store.is_connected and group_id:
-            for sq in sub_queries[:5]:
-                try:
-                    results = await vector_store.hybrid_search_group_vectors(
-                        group_id=group_id, query=str(sq), limit=5
-                    )
-                    for res in results:
-                        _add(
-                            title=res.get("title", res.get("paper_id", "DB Chunk")),
-                            url=res.get("url", ""),
-                            snippet=res.get("content", ""),
-                            src_type="vector_store",
-                        )
-                except Exception as exc:
-                    logger.warning("Hybrid search failed for %r: %s", sq, exc)
-
         # 2) Web search
-        if include_web:
-            for sq in sub_queries[:3]:
-                try:
-                    web_results = await search_web(query=str(sq), limit=3)
-                    for item in web_results.get("results", []):
-                        _add(
-                            title=item.get("title", ""),
-                            url=item.get("url", ""),
-                            snippet=item.get("snippet", ""),
-                            src_type="web",
-                        )
-                except Exception as exc:
-                    logger.warning("Web search failed for %r: %s", sq, exc)
-
         # 3) ArXiv search
-        if include_arxiv:
-            for sq in sub_queries[:3]:
-                try:
-                    ax_resp = await search_arxiv(query=str(sq), limit=3)
-                    for item in ax_resp.get("papers", []):
-                        _add(
-                            title=item.get("title", ""),
-                            url=item.get("url", item.get("id", "")),
-                            snippet=item.get("abstract", ""),
-                            src_type="arxiv",
+        # Run all three search types in parallel for speed
+        async def _vector_search():
+            results_list = []
+            if vector_store.is_connected and group_id:
+                for sq in sub_queries[:5]:
+                    try:
+                        results = await vector_store.hybrid_search_group_vectors(
+                            group_id=group_id, query=str(sq), limit=5
                         )
-                except Exception as exc:
-                    logger.warning("ArXiv search failed for %r: %s", sq, exc)
+                        for res in results:
+                            results_list.append({
+                                "title": res.get("title", res.get("paper_id", "DB Chunk")),
+                                "url": res.get("url", ""),
+                                "snippet": res.get("content", ""),
+                                "src_type": "vector_store",
+                            })
+                    except Exception as exc:
+                        logger.warning("Hybrid search failed for %r: %s", sq, exc)
+            return results_list
+
+        async def _web_search():
+            results_list = []
+            if include_web:
+                for sq in sub_queries[:3]:
+                    try:
+                        web_results = await search_web(query=str(sq), limit=3)
+                        for item in web_results.get("results", []):
+                            results_list.append({
+                                "title": item.get("title", ""),
+                                "url": item.get("url", ""),
+                                "snippet": item.get("snippet", ""),
+                                "src_type": "web",
+                            })
+                    except Exception as exc:
+                        logger.warning("Web search failed for %r: %s", sq, exc)
+            return results_list
+
+        async def _arxiv_search():
+            results_list = []
+            if include_arxiv:
+                for sq in sub_queries[:3]:
+                    try:
+                        ax_resp = await search_arxiv(query=str(sq), limit=3)
+                        for item in ax_resp.get("papers", []):
+                            results_list.append({
+                                "title": item.get("title", ""),
+                                "url": item.get("url", item.get("id", "")),
+                                "snippet": item.get("abstract", ""),
+                                "src_type": "arxiv",
+                            })
+                    except Exception as exc:
+                        logger.warning("ArXiv search failed for %r: %s", sq, exc)
+            return results_list
+
+        vec_results, web_results, arxiv_results = await asyncio.gather(
+            _vector_search(), _web_search(), _arxiv_search()
+        )
+
+        for item in vec_results + web_results + arxiv_results:
+            _add(
+                title=item["title"],
+                url=item["url"],
+                snippet=item["snippet"],
+                src_type=item["src_type"],
+            )
 
         # 4) Fallback to group papers if nothing found
         if not source_registry and group_id:
@@ -1246,7 +1268,16 @@ class AgenticService:
             elif messages and isinstance(messages[-1], dict):
                 final_response = self._extract_text_from_possible_json(messages[-1].get("content", final_response))
 
+            # Validate that the agent actually used tools (not just internal knowledge)
+            tool_messages = [m for m in messages if hasattr(m, "type") and m.type == "tool"]
             errors = []
+            if not tool_messages:
+                logger.warning(
+                    "[trace=%s] Agent returned response without using any tools — "
+                    "result may be based on internal knowledge only",
+                    trace_id,
+                )
+                errors.append("Agent did not use tools — response may lack grounded sources")
 
         except Exception as exc:
             logger.error("DeepAgent execution failed: %s", exc, exc_info=True)

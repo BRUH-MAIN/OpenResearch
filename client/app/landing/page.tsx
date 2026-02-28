@@ -209,7 +209,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="px-4 py-8 sm:px-6 lg:px-8 bg-[var(--color-bg-tertiary)] text-[var(--color-text-tertiary)] border-t border-[var(--color-border-primary)]">
         <div className="max-w-7xl mx-auto text-center">
-          <p>&copy; 2025 OpenResearch. All rights reserved.</p>
+          <p>&copy; 2026 OpenResearch. All rights reserved.</p>
         </div>
       </footer>
     </div>

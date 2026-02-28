@@ -31,7 +31,6 @@ graph LR
     %% External Systems
     ArXiv([📚 arXiv API])
     GroqAI([🤖 Groq LLM API])
-    OpenAIAPI([🧠 OpenAI Embeddings API])
 
     %% System Boundary
     subgraph OpenResearch ["🔬 OpenResearch System"]
@@ -368,7 +367,6 @@ sequenceDiagram
     participant Server as Express Backend
     participant AI as FastAPI AI Service
     participant Groq as Groq LLM API
-    participant OpenAI as OpenAI Embeddings
     participant DB as PostgreSQL + pgvector
 
     User->>Client: Types message with @ai
@@ -383,8 +381,7 @@ sequenceDiagram
     Socket->>Server: Detect @ai trigger
     Server->>AI: POST /groups/{groupId}/ai-chat
     AI->>AI: Validate @ai trigger
-    AI->>OpenAI: Generate embedding for prompt
-    OpenAI-->>AI: Return embedding vector
+    AI->>AI: Generate embedding for prompt (SPECTER2)
     AI->>DB: Vector similarity search (filtered by groupId)
     DB-->>AI: Return relevant context chunks
     AI->>Groq: Send prompt + RAG context
@@ -406,7 +403,6 @@ sequenceDiagram
     participant Server as Express Backend
     participant ArXiv as arXiv API
     participant AI as FastAPI AI Service
-    participant OpenAI as OpenAI Embeddings
     participant DB as PostgreSQL + pgvector
 
     User->>Client: Enter search query
@@ -429,8 +425,7 @@ sequenceDiagram
     Server->>DB: INSERT into group_papers
     Server->>AI: POST /groups/{groupId}/papers/embed
     AI->>AI: Chunk paper text
-    AI->>OpenAI: Generate embeddings for each chunk
-    OpenAI-->>AI: Return embedding vectors
+    AI->>AI: Generate embeddings for each chunk (SPECTER2)
     AI->>DB: INSERT vectors into group_paper_vectors
     AI-->>Server: Embedding complete
     Server-->>Client: Paper added to group
@@ -547,7 +542,7 @@ graph TB
     subgraph AILayer ["🤖 AI Service — Python 3.12 + FastAPI"]
         AIMain["FastAPI App"]
         GroqClient["Groq LLM Client"]
-        EmbeddingService["Embedding Service<br/>(OpenAI)"]
+        EmbeddingService["Embedding Service<br/>(SPECTER2 Local)"]
         VectorStore["Vector Store<br/>(pgvector)"]
         ReportGen["Report Generator<br/>(ReportLab)"]
         AgenticService["Agentic Orchestration"]
@@ -570,7 +565,6 @@ graph TB
     subgraph ExternalAPIs ["🌐 External APIs"]
         ArXivAPI["arXiv API"]
         GroqAPI["Groq LLM API"]
-        OpenAIAPI["OpenAI<br/>Embeddings API"]
     end
 
     %% Client to Server
@@ -607,7 +601,6 @@ graph TB
 
     %% AI to External
     GroqClient --> GroqAPI
-    EmbeddingService --> OpenAIAPI
     PaperRoutes --> ArXivAPI
 
     %% AI to DB
@@ -654,7 +647,6 @@ graph TB
 
     subgraph ExternalServices ["☁️ External Cloud Services"]
         GroqCloud["Groq Cloud API<br/>(Llama 3.3 70B)"]
-        OpenAICloud["OpenAI API<br/>(text-embedding-3-small)"]
         ArXivService["arXiv.org API"]
     end
 
@@ -671,7 +663,6 @@ graph TB
     Postgres --- Volume
 
     FastAPI -->|"HTTPS"| GroqCloud
-    FastAPI -->|"HTTPS"| OpenAICloud
     MCPServer -->|"HTTPS"| ArXivService
 
     %% Health Checks

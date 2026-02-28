@@ -621,7 +621,7 @@ The system improves through:
 ### PGVector Schema Design
 
 **Papers Collection**:
-- Embedding of full abstract (768 or 1536 dimensions)
+- Embedding of full abstract (768 dimensions, SPECTER2)
 - Embeddings of individual sections
 - Metadata: title, authors, date, venue, citations, DOI
 - Full text if available

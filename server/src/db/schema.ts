@@ -1,10 +1,10 @@
 import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey, boolean, customType } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-// Custom vector type for pgvector
+// Custom vector type for pgvector (SPECTER2 produces 768-dimensional vectors)
 const vector = customType<{ data: number[]; driverData: string }>({
   dataType() {
-    return 'vector(1536)';
+    return 'vector(768)';
   },
   toDriver(value: number[]): string {
     return `[${value.join(',')}]`;

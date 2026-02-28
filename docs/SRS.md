@@ -194,7 +194,7 @@ OpenResearch operates as a standalone web application with the following system 
 
 4. **External API Dependencies**:
    - Groq API for LLM (Llama 3.3 70B)
-   - OpenAI API for text embeddings (1536 dimensions)
+   - SPECTER2 for text embeddings (768 dimensions, local model)
    - arXiv API for paper search
 
 5. **Real-time Communication**: Socket.IO requires persistent WebSocket connections
@@ -205,14 +205,14 @@ OpenResearch operates as a standalone web application with the following system 
 
 **Assumptions:**
 - Users have stable internet connectivity for real-time features
-- External APIs (Groq, OpenAI, arXiv) maintain availability and API compatibility
+- External APIs (Groq, arXiv) maintain availability and API compatibility
 - Users have modern browsers with JavaScript enabled
 - Research papers are publicly accessible via arXiv
 
 **Dependencies:**
 - PostgreSQL 16 with pgvector extension for vector storage
 - Groq API for LLM inference
-- OpenAI API for embedding generation
+- SPECTER2 model for embedding generation (local)
 - arXiv API for paper metadata and search
 
 ---
@@ -249,7 +249,7 @@ OpenResearch operates as a standalone web application with the following system 
 |-----------|----------|-------------|
 | **arXiv API** | REST/HTTP | Search and retrieve academic paper metadata |
 | **Groq API** | REST/HTTP | LLM inference for Q&A and summarization |
-| **OpenAI API** | REST/HTTP | Text embedding generation (1536 dimensions) |
+| **SPECTER2** | Local | Text embedding generation (768 dimensions) |
 | **PostgreSQL** | TCP/IP | Primary data storage with pgvector |
 
 #### 3.1.4 Communications Interfaces
@@ -632,7 +632,7 @@ OpenResearch operates as a standalone web application with the following system 
 | Vector Extension | pgvector | Latest |
 | AI Service | FastAPI (Python) | 3.12+ |
 | LLM Provider | Groq (Llama 3.3 70B) | Latest |
-| Embeddings | OpenAI | text-embedding-3-small |
+| Embeddings | SPECTER2 (local) | 768-dim |
 | PDF Generation | ReportLab | Latest |
 | Testing (Server) | Vitest | Latest |
 | Testing (AI) | pytest | Latest |
