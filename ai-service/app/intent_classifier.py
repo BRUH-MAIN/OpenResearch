@@ -54,6 +54,12 @@ INTENT_PHRASES: dict[str, list[str]] = {
         "what is known about",
         "state of the art in",
         "review the body of work on",
+        "are the latest models based on",
+        "what approaches are used in",
+        "what techniques are common in",
+        "compare different methods for",
+        "what are the main approaches to",
+        "classify the types of",
     ],
     # --- Gap Analysis ---
     "gap_analysis": [
@@ -98,6 +104,9 @@ INTENT_PHRASES: dict[str, list[str]] = {
     "research_mentor": [
         "advise me on",
         "how should I approach",
+        "what are the next steps",
+        "what should I do next",
+        "next steps for this research",
         "mentorship on",
         "guide me through",
         "give me research advice",
@@ -224,5 +233,28 @@ def classify_intent(prompt: str) -> tuple[Optional[str], float, Optional[str]]:
 
     if best_score >= INTENT_THRESHOLD:
         return best_intent, best_score, best_phrase
+
+    # When below threshold, check if we have a close runner-up that
+    # is a safer default.  For instance, if the top match is
+    # fact_check but literature_survey is within 0.05, prefer
+    # literature_survey because it's a more general-purpose agent.
+    _PREFER_OVER: dict[str, list[str]] = {
+        "fact_check": ["literature_survey"],
+    }
+    prefer_candidates = _PREFER_OVER.get(best_intent or "", [])
+    if best_intent and prefer_candidates and best_score >= (INTENT_THRESHOLD - 0.05):
+        # Re-scan for a close runner-up among preferred intents
+        for intent_name, embeddings in _intent_embeddings.items():
+            if intent_name not in prefer_candidates:
+                continue
+            phrases = INTENT_PHRASES[intent_name]
+            for emb, phrase in zip(embeddings, phrases):
+                score = _cosine_similarity(query_vec, emb)
+                if score >= (best_score - 0.05):
+                    logger.info(
+                        "Intent preference override: %s (%.3f) -> %s (%.3f)",
+                        best_intent, best_score, intent_name, score,
+                    )
+                    return intent_name, score, phrase
 
     return None, best_score, None
