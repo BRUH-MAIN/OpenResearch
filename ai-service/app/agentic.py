@@ -134,10 +134,15 @@ class AgenticService:
             "2. DO NOT CALL MULTIPLE TOOLS AT ONCE. Call ONE tool, wait for the result, then evaluate if you need to call another tool.\n"
             "3. If the user asks to find or retrieve papers, you MUST ALWAYS call `_tool_retrieve_papers` FIRST.\n"
             "4. If the user asks for a literature review, survey, or gap analysis, you MUST first call `_tool_retrieve_papers` to get the papers into the database, wait for the result, and THEN call `_tool_survey_literature`.\n"
-            "5. Never hallucinate paper content."
+            "5. Never hallucinate paper content.\n"
+            "6. When presenting retrieved papers, ALWAYS include each paper's title, authors (if available), abstract snippet, and URL directly in your response. "
+            "Do NOT merely refer to tool output — reproduce the key details so the user can see them.\n"
+            "7. If conversation history is provided, use it to understand the user's ongoing research topic. "
+            "Ensure your tool calls and responses stay on that topic."
         )
 
         task_tool_map = {
+            "paper_retrieval": [self._tool_retrieve_papers],
             "literature_survey": [self._tool_retrieve_papers, self._tool_survey_literature],
             "gap_analysis": [self._tool_retrieve_papers, self._tool_survey_literature, self._tool_analyze_gaps],
             "fact_check": [self._tool_fact_check],
@@ -873,10 +878,18 @@ class AgenticService:
         """Identify research gaps, unresolved debates, and underexplored areas."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Generate sub-queries for gap analysis
+            # Generate sub-queries for gap analysis — include full context so
+            # queries stay on topic when conversation history is present.
             sub_queries = await self._call_llm_json(
-                system_prompt="You are a research strategist. Generate 3-5 focused search queries to find potential research gaps, underexplored areas, and recent developments related to the topic. Return a JSON array of strings.",
-                user_prompt=f"Topic context:\n{literature_review_context[:2000]}",
+                system_prompt=(
+                    "You are a research strategist. Given the research context below "
+                    "(which may include conversation history), generate 3-5 focused "
+                    "search queries to find potential research gaps, underexplored areas, "
+                    "and recent developments related to THE SPECIFIC TOPIC the user is "
+                    "researching. Do NOT generate queries about unrelated topics. "
+                    "Return a JSON array of strings."
+                ),
+                user_prompt=f"Topic context:\n{literature_review_context[:3000]}",
                 temperature=0.2,
             )
             if not isinstance(sub_queries, list):
@@ -916,9 +929,16 @@ class AgenticService:
         """Verify claims against available context. Returns supported, contradicted, or unclear with evidence."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Generate search queries to verify the claim
+            # Generate search queries to verify the claim — include
+            # conversation context so queries remain on the right topic.
             sub_queries = await self._call_llm_json(
-                system_prompt="You are a fact-checking strategist. Generate 3-5 search queries to find evidence that supports or contradicts the given claim. Return a JSON array of strings.",
+                system_prompt=(
+                    "You are a fact-checking strategist. The user's claim may reference "
+                    "an ongoing conversation — use the full context to understand what "
+                    "specific topic and papers they are referring to. Generate 3-5 "
+                    "search queries to find evidence that supports or contradicts the "
+                    "given claim. Return a JSON array of strings."
+                ),
                 user_prompt=f"Claim to verify: {claim}",
                 temperature=0.2,
             )
@@ -958,9 +978,16 @@ class AgenticService:
         """Compare an idea against existing papers and assess novelty."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Generate search queries for prior art
+            # Generate search queries for prior art — include conversation
+            # context so queries find work related to the actual idea.
             sub_queries = await self._call_llm_json(
-                system_prompt="You are a novelty assessment strategist. Generate 3-5 search queries to find existing work similar to the idea. Aim to find overlapping research. Return a JSON array of strings.",
+                system_prompt=(
+                    "You are a novelty assessment strategist. The user's idea may "
+                    "reference an ongoing conversation — use the full context to "
+                    "understand their specific research idea. Generate 3-5 search "
+                    "queries to find existing work similar to the idea. Aim to find "
+                    "overlapping research. Return a JSON array of strings."
+                ),
                 user_prompt=f"Idea to assess: {idea}",
                 temperature=0.2,
             )
@@ -1001,9 +1028,17 @@ class AgenticService:
         """Provide personalized guidance, methodology advice, and next steps."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Generate search queries for resources
+            # Generate search queries for resources — include conversation
+            # context so queries pertain to the actual research topic.
             sub_queries = await self._call_llm_json(
-                system_prompt="You are a research mentor. Generate 3-5 search queries to find helpful resources, methodologies, tutorials, and seminal papers for the student's question. Return a JSON array of strings.",
+                system_prompt=(
+                    "You are a research mentor. The student's question may reference "
+                    "an ongoing conversation — use the full context to understand their "
+                    "specific research topic. Generate 3-5 search queries to find "
+                    "helpful resources, methodologies, tutorials, and seminal papers "
+                    "DIRECTLY relevant to their topic. Do NOT generate generic or "
+                    "unrelated queries. Return a JSON array of strings."
+                ),
                 user_prompt=f"Student question: {query}",
                 temperature=0.2,
             )
@@ -1196,6 +1231,39 @@ class AgenticService:
             return f"Error in deep research: {exc}"
 
     # ------------------------------------------------------------------
+    # Session history helper
+    # ------------------------------------------------------------------
+
+    async def _load_session_history(
+        self,
+        session_id: Optional[str],
+        limit: int = 15,
+    ) -> str:
+        """Load recent session messages and format as a conversation transcript.
+
+        Returns an empty string when no history is available.
+        """
+        if not session_id or not database.is_connected:
+            return ""
+        try:
+            messages = await database.get_session_messages(session_id, limit=limit)
+            if not messages:
+                return ""
+            lines: list[str] = []
+            for msg in messages:
+                role = msg.get("type", "unknown")
+                name = msg.get("user_name") or role
+                # Truncate very long AI responses to keep context window manageable
+                content = msg.get("content", "")
+                if role == "ai" and len(content) > 2000:
+                    content = content[:2000] + "\n... [truncated]"
+                lines.append(f"[{name} ({role})]: {content}")
+            return "\n\n".join(lines)
+        except Exception as exc:
+            logger.warning("Failed to load session history: %s", exc)
+            return ""
+
+    # ------------------------------------------------------------------
     # Public entry point
     # ------------------------------------------------------------------
 
@@ -1232,7 +1300,22 @@ class AgenticService:
             "[trace=%s] Starting task_type=%s", trace_id, effective_task
         )
 
+        # --- Load conversation history from session ---
+        session_id = request.get("session_id")
+        conversation_history = await self._load_session_history(session_id)
+
+        history_block = ""
+        if conversation_history:
+            history_block = (
+                "<conversation_history>\n"
+                "Below is the recent conversation in this session. Use it to "
+                "understand the user's ongoing research topic and prior results.\n\n"
+                f"{conversation_history}\n"
+                "</conversation_history>\n\n"
+            )
+
         user_content = (
+            f"{history_block}"
             f"User request: {raw_prompt}\n\n"
             f"The identified overall objective is '{effective_task}'. "
             f"You MUST use your tools to accomplish this. Do not write the final response until you have used the tools (e.g. use `_tool_retrieve_papers` FIRST, and then `{'_tool_' + effective_task}` if applicable).\n\n"
@@ -1303,11 +1386,34 @@ class AgenticService:
         }
         result_key = key_map.get(effective_task, "result")
 
+        # Store the result as an artifact for future cross-run retrieval
+        artifact_ids = []
+        if final_response and not errors and request.get("group_id"):
+            try:
+                artifact_state: AgentState = {
+                    "group_id": request.get("group_id"),
+                    "session_id": request.get("session_id"),
+                    "user_id": request.get("user_id"),
+                    "prompt": raw_prompt,
+                    "paper_ids": request.get("paper_ids"),
+                }  # type: ignore[typeddict-item]
+                aid = await self._store_artifact(
+                    state=artifact_state,
+                    artifact_type=effective_task,
+                    content=final_response[:8000],
+                    metadata={"trace_id": trace_id, "task_type": effective_task},
+                )
+                if aid:
+                    artifact_ids.append(aid)
+                    logger.info("[trace=%s] Stored artifact %s", trace_id, aid)
+            except Exception as exc:
+                logger.warning("[trace=%s] Failed to store artifact: %s", trace_id, exc)
+
         return {
             "task_type": effective_task,
             "trace_id": trace_id,
             "result": {result_key: final_response},
-            "artifacts": [],
+            "artifacts": artifact_ids,
             "errors": errors,
             "metadata": request.get("options") or {},
             "latency_ms": latency_ms,
@@ -1335,7 +1441,22 @@ class AgenticService:
         trace_id = str(uuid.uuid4())
         logger.info("[trace=%s] Starting stream_task_events for %s", trace_id, effective_task)
 
+        # --- Load conversation history from session ---
+        session_id = request.get("session_id")
+        conversation_history = await self._load_session_history(session_id)
+
+        history_block = ""
+        if conversation_history:
+            history_block = (
+                "<conversation_history>\n"
+                "Below is the recent conversation in this session. Use it to "
+                "understand the user's ongoing research topic and prior results.\n\n"
+                f"{conversation_history}\n"
+                "</conversation_history>\n\n"
+            )
+
         user_content = (
+            f"{history_block}"
             f"User request: {raw_prompt}\n\n"
             f"The identified overall objective is '{effective_task}'. "
             f"You MUST use your tools to accomplish this. Do not write the final response until you have used the tools.\n\n"
@@ -1616,10 +1737,24 @@ class AgenticService:
 
                 yield yield_progress()
 
-                # Phase 1: Generate sub-queries
+                # Phase 1: Generate sub-queries — include conversation context
+                # so the generated queries stay relevant to the user's topic.
+                sub_query_context = f"User request: {query}"
+                if conversation_history:
+                    sub_query_context = (
+                        f"Conversation context (use to understand the research topic):\n"
+                        f"{conversation_history[-1500:]}\n\n"
+                        f"Current user request: {query}"
+                    )
                 sub_queries = await self._call_llm_json(
-                    system_prompt="You are a research strategist. Generate 3-5 focused search queries relevant to the user's request. Return a JSON array of strings.",
-                    user_prompt=f"User request: {query}",
+                    system_prompt=(
+                        "You are a research strategist. Generate 3-5 focused search "
+                        "queries relevant to the user's request. If conversation context "
+                        "is provided, use it to understand the specific topic the user is "
+                        "researching and generate on-topic queries ONLY. "
+                        "Return a JSON array of strings."
+                    ),
+                    user_prompt=sub_query_context,
                     temperature=0.2,
                 )
                 if not isinstance(sub_queries, list):
@@ -1661,14 +1796,24 @@ class AgenticService:
                 # Phase 5: Call the actual agent tool
                 tool_config = {"configurable": {"group_id": group_id, "user_id": request.get("user_id")}}
 
+                # Enrich query with conversation history so downstream tools
+                # are aware of the ongoing research context (prevents off-topic drift).
+                enriched_query = query
+                if conversation_history:
+                    enriched_query = (
+                        f"Conversation context (use this to stay on topic):\n"
+                        f"{conversation_history}\n\n"
+                        f"Current user request: {query}"
+                    )
+
                 tool_map = {
-                    "gap_analysis": lambda: self._tool_analyze_gaps(query, tool_config),
-                    "fact_check": lambda: self._tool_fact_check(query, tool_config),
-                    "novelty_assessment": lambda: self._tool_assess_novelty(query, tool_config),
-                    "research_mentor": lambda: self._tool_provide_mentoring(query, tool_config),
-                    "paper_writing": lambda: self._tool_write_paper_draft(query, tool_config),
-                    "research_planning": lambda: self._tool_plan_research(query, tool_config),
-                    "deep_research": lambda: self._tool_deep_research(query, tool_config),
+                    "gap_analysis": lambda: self._tool_analyze_gaps(enriched_query, tool_config),
+                    "fact_check": lambda: self._tool_fact_check(enriched_query, tool_config),
+                    "novelty_assessment": lambda: self._tool_assess_novelty(enriched_query, tool_config),
+                    "research_mentor": lambda: self._tool_provide_mentoring(enriched_query, tool_config),
+                    "paper_writing": lambda: self._tool_write_paper_draft(enriched_query, tool_config),
+                    "research_planning": lambda: self._tool_plan_research(enriched_query, tool_config),
+                    "deep_research": lambda: self._tool_deep_research(enriched_query, tool_config),
                 }
 
                 tool_fn = tool_map.get(effective_task)
@@ -1723,12 +1868,35 @@ class AgenticService:
         }
         result_key = key_map.get(str(effective_task), "result")
 
+        # Store the result as an artifact for future cross-run retrieval
+        artifact_ids = []
+        if final_response and not errors and request.get("group_id"):
+            try:
+                artifact_state: AgentState = {
+                    "group_id": request.get("group_id"),
+                    "session_id": request.get("session_id"),
+                    "user_id": request.get("user_id"),
+                    "prompt": raw_prompt,
+                    "paper_ids": request.get("paper_ids"),
+                }  # type: ignore[typeddict-item]
+                aid = await self._store_artifact(
+                    state=artifact_state,
+                    artifact_type=effective_task,
+                    content=final_response[:8000],
+                    metadata={"trace_id": trace_id, "task_type": effective_task},
+                )
+                if aid:
+                    artifact_ids.append(aid)
+                    logger.info("[trace=%s] Stored stream artifact %s", trace_id, aid)
+            except Exception as exc:
+                logger.warning("[trace=%s] Failed to store stream artifact: %s", trace_id, exc)
+
         yield json.dumps({
             "type": "complete",
             "task_type": effective_task,
             "trace_id": trace_id,
             "result": {result_key: final_response},
-            "artifacts": [],
+            "artifacts": artifact_ids,
             "errors": errors,
             "metadata": request.get("options") or {},
             "latency_ms": latency_ms,
