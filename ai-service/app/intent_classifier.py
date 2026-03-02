@@ -142,6 +142,29 @@ INTENT_PHRASES: dict[str, list[str]] = {
         "project planning for research",
         "milestone plan for my project",
     ],
+    # --- Methodology Extraction ---
+    "methodology_extraction": [
+        "compare methodologies across papers",
+        "extract study designs",
+        "methodology matrix",
+        "compare sample sizes",
+        "research design comparison",
+        "extract methodology from papers",
+        "what methods were used",
+        "compare statistical approaches",
+        "methodology comparison table",
+    ],
+    # --- Reviewer Anticipation ---
+    "reviewer_anticipation": [
+        "anticipate reviewer critiques",
+        "what would reviewers say",
+        "predict peer review feedback",
+        "reviewer concerns about my research",
+        "prepare for peer review",
+        "what critiques will reviewers raise",
+        "preemptive reviewer response",
+        "anticipate objections to my paper",
+    ],
 }
 
 
@@ -200,61 +223,117 @@ def _clean_prompt(prompt: str) -> str:
     return cleaned
 
 
+def _compute_intent_scores(prompt: str) -> list[tuple[str, float, str]]:
+    """Compute similarity scores for ALL intents against a prompt.
+
+    Returns a sorted list of ``(intent_name, score, matched_phrase)``
+    ordered by descending score.
+    """
+    _ensure_initialized()
+
+    cleaned = _clean_prompt(prompt)
+    if not cleaned:
+        return []
+
+    query_emb = embedding_service._sync_embed(cleaned)
+    if query_emb is None:
+        return []
+
+    query_vec = np.array(query_emb)
+
+    # Collect best score per intent
+    intent_best: dict[str, tuple[float, str]] = {}
+    for intent, embeddings in _intent_embeddings.items():
+        phrases = INTENT_PHRASES[intent]
+        for emb, phrase in zip(embeddings, phrases):
+            score = _cosine_similarity(query_vec, emb)
+            if intent not in intent_best or score > intent_best[intent][0]:
+                intent_best[intent] = (score, phrase)
+
+    ranked = [
+        (intent, score, phrase)
+        for intent, (score, phrase) in intent_best.items()
+    ]
+    ranked.sort(key=lambda x: x[1], reverse=True)
+    return ranked
+
+
+def get_top_k_intents(prompt: str, k: int = 3) -> list[dict]:
+    """Return top-k intent alternatives with scores.
+
+    Each entry: ``{"intent": str, "confidence": float, "phrase": str}``
+    """
+    ranked = _compute_intent_scores(prompt)
+    return [
+        {"intent": r[0], "confidence": round(r[1], 4), "phrase": r[2]}
+        for r in ranked[:k]
+    ]
+
+
+def classify_intent_detailed(prompt: str) -> dict:
+    """Extended intent classification with ambiguity detection.
+
+    Returns a dict with ``intent``, ``confidence``, ``ambiguous``,
+    ``fallback``, ``matched_phrase``, and ``alternatives``.
+    """
+    ranked = _compute_intent_scores(prompt)
+    if not ranked:
+        return {
+            "intent": None,
+            "confidence": 0.0,
+            "ambiguous": False,
+            "fallback": True,
+            "matched_phrase": None,
+            "alternatives": [],
+        }
+
+    best_intent, best_score, best_phrase = ranked[0]
+    is_ambiguous = 0.75 <= best_score < INTENT_THRESHOLD
+    is_fallback = best_score < 0.75
+
+    alternatives = [
+        {"intent": r[0], "confidence": round(r[1], 4)}
+        for r in ranked[1:4]
+    ]
+
+    return {
+        "intent": best_intent if best_score >= 0.75 else None,
+        "confidence": round(best_score, 4),
+        "ambiguous": is_ambiguous,
+        "fallback": is_fallback,
+        "matched_phrase": best_phrase,
+        "alternatives": alternatives,
+    }
+
+
 def classify_intent(prompt: str) -> tuple[Optional[str], float, Optional[str]]:
     """Classify the agentic intent of a prompt.
 
     Returns ``(intent_name, similarity, matched_phrase)`` or
     ``(None, similarity, None)`` if below threshold.
     """
-    _ensure_initialized()
-
-    cleaned = _clean_prompt(prompt)
-    if not cleaned:
+    ranked = _compute_intent_scores(prompt)
+    if not ranked:
         return None, 0.0, None
 
-    query_emb = embedding_service._sync_embed(cleaned)
-    if query_emb is None:
-        return None, 0.0, None
-
-    query_vec = np.array(query_emb)
-
-    best_intent: Optional[str] = None
-    best_score = 0.0
-    best_phrase: Optional[str] = None
-
-    for intent, embeddings in _intent_embeddings.items():
-        phrases = INTENT_PHRASES[intent]
-        for emb, phrase in zip(embeddings, phrases):
-            score = _cosine_similarity(query_vec, emb)
-            if score > best_score:
-                best_score = score
-                best_intent = intent
-                best_phrase = phrase
+    best_intent, best_score, best_phrase = ranked[0]
 
     if best_score >= INTENT_THRESHOLD:
         return best_intent, best_score, best_phrase
 
     # When below threshold, check if we have a close runner-up that
-    # is a safer default.  For instance, if the top match is
-    # fact_check but literature_survey is within 0.05, prefer
-    # literature_survey because it's a more general-purpose agent.
+    # is a safer default.
     _PREFER_OVER: dict[str, list[str]] = {
         "fact_check": ["literature_survey"],
     }
     prefer_candidates = _PREFER_OVER.get(best_intent or "", [])
     if best_intent and prefer_candidates and best_score >= (INTENT_THRESHOLD - 0.05):
-        # Re-scan for a close runner-up among preferred intents
-        for intent_name, embeddings in _intent_embeddings.items():
-            if intent_name not in prefer_candidates:
-                continue
-            phrases = INTENT_PHRASES[intent_name]
-            for emb, phrase in zip(embeddings, phrases):
-                score = _cosine_similarity(query_vec, emb)
-                if score >= (best_score - 0.05):
-                    logger.info(
-                        "Intent preference override: %s (%.3f) -> %s (%.3f)",
-                        best_intent, best_score, intent_name, score,
-                    )
-                    return intent_name, score, phrase
+        for r_intent, r_score, r_phrase in ranked[1:]:
+            if r_intent in prefer_candidates and r_score >= (best_score - 0.05):
+                logger.info(
+                    "Intent preference override: %s (%.3f) -> %s (%.3f)",
+                    best_intent, best_score, r_intent, r_score,
+                )
+                return r_intent, r_score, r_phrase
 
     return None, best_score, None

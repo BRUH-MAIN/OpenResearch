@@ -150,6 +150,7 @@ class VectorStore:
         
         # Always embed title + abstract together as first chunk
         title_abstract = f"{title}\n\n{abstract}"
+        enriched_metadata = {**(metadata or {}), "chunk_type": "title_abstract", "title": title}
         vector_id = await self.insert_vector(
             group_id=group_id,
             paper_id=paper_id,
@@ -157,7 +158,7 @@ class VectorStore:
             content_type="paper",
             content_id=paper_id,
             chunk_index=0,
-            metadata={**(metadata or {}), "chunk_type": "title_abstract"}
+            metadata=enriched_metadata
         )
         if vector_id:
             vector_ids.append(vector_id)
@@ -173,7 +174,7 @@ class VectorStore:
                     content_type="paper",
                     content_id=paper_id,
                     chunk_index=i,
-                    metadata={**(metadata or {}), "chunk_type": "full_text"}
+                    metadata={**(metadata or {}), "chunk_type": "full_text", "title": title}
                 )
                 if vector_id:
                     vector_ids.append(vector_id)
@@ -226,7 +227,7 @@ class VectorStore:
         }
         
         # Build WHERE clauses with proper parameterization
-        where_clauses = ["group_id = :group_id"]
+        where_clauses = ["v.group_id = :group_id"]
         
         # Handle content_types filter - validate allowed values to prevent SQL injection
         ALLOWED_CONTENT_TYPES = {"paper", "qa", "summary", "memory", "report", "chat_response"}
@@ -236,11 +237,11 @@ class VectorStore:
             if valid_types:
                 # Use ANY with array for safe parameterization
                 params["content_types"] = valid_types
-                where_clauses.append("content_type = ANY(:content_types)")
+                where_clauses.append("v.content_type = ANY(:content_types)")
         
         if paper_id:
             params["paper_id"] = paper_id
-            where_clauses.append("paper_id = :paper_id")
+            where_clauses.append("v.paper_id = :paper_id")
         
         where_sql = " AND ".join(where_clauses)
         
@@ -248,18 +249,21 @@ class VectorStore:
             result = await session.execute(
                 text(f"""
                     SELECT 
-                        id,
-                        group_id,
-                        paper_id,
-                        content_type,
-                        content_id,
-                        chunk_index,
-                        content,
-                        metadata,
-                        embedding <=> :query_embedding AS distance
-                    FROM group_paper_vectors
+                        v.id,
+                        v.group_id,
+                        v.paper_id,
+                        v.content_type,
+                        v.content_id,
+                        v.chunk_index,
+                        v.content,
+                        v.metadata,
+                        v.embedding <=> :query_embedding AS distance,
+                        p.title AS paper_title,
+                        p.url AS paper_url
+                    FROM group_paper_vectors v
+                    LEFT JOIN papers p ON v.paper_id::text = p.id::text
                     WHERE {where_sql}
-                    ORDER BY embedding <=> :query_embedding
+                    ORDER BY v.embedding <=> :query_embedding
                     LIMIT :limit
                 """),
                 params
@@ -276,6 +280,8 @@ class VectorStore:
                     "chunk_index": row.chunk_index,
                     "content": row.content,
                     "metadata": row.metadata,
+                    "title": row.paper_title or "",
+                    "url": row.paper_url or "",
                     "similarity": 1 - float(row.distance)  # Convert distance to similarity
                 }
                 for row in rows
@@ -346,6 +352,7 @@ class VectorStore:
         where_sql = " AND ".join(where_clauses)
 
         # Hybrid query using RRF: combine vector rank and BM25 rank
+        # LEFT JOIN papers to enrich results with human-readable title & URL
         hybrid_sql = f"""
             WITH vector_results AS (
                 SELECT
@@ -380,9 +387,12 @@ class VectorStore:
                 (
                     {vector_weight} / ({rrf_k} + v.vector_rank)
                     + {bm25_weight} / ({rrf_k} + COALESCE(b.bm25_rank, :limit * 3 + 1))
-                ) AS rrf_score
+                ) AS rrf_score,
+                p.title AS paper_title,
+                p.url AS paper_url
             FROM vector_results v
             LEFT JOIN bm25_results b ON v.id = b.id
+            LEFT JOIN papers p ON v.paper_id::text = p.id::text
             ORDER BY rrf_score DESC
             LIMIT :limit
         """
@@ -402,6 +412,8 @@ class VectorStore:
                         "chunk_index": row.chunk_index,
                         "content": row.content,
                         "metadata": row.metadata,
+                        "title": row.paper_title or "",
+                        "url": row.paper_url or "",
                         "similarity": 1 - float(row.vector_distance),
                         "bm25_score": float(row.bm25_score),
                         "rrf_score": float(row.rrf_score),

@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey, boolean, customType } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey, boolean, real, customType } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Custom vector type for pgvector (SPECTER2 produces 768-dimensional vectors)
@@ -356,6 +356,43 @@ export const groupReports = pgTable('group_reports', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
+// Methodology Matrices - stores structured methodology comparisons
+export const methodologyMatrices = pgTable('methodology_matrices', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+  query: text('query').notNull(),
+  rows: jsonb('rows').$type<Array<Record<string, string>>>().notNull(),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Claim Lineage Nodes - claim provenance tracking
+export const claimLineageNodes = pgTable('claim_lineage_nodes', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+  nodeType: varchar('node_type', { length: 50 }).notNull(), // 'claim' | 'source' | 'synthesis'
+  label: text('label').notNull(),
+  content: text('content'),
+  sourceUrl: text('source_url'),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
+// Claim Lineage Edges - directed edges between claim nodes
+export const claimLineageEdges = pgTable('claim_lineage_edges', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+  sourceNodeId: uuid('source_node_id').notNull().references(() => claimLineageNodes.id, { onDelete: 'cascade' }),
+  targetNodeId: uuid('target_node_id').notNull().references(() => claimLineageNodes.id, { onDelete: 'cascade' }),
+  edgeType: varchar('edge_type', { length: 50 }).notNull(), // 'supports' | 'contradicts' | 'derives_from' | 'cites'
+  weight: real('weight').default(1.0),
+  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+
 // Relations for new tables
 export const groupPapersRelations = relations(groupPapers, ({ one }) => ({
   group: one(groups, {
@@ -410,5 +447,48 @@ export const groupReportsRelations = relations(groupReports, ({ one }) => ({
   createdByUser: one(users, {
     fields: [groupReports.createdBy],
     references: [users.id],
+  }),
+}));
+
+export const methodologyMatricesRelations = relations(methodologyMatrices, ({ one }) => ({
+  group: one(groups, {
+    fields: [methodologyMatrices.groupId],
+    references: [groups.id],
+  }),
+  session: one(sessions, {
+    fields: [methodologyMatrices.sessionId],
+    references: [sessions.id],
+  }),
+  user: one(users, {
+    fields: [methodologyMatrices.userId],
+    references: [users.id],
+  }),
+}));
+
+export const claimLineageNodesRelations = relations(claimLineageNodes, ({ one }) => ({
+  group: one(groups, {
+    fields: [claimLineageNodes.groupId],
+    references: [groups.id],
+  }),
+  session: one(sessions, {
+    fields: [claimLineageNodes.sessionId],
+    references: [sessions.id],
+  }),
+}));
+
+export const claimLineageEdgesRelations = relations(claimLineageEdges, ({ one }) => ({
+  group: one(groups, {
+    fields: [claimLineageEdges.groupId],
+    references: [groups.id],
+  }),
+  sourceNode: one(claimLineageNodes, {
+    fields: [claimLineageEdges.sourceNodeId],
+    references: [claimLineageNodes.id],
+    relationName: 'sourceNode',
+  }),
+  targetNode: one(claimLineageNodes, {
+    fields: [claimLineageEdges.targetNodeId],
+    references: [claimLineageNodes.id],
+    relationName: 'targetNode',
   }),
 }));

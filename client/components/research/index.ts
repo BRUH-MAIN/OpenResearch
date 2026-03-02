@@ -22,3 +22,18 @@ export type { TimelineEvent } from './WorkspaceTimeline';
 export { WorkspaceExport } from './WorkspaceExport';
 
 export { WorkspaceOutline } from './WorkspaceOutline';
+
+export { IntentBanner } from './IntentBanner';
+export type { IntentBannerProps } from './IntentBanner';
+
+export { MethodologyMatrix } from './MethodologyMatrix';
+export type { MethodologyMatrixProps } from './MethodologyMatrix';
+
+export { ReviewerCritiques } from './ReviewerCritiques';
+export type { ReviewerCritiquesProps } from './ReviewerCritiques';
+
+export { CitationAnchoredText } from './CitationAnchoredText';
+export type { CitationAnchoredTextProps } from './CitationAnchoredText';
+
+export { ClaimLineageGraph } from './ClaimLineageGraph';
+export type { ClaimLineageGraphProps, ClaimNode, ClaimEdge } from './ClaimLineageGraph';

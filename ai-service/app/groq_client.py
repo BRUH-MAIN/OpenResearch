@@ -1,4 +1,4 @@
-"""Groq AI client wrapper using LangChain ChatGroq with retries."""
+"""LLM client wrapper — DeepSeek primary, Groq fallback, with retries."""
 
 import asyncio
 import logging
@@ -12,52 +12,139 @@ from .config import get_settings
 
 logger = logging.getLogger(__name__)
 
+# ---------------------------------------------------------------------------
+# Import LangChain chat models — both providers are optional at import time.
+# ---------------------------------------------------------------------------
+_LANGCHAIN_AVAILABLE = False
+_DEEPSEEK_AVAILABLE = False
+_GROQ_AVAILABLE = False
+
+ChatOpenAI: Any = None
+ChatGroq: Any = None
+SystemMessage: Any = None
+HumanMessage: Any = None
+
 try:
-    from langchain_groq import ChatGroq
-    from langchain_core.messages import SystemMessage, HumanMessage
+    from langchain_core.messages import SystemMessage, HumanMessage  # type: ignore[assignment]
     _LANGCHAIN_AVAILABLE = True
 except Exception:  # pragma: no cover
-    ChatGroq = None  # type: ignore[assignment]
-    SystemMessage = None  # type: ignore[assignment]
-    HumanMessage = None  # type: ignore[assignment]
-    _LANGCHAIN_AVAILABLE = False
+    pass
+
+try:
+    from langchain_openai import ChatOpenAI  # type: ignore[assignment]
+    _DEEPSEEK_AVAILABLE = True
+except Exception:  # pragma: no cover
+    pass
+
+try:
+    from langchain_groq import ChatGroq  # type: ignore[assignment]
+    _GROQ_AVAILABLE = True
+except Exception:  # pragma: no cover
+    pass
+
+
+def _create_deepseek_llm(api_key: str, model: str, temperature: float = 0.7) -> Any:
+    """Create a DeepSeek LLM instance via OpenAI-compatible endpoint."""
+    settings = get_settings()
+    return ChatOpenAI(
+        api_key=api_key,
+        model=model,
+        base_url=settings.deepseek_base_url,
+        temperature=temperature,
+    )
+
+
+def _create_groq_llm(api_key: str, model: str, temperature: float = 0.7) -> Any:
+    """Create a Groq LLM instance."""
+    return ChatGroq(
+        api_key=api_key,
+        model_name=model,
+        temperature=temperature,
+    )
 
 
 class GroqClient:
-    """Wrapper for Groq API using ChatGroq (LangChain) with retries."""
+    """Wrapper for LLM API — DeepSeek primary, Groq fallback."""
 
     def __init__(self):
         settings = get_settings()
-        self.api_key = settings.groq_api_key
-        self.model_name = settings.groq_model
+        # Primary: DeepSeek
+        self._deepseek_api_key = settings.deepseek_api_key
+        self._deepseek_model = settings.deepseek_model
+        # Fallback: Groq
+        self._groq_api_key = settings.groq_api_key
+        self._groq_model = settings.groq_model
+        # Active provider tracking
+        self._provider = settings.llm_provider  # "deepseek" or "groq"
+        self.api_key: str = ""
+        self.model_name: str = ""
         self._llm: Any = None
+        self._fallback_llm: Any = None
         self._initialized = False
 
     def initialize(self) -> bool:
-        """Initialize the ChatGroq client. Returns True if successful."""
+        """Initialize LLM client. DeepSeek primary, Groq fallback. Returns True if at least one works."""
         if not _LANGCHAIN_AVAILABLE:
-            logger.warning("langchain-groq not available - AI features disabled")
+            logger.warning("langchain-core not available - AI features disabled")
             return False
-        if not self.api_key:
-            logger.warning("GROQ_API_KEY not set - AI features will be unavailable")
+
+        # --- try DeepSeek first ---
+        if _DEEPSEEK_AVAILABLE and self._deepseek_api_key:
+            try:
+                self._llm = _create_deepseek_llm(
+                    self._deepseek_api_key, self._deepseek_model
+                )
+                self._provider = "deepseek"
+                self.api_key = self._deepseek_api_key
+                self.model_name = self._deepseek_model
+                logger.info("Primary LLM: DeepSeek (%s)", self._deepseek_model)
+            except Exception as e:
+                logger.warning("DeepSeek init failed: %s — will try Groq", e)
+                self._llm = None
+
+        # --- try Groq as fallback (or primary if DeepSeek unavailable) ---
+        if _GROQ_AVAILABLE and self._groq_api_key:
+            try:
+                groq_llm = _create_groq_llm(
+                    self._groq_api_key, self._groq_model
+                )
+                if self._llm is None:
+                    # DeepSeek failed — promote Groq to primary
+                    self._llm = groq_llm
+                    self._provider = "groq"
+                    self.api_key = self._groq_api_key
+                    self.model_name = self._groq_model
+                    logger.info("Primary LLM (fallback): Groq (%s)", self._groq_model)
+                else:
+                    self._fallback_llm = groq_llm
+                    logger.info("Fallback LLM: Groq (%s)", self._groq_model)
+            except Exception as e:
+                logger.warning("Groq init failed: %s", e)
+
+        if self._llm is None:
+            logger.warning("No LLM provider available — AI features disabled")
             return False
-        try:
-            self._llm = ChatGroq(
-                api_key=self.api_key,
-                model_name=self.model_name,
-                temperature=0.7,
-            )
-            self._initialized = True
-            logger.info("Groq client initialized with model: %s", self.model_name)
-            return True
-        except Exception as e:
-            logger.error("Failed to initialize Groq client: %s", e)
-            return False
+
+        self._initialized = True
+        return True
 
     @property
     def is_configured(self) -> bool:
         """Check if the client is properly configured."""
         return self._initialized and self._llm is not None
+
+    async def _invoke_with_fallback(self, messages: list, **kwargs) -> Any:
+        """Invoke the primary LLM; on failure fall back to the secondary."""
+        try:
+            return await self._llm.ainvoke(messages, **kwargs)
+        except Exception as primary_err:
+            if self._fallback_llm is not None:
+                logger.warning(
+                    "Primary LLM (%s) failed: %s — falling back to secondary",
+                    self._provider, primary_err,
+                )
+                return await self._fallback_llm.ainvoke(messages, **kwargs)
+            raise  # no fallback available
 
     @retry(
         stop=stop_after_attempt(3),
@@ -73,35 +160,26 @@ class GroqClient:
         model: Optional[str] = None,
     ) -> tuple[str, int]:
         """
-        Generate a response from Groq using ChatGroq (async-native).
+        Generate a response using the active LLM (DeepSeek → Groq fallback).
 
         Returns:
             Tuple of (response_text, latency_ms)
         """
         if not self.is_configured:
-            raise RuntimeError("Groq client not initialized. Please set GROQ_API_KEY.")
+            raise RuntimeError("LLM client not initialized. Set DEEPSEEK_API_KEY or GROQ_API_KEY.")
 
         start_time = time.time()
-
-        # Use the provided model or default
-        llm = self._llm
-        if model and model != self.model_name:
-            llm = ChatGroq(
-                api_key=self.api_key,
-                model_name=model,
-                temperature=temperature,
-            )
 
         messages = []
         if system_instruction:
             messages.append(SystemMessage(content=system_instruction))
         messages.append(HumanMessage(content=prompt))
 
-        response = await llm.ainvoke(messages)
+        response = await self._invoke_with_fallback(messages)
 
         response_text = response.content if hasattr(response, "content") else str(response)
         if not response_text:
-            raise RuntimeError("Empty response from Groq API")
+            raise RuntimeError("Empty response from LLM API")
 
         latency_ms = int((time.time() - start_time) * 1000)
         return response_text, latency_ms
@@ -115,31 +193,36 @@ class GroqClient:
         model: Optional[str] = None,
     ):
         """
-        Stream a response from Groq token-by-token using ChatGroq.astream().
+        Stream a response token-by-token.
 
         Yields:
             Individual token strings as they arrive.
         """
         if not self.is_configured:
-            raise RuntimeError("Groq client not initialized. Please set GROQ_API_KEY.")
-
-        llm = self._llm
-        if model and model != self.model_name:
-            llm = ChatGroq(
-                api_key=self.api_key,
-                model_name=model,
-                temperature=temperature,
-            )
+            raise RuntimeError("LLM client not initialized.")
 
         messages = []
         if system_instruction:
             messages.append(SystemMessage(content=system_instruction))
         messages.append(HumanMessage(content=prompt))
 
-        async for chunk in llm.astream(messages):
-            token = chunk.content if hasattr(chunk, "content") else str(chunk)
-            if token:
-                yield token
+        # Try primary, fall back on error
+        try:
+            async for chunk in self._llm.astream(messages):
+                token = chunk.content if hasattr(chunk, "content") else str(chunk)
+                if token:
+                    yield token
+        except Exception as primary_err:
+            if self._fallback_llm is not None:
+                logger.warning(
+                    "Primary LLM stream failed: %s — falling back", primary_err
+                )
+                async for chunk in self._fallback_llm.astream(messages):
+                    token = chunk.content if hasattr(chunk, "content") else str(chunk)
+                    if token:
+                        yield token
+            else:
+                raise
 
     async def chat_qa(
         self,

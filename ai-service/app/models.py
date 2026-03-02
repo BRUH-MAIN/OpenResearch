@@ -128,6 +128,8 @@ AgenticTaskType = Literal[
     "paper_writing",
     "research_planning",
     "deep_research",
+    "methodology_extraction",
+    "reviewer_anticipation",
 ]
 
 
@@ -254,6 +256,17 @@ class IntentClassifyResponse(BaseModel):
     similarity: float
     threshold: float
     matched_phrase: Optional[str] = None
+
+
+class IntentClassifyDetailedResponse(BaseModel):
+    """Detailed response for agentic intent classification with ambiguity detection."""
+    task_type: Optional[str] = None
+    similarity: float
+    threshold: float
+    matched_phrase: Optional[str] = None
+    ambiguous: bool = False
+    fallback: bool = False
+    alternatives: list[dict] = Field(default_factory=list, description="Top-K alternative intents with scores")
 
 
 class HealthResponse(BaseModel):

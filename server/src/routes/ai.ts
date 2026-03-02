@@ -27,6 +27,8 @@ const AGENTIC_TASK_LABELS: Record<AgenticTaskType, string> = {
   paper_writing: 'Paper Writing',
   research_planning: 'Research Planning',
   deep_research: 'Deep Research',
+  methodology_extraction: 'Methodology Extraction',
+  reviewer_anticipation: 'Reviewer Anticipation',
 };
 
 function formatAgenticContent(response: AgenticRunResponse): string {
@@ -42,6 +44,8 @@ function formatAgenticContent(response: AgenticRunResponse): string {
     { key: 'mentor_advice', title: 'Mentor Advice' },
     { key: 'paper_draft', title: 'Paper Draft' },
     { key: 'research_plan', title: 'Research Plan' },
+    { key: 'methodology_matrix', title: 'Methodology Comparison' },
+    { key: 'reviewer_critiques', title: 'Reviewer Critiques' },
     { key: 'papers', title: 'Papers' },
     { key: 'result', title: 'Result' },
   ];

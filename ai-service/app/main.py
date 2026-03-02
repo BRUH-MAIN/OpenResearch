@@ -37,9 +37,10 @@ from .models import (
     AgenticRunRequest, AgenticRunResponse,
     HealthResponse, ErrorResponse,
     IntentClassifyRequest, IntentClassifyResponse,
+    IntentClassifyDetailedResponse,
 )
 from .groq_client import groq_client
-from .intent_classifier import classify_intent, INTENT_THRESHOLD
+from .intent_classifier import classify_intent, classify_intent_detailed, INTENT_THRESHOLD
 from .database import database
 from .embeddings import embedding_service
 from .vector_store import vector_store
@@ -61,15 +62,15 @@ async def lifespan(app: FastAPI):
     print("=" * 60)
     print()
 
-    # ── Step 1: Groq ────────────────────────────────────────
-    print(f"[1/{total_steps}]  Initializing Groq AI client …")
+    # ── Step 1: LLM (DeepSeek primary, Groq fallback) ─────
+    print(f"[1/{total_steps}]  Initializing LLM client (DeepSeek → Groq fallback) …")
     t0 = _time.time()
     if groq_client.initialize():
-        results.append(("Groq AI client", True, _time.time() - t0))
-        print(f"  ✅  Groq ready ({_time.time() - t0:.1f}s)")
+        results.append(("LLM client", True, _time.time() - t0))
+        print(f"  ✅  LLM ready — provider: {groq_client._provider} / {groq_client.model_name} ({_time.time() - t0:.1f}s)")
     else:
-        results.append(("Groq AI client", False, _time.time() - t0))
-        print(f"  ⚠️   Groq API key not configured")
+        results.append(("LLM client", False, _time.time() - t0))
+        print(f"  ⚠️   No LLM API key configured (set DEEPSEEK_API_KEY or GROQ_API_KEY)")
     print()
 
     # ── Step 2: Embedding model ────────────────────────────
@@ -384,6 +385,38 @@ async def classify_agentic_intent(request: IntentClassifyRequest):
         similarity=similarity,
         threshold=INTENT_THRESHOLD,
         matched_phrase=matched_phrase,
+    )
+
+
+@app.post(
+    "/agentic/classify-intent-detailed",
+    response_model=IntentClassifyDetailedResponse,
+    responses={
+        400: {"model": ErrorResponse, "description": "Missing @ai trigger"},
+        503: {"model": ErrorResponse, "description": "AI service not configured"},
+    },
+    tags=["Agentic"],
+    summary="Classify agentic intent with ambiguity detection",
+)
+async def classify_agentic_intent_detailed(request: IntentClassifyRequest):
+    """Classify a prompt into an agentic task with ambiguity detection and alternatives."""
+    validate_ai_trigger(request.prompt, "prompt")
+
+    if not embedding_service.is_configured:
+        embedding_service.initialize()
+
+    detailed = classify_intent_detailed(request.prompt)
+    return IntentClassifyDetailedResponse(
+        task_type=detailed.get("intent"),
+        similarity=detailed.get("score", 0.0),
+        threshold=INTENT_THRESHOLD,
+        matched_phrase=detailed.get("matched_phrase"),
+        ambiguous=detailed.get("ambiguous", False),
+        fallback=detailed.get("fallback", False),
+        alternatives=[
+            {"intent": alt[0], "score": alt[1]}
+            for alt in detailed.get("alternatives", [])
+        ],
     )
 
 

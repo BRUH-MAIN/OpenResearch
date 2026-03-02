@@ -15,6 +15,13 @@
       "when": 1772210839376,
       "tag": "0001_chief_silhouette",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772300000000,
+      "tag": "0004_methodology_and_lineage_tables",
+      "breakpoints": true
     }
   ]
 }

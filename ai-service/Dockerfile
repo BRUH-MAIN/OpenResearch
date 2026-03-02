@@ -1,4 +1,11 @@
 # AI Service Dockerfile
+
+# Stage 1: Model cache — reuses the existing image's cached models to avoid
+# re-downloading 4GB+ of ML models on every code change.
+# To refresh models, rebuild with: docker compose build --no-cache ai-service
+FROM openresearch-ai-service:latest AS model-cache
+
+# Stage 2: Build the application
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -20,17 +27,11 @@ COPY requirements.txt .
 # Install Python dependencies with UV
 RUN uv pip install --system --no-cache --index-strategy unsafe-best-match -r requirements.txt
 
+# Copy pre-downloaded ML models from the existing image (avoids re-download)
+COPY --from=model-cache /root/.cache/huggingface /root/.cache/huggingface
+
 # Copy application code
 COPY app/ ./app/
-
-# Accept HF_TOKEN for authenticated model downloads (higher rate limits)
-ARG HF_TOKEN
-ENV HF_TOKEN=${HF_TOKEN}
-
-# Pre-download ML models during build for fast startup.
-# Use --progress=plain when building to see live download output:
-#   docker compose build --progress=plain ai-service
-RUN python -u -m app.download_models
 
 # Set environment variables
 ENV PYTHONPATH=/app

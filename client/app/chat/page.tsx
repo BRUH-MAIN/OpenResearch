@@ -14,7 +14,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
-import { api, Session, GroupPaper, AgenticTaskType, AgenticRunResponse } from '@/lib/api';
+import { api, Session, GroupPaper, AgenticTaskType, AgenticRunResponse, IntentClassifiedEvent, MethodologyRow, ReviewerCritique } from '@/lib/api';
 import { useSocket } from '@/lib/socket';
 import { useToastStore } from '@/lib/toast';
 import { Button, Modal } from '@/components/ui';
@@ -25,6 +25,9 @@ import {
   ResearchMessage,
   Source,
   StudioOutput,
+  IntentBanner,
+  MethodologyMatrix,
+  ReviewerCritiques,
 } from '@/components/research';
 
 // Default suggested questions
@@ -44,6 +47,8 @@ const AGENTIC_TASKS: { value: AgenticTaskType; label: string; description: strin
   { value: 'paper_writing', label: 'Paper Writing', description: 'Draft outline and starter content.' },
   { value: 'research_planning', label: 'Research Planning', description: 'Create a milestone-based plan.' },
   { value: 'deep_research', label: 'Deep Research', description: 'Multi-hop synthesis across papers.' },
+  { value: 'methodology_extraction', label: 'Methodology Extraction', description: 'Compare study designs across papers.' },
+  { value: 'reviewer_anticipation', label: 'Reviewer Anticipation', description: 'Predict peer-review critiques.' },
 ];
 
 function ChatPageContent() {
@@ -71,6 +76,9 @@ function ChatPageContent() {
   const [agenticMode, setAgenticMode] = useState(false);
   const [agenticTask, setAgenticTask] = useState<AgenticTaskType>('literature_survey');
   const [isAgenticRunning, setIsAgenticRunning] = useState(false);
+  const [methodologyRows, setMethodologyRows] = useState<MethodologyRow[]>([]);
+  const [reviewerCritiques, setReviewerCritiques] = useState<ReviewerCritique[]>([]);
+  const [lastAgenticTaskType, setLastAgenticTaskType] = useState<AgenticTaskType | null>(null);
 
   // Socket connection
   const {
@@ -78,6 +86,7 @@ function ChatPageContent() {
     messages,
     typingUsers,
     aiError,
+    intentEvent,
     sendMessage,
     startTyping,
     stopTyping,
@@ -170,6 +179,8 @@ function ChatPageContent() {
         { key: 'mentor_advice', title: 'Mentor Advice' },
         { key: 'paper_draft', title: 'Paper Draft' },
         { key: 'research_plan', title: 'Research Plan' },
+        { key: 'methodology_matrix', title: 'Methodology Comparison' },
+        { key: 'reviewer_critiques', title: 'Anticipated Reviewer Critiques' },
         { key: 'papers', title: 'Papers' },
         { key: 'result', title: 'Result' },
       ];
@@ -295,6 +306,31 @@ function ChatPageContent() {
 
       const content = formatAgenticResponse(response);
       updateMessage(pendingMessageId, { content });
+
+      // Extract structured data for rich components
+      setLastAgenticTaskType(response.task_type);
+      const rawResult = response.result as Record<string, unknown> | undefined;
+      if (rawResult && response.task_type === 'methodology_extraction') {
+        const matrix = rawResult.methodology_matrix;
+        if (typeof matrix === 'string') {
+          // Backend returns markdown — try to parse rows from the table
+          // For now, the markdown table renders fine via ResearchMessage
+          setMethodologyRows([]);
+        } else if (Array.isArray(matrix)) {
+          setMethodologyRows(matrix as MethodologyRow[]);
+        }
+      } else if (rawResult && response.task_type === 'reviewer_anticipation') {
+        const critiques = rawResult.reviewer_critiques;
+        if (typeof critiques === 'string') {
+          setReviewerCritiques([]);
+        } else if (Array.isArray(critiques)) {
+          setReviewerCritiques(critiques as ReviewerCritique[]);
+        }
+      } else {
+        setMethodologyRows([]);
+        setReviewerCritiques([]);
+      }
+
       addToast('Agentic task completed', 'success');
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Agentic task failed';
@@ -700,6 +736,18 @@ function ChatPageContent() {
                     );
                   })}
 
+                  {/* Rich structured results */}
+                  {lastAgenticTaskType === 'methodology_extraction' && methodologyRows.length > 0 && (
+                    <div className="px-4 py-2">
+                      <MethodologyMatrix rows={methodologyRows} />
+                    </div>
+                  )}
+                  {lastAgenticTaskType === 'reviewer_anticipation' && reviewerCritiques.length > 0 && (
+                    <div className="px-4 py-2">
+                      <ReviewerCritiques critiques={reviewerCritiques} />
+                    </div>
+                  )}
+
                   {/* Typing Indicator */}
                   {typingUsers.length > 0 && (
                     <div
@@ -734,6 +782,21 @@ function ChatPageContent() {
               )}
             </div>
           </div>
+
+          {/* Intent Classification Banner */}
+          {intentEvent && (
+            <div className="px-6 pb-1">
+              <div className="max-w-3xl mx-auto">
+                <IntentBanner
+                  event={intentEvent}
+                  onOverride={(newIntent) => {
+                    setAgenticTask(newIntent);
+                    setAgenticMode(true);
+                  }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Chat Input */}
           <div

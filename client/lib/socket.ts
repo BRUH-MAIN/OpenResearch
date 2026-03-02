@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from './auth';
-import { Message } from './api';
+import { Message, IntentClassifiedEvent } from './api';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -23,6 +23,7 @@ export function useSocket(sessionId: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [aiError, setAIError] = useState<AIError | null>(null);
+  const [intentEvent, setIntentEvent] = useState<IntentClassifiedEvent | null>(null);
 
   // Connect socket
   useEffect(() => {
@@ -60,6 +61,13 @@ export function useSocket(sessionId: string | null) {
       if (error.recoverable) {
         setTimeout(() => setAIError(null), 10000);
       }
+    });
+
+    // Handle intent classification results
+    socket.on('ai:intent_classified', (data: IntentClassifiedEvent) => {
+      setIntentEvent(data);
+      // Auto-clear after 15 seconds
+      setTimeout(() => setIntentEvent(null), 15000);
     });
 
     socket.on('message:new', (message: Message) => {
@@ -183,6 +191,7 @@ export function useSocket(sessionId: string | null) {
     messages,
     typingUsers,
     aiError,
+    intentEvent,
     sendMessage,
     startTyping,
     stopTyping,

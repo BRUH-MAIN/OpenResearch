@@ -1,0 +1,2326 @@
+﻿docker :     await response.aread()
+At line:1 char:1
++ docker logs openresearch-ai --tail 1500 2>&1 | Out-File -Encoding UTF ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (    await response.aread():String 
+   ) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1115, in _tool_assess_novelty
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+INFO:     172.18.0.3:34184 - "POST /agentic/stream HTTP/1.1" 200 OK
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+INFO:     127.0.0.1:38742 - "GET /health HTTP/1.1" 200 OK
+_tool_assess_novelty failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+INFO:     172.18.0.3:43582 - "POST /agentic/stream HTTP/1.1" 200 OK
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1115, in _tool_assess_novelty
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+_tool_analyze_gaps failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+INFO:     172.18.0.3:44134 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:55390 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:56360 - "GET /health HTTP/1.1" 200 OK
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1015, in _tool_analyze_gaps
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+ArXiv search failed for 'deepfake detection accuracy FaceForensics++ Celeb-DF 
+DFDC benchmark results': [Errno -2] Name or service not known
+_tool_fact_check failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1064, in _tool_fact_check
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+INFO:     172.18.0.3:43582 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     172.18.0.3:34184 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51172 - "GET /health HTTP/1.1" 200 OK
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+_tool_assess_novelty failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1115, in _tool_assess_novelty
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+INFO:     172.18.0.3:44134 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54170 - "GET /health HTTP/1.1" 200 OK
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+_tool_provide_mentoring failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1167, in _tool_provide_mentoring
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+_tool_provide_mentoring failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+INFO:     172.18.0.3:43582 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:34614 - "GET /health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:34184 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     172.18.0.3:44134 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:51374 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54124 - "GET /health HTTP/1.1" 200 OK
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1167, in _tool_provide_mentoring
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+ArXiv search failed for 'domain adaptation techniques for deepfake detection 
+across datasets': [Errno -2] Name or service not known
+_tool_plan_research failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1254, in _tool_plan_research
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+_tool_plan_research failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1254, in _tool_plan_research
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+INFO:     172.18.0.3:43582 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     172.18.0.3:34184 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40272 - "GET /health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:44134 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:57406 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49542 - "GET /health HTTP/1.1" 200 OK
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+_tool_provide_mentoring failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1167, in _tool_provide_mentoring
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+ArXiv search failed for '```json': [Errno -2] Name or service not known
+_tool_plan_research failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+INFO:     127.0.0.1:44922 - "GET /health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:58412 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     172.18.0.3:58414 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49560 - "GET /health HTTP/1.1" 200 OK
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1254, in _tool_plan_research
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+ArXiv search failed for 'deepfake detection robustness compression social 
+media degradation video quality metrics': [Errno -2] Name or service not known
+ArXiv search failed for 'Conversation context (use this to stay on 
+topic):\n[Deepfake Research Tester (user)]: @ai Find and retrieve the most 
+relevant papers on deepfake detection using deep learning methods, including 
+approaches based on CNNs, Vision Transformers, frequency analysis, and 
+temporal consistency checking.\n\n[ai (ai)]: ## Paper Retrieval\n\n### 
+Result\n\nBased on my searches, I have retrieved a comprehensive set of papers 
+on deepfake detection using deep learning methods. Let me now provide you with 
+the most relevant papers covering the approaches you mentioned:\n\n## 
+**Relevant Papers on Deepfake Detection Using Deep Learning Methods**\n\n### 
+**1. Survey Papers**\n**Title:** Deep Learning Technology for Face Forgery 
+Detection: A Survey  \n**Abstract:** Currently, the rapid development of 
+computer vision and deep learning has enabled the creation or manipulation of 
+high-fidelity facial images and videos via deep generative approaches. This 
+technology, also known as deepfake, has achieved dramatic progress and become 
+increasingly popular in social media. However, the technology can generate 
+threats to personal privacy and national security by spreading misinformation. 
+ \n**URL:** https://arxiv.org/abs/2405.17371\n\n**Title:** Deepfake Generation 
+and Detection: A Benchmark and Survey  \n**Abstract:** Deepfake is a 
+technology dedicated to creating highly realistic facial images and videos 
+under specific conditions, which has significant application potential in 
+fields such as entertainment, movie production, digital human creation, to 
+name a few. With the advancements in deep learning, techniques primarily 
+represented by Variational Autoencoders and Generative Adversarial Networks 
+have achieved remarkable progress.  \n**URL:** 
+https://arxiv.org/abs/2404.00531\n\n### **2. CNN-Based 
+Approaches**\n**Title:** Recurrent Convolutional Strategies for Face 
+Manipulation Detection in Videos  \n**Abstract:** The spread of misinformation 
+through synthetically generated yet realistic images and videos has become a 
+significant problem, calling for robust manipulation detection methods. 
+Despite the predominant effort of detecting face manipulation in still images, 
+less attention has been paid to the identification of tampered faces in videos 
+by taking advantage of the temporal information present in the sequences.  
+\n\n... [truncated]\n\n[Deepfake Research Tester (user)]: @ai Extract and 
+compare the methodologies used in the collected deepfake detection papers. 
+Identify the feature extraction techniques, network architectures, loss 
+functions, training strategies, and evaluation protocols used by each paper. 
+Create a comparative table of methodologies.\n\n[ai (ai)]: ## Methodology 
+Extraction\n\n### Methodology Comparison\n\n## Methodology Comparison 
+Matrix\n\n| Paper | Design | Sample Size | Population | Measures | Statistical 
+Methods | Limitations | Replication Risk |\n| --- | --- | --- | --- | --- | 
+--- | --- | --- |\n|  | experimental | 1200 | Amazon Mechanical Turk 
+participants | [\'ability to differentiate between real and manipulated 
+videos\', \'performance of state-of-the-art manipulation detection 
+algorithms\'] | [\'analysis of algorithm performance\', \'user study 
+analysis\'] | [\'dataset limited to 826 videos\', "algorithms only work for 
+specific attacks and don\'t scale well", \'user study limited to Amazon 
+Mechanical Turk population\'] | low |\n|  | experimental | 3480 | 3D face 
+point cloud dataset comprising bona fide samples and two different 3D 
+presentation attack instruments (3D silicone face mask and wrap photo mask) | 
+[\'detection performance using three different evaluation protocols\', 
+\'comparison with existing methods\'] | [] | [] | medium |\n|  | experimental 
+| None | None | [\'accuracy\', \'generalization ability\'] | [\'cross-dataset 
+evaluation\'] | [] | low |\n|  | experimental | None | None | [\'accuracy\'] | 
+[] | [] | medium |\n|  | experimental | None | None | [\'performance 
+evaluation of deepfake detection methods\'] | [] | [] | medium |\n|  | 
+experimental | None | video deepfake dataset from DDL Challenge Track 2 | 
+[\'AUC\', \'AP (Average Precision)\', \'AR (Average Recall)\', \'final 
+challenge score\'] | [] | [] | medium |\n|  | experimental | None | None | 
+[\'accuracy rate\', \'Euclidean distance\'] | [\'Euclidean distance 
+classifier\'] | [\'uses images from low-cost devices with inferior image 
+quality\', \'only processes frontal faces\'] | medium |\n|  | experimental | 
+None | None | [\'accuracy\', \'F1-score\', \'pixel-level forgery 
+localization\'] | [\'ablation studies\', \'qualitative analysis\'] | [] | 
+medium |\n|  | systematic review | None | None | [\'overview of deepfake 
+techniques\', \'analysis of deepfake dataset characteristics\', \'systematic 
+review of detect\n... [truncated]\n\n[Deepfake Research Tester (user)]: @ai 
+Identify research gaps and opportunities in deepfake detection. Analyze what 
+problems remain unsolved, what scenarios are poorly addressed, cross-dataset 
+generalization challenges, real-time detection limitations, and areas where 
+current methods fail. Suggest promising future research directions.\n\n[ai 
+(ai)]: ## Gap Analysis\n\n### Research Gaps\n\nBased on the provided 
+literature review context and sources, here is a comprehensive gap analysis 
+for deepfake detection research.\n\n### **Identified Research Gaps**\n\n**1. 
+Gap: Detection of Partially Manipulated ("Undercover") Video Segments**\n*   
+**Description:** Most detection research focuses on classifying entire videos 
+or frames as real or fake. There is a significant gap in methods specifically 
+designed to **localize and identify short, manipulated segments within 
+otherwise authentic videos**, a more subtle and realistic attack vector 
+[Undercover Deepfakes: Detecting Fake Segments in 
+Videos](http://arxiv.org/abs/2305.06564v4).\n*   **Significance:** ≡ƒö┤ 
+**High**. This represents a critical real-world threat where short, targeted 
+manipulations can change the meaning of a conversation or event without 
+raising suspicion by making an entire video appear fake.\n*   **Suggested 
+Approaches:**\n    *   Develop **temporal segmentation models** that can 
+analyze video at a fine-grained clip level and flag inconsistencies, rather 
+than just providing a video-level score [Undercover Deepfakes: Detecting Fake 
+Segments in Videos](http://arxiv.org/abs/2305.06564v4).\n    *   Implement 
+**contrastive learning strategies** to learn representations that distinguish 
+between authentic and manipulated segments within the same video sequence 
+[Undercover Deepfakes: Detecting Fake Segments in 
+Videos](http://arxiv.org/abs/2305.06564v4).\n    *   Combine frame-level 
+artifact detection with **temporal consistency graphs** to identify abrupt 
+feature shifts indicative of a localized manipulation [Recurrent Convolutional 
+Strategies for Face Manipulation 
+Det](http://arxiv.org/abs/1905.00582v3).\n\n**2. Gap: Cross-Domain and 
+Cross-Manipulation Generalization**\n*   **Description:** Many deep learning 
+detectors excel on the datasets they are trained on but suffer severe 
+performance degradation when faced with unseen manipulation techniques (e.g., 
+a model trained on FaceS\n... [truncated]\n\n[Deepfake Research Tester 
+(user)]: @ai Assess the novelty of each collected paper. Evaluate how each 
+paper contributes new ideas to deepfake detection, whether through novel 
+architectures, new training approaches, new datasets, or new evaluation 
+metrics. Identify the most innovative contributions and redundant 
+approaches.\n\n[ai (ai)]: ## Novelty Assessment\n\n### Novelty 
+Assessment\n\nError assessing novelty: \n\n**Artifacts**\n- 
+3bc3a437-e40f-467d-b028-416fb7b5a755\n\n_Completed in 76524ms_\n\n[Deepfake 
+Research Tester (user)]: @ai Fact-check the key claims made in the deepfake 
+detection papers. Verify whether the reported accuracy metrics are consistent 
+with the datasets used, check if claimed improvements over baselines are 
+valid, and assess whether the experimental setups are sound and 
+reproducible.\n\n[ai (ai)]: ## Fact Check\n\n### Fact Check\n\n## 
+Fact-Checking Report: Deepfake Detection Papers\n\n### **Claim 
+Assessment**\n\n**Overall Claim:** The papers present valid accuracy metrics, 
+improvements over baselines, and sound experimental setups.\n\n**Analysis of 
+Sub-Claims:**\n\n---\n\n#### **1. Sub-claim: "Deepfake detection models 
+achieve high accuracy on standard benchmarks"**\n- **Classification:** Γ£à 
+**Supported**\n- **Evidence:**  \n  - Survey papers confirm high performance 
+on controlled datasets: "techniques primarily represented by Variational 
+Autoencoders and Generative Adversarial Networks have achieved impressive 
+generation results" and corresponding detection methods show high accuracy 
+[Deepfake Generation and Detection: A Benchmark and 
+Survey](http://arxiv.org/abs/2403.17881v4).  \n  - Specific models report 
+strong metrics: "accuracy, F1-score, pixel-level forgery localization" are 
+commonly reported with high values [Context from earlier methodology 
+table].\n- **Confidence:** **High** ΓÇô Multiple sources confirm high accuracy 
+on in-distribution tests.\n\n---\n\n#### **2. Sub-claim: "Reported 
+improvements over baselines are valid"**\n- **Classification:** ΓÜá∩╕Å 
+**Unclear**\n- **Evidence:**  \n  - Improvements are claimed but often lack 
+rigorous cross-dataset validation: "Many deep learning detectors excel on the 
+datasets they are trained on but suffer severe performance degradation when 
+faced with unseen manipulation techniques" [Context from Gap Analysis].  \n  - 
+Cross-domain generalization is a known weakness: "they suffer from sharp 
+performance degradation when faced with cross-dataset scenarios where unseen 
+deepfake techniques are tested" [CrossDF: Improving Cross-Domain Deepfake 
+Detection with Deep](https://arxiv.org/abs/2310.00359v3).\n- **Confidence:** 
+**Medium** ΓÇô While improvements on specific datasets are plausible, general 
+superiority claims are questionable without cross-dataset 
+testing.\n\n---\n\n#### **3. Sub-claim: "Experimental setups are sound and 
+reproducible"**\n- **Classificati\n... [truncated]\n\n[Deepfake Research 
+Tester (user)]: @ai As a research mentor, advise on deepfake detection 
+research. Based on the collected papers, what would be the most promising 
+research direction for a new PhD student? What skills and knowledge areas 
+should they focus on? What are the key methodological pitfalls to 
+avoid?\n\n[ai (ai)]: ## Research Mentor\n\n### Mentor Advice\n\nError 
+providing mentoring: \n\n**Artifacts**\n- 
+d94bb5a5-5153-484c-b9a2-fc86f25ed031\n\n_Completed in 74777ms_\n\n[Deepfake 
+Research Tester (user)]: @ai Create a detailed research plan for a project on 
+developing a novel deepfake detection method that improves cross-dataset 
+generalization. Include milestones, timeline, required resources, datasets to 
+use, baseline methods to compare against, and evaluation metrics.\n\n[ai 
+(ai)]: ## Research Planning\n\n### Research Plan\n\nError planning research: 
+\n\n**Artifacts**\n- f4ff2a4b-2cc5-4af6-81db-3c5d62b00ccf\n\n_Completed in 
+78668ms_\n\nCurrent user request: @ai Write a comprehensive research paper 
+titled "A Comparative Survey of Deep Learning Methods for Deepfake Detection: 
+Architectures, Datasets, and Challenges". The paper should include:\n1. 
+Abstract summarizing key findings\n2. Introduction with motivation and problem 
+statement\n3. Background on deepfake generation techniques\n4. Taxonomy of 
+detection methods (CNN-based, Transformer-based, Frequency-based, 
+Temporal-based)\n5. Comparative analysis of methods with performance 
+tables\n6. Discussion of cross-dataset generalization challenges\n7. Analysis 
+of detection robustness against compression and social media degradation\n8. 
+Open challenges and future research directions\n9. Conclusion\n\nUse the 
+collected papers as references and cite them appropriately.': Client error 
+'414 URI Too Long' for url 'https://export.arxiv.org/api/query?search_query=all
+%3A%28Conversation+context+%28use+this+to+stay+on+topic%29%3A%0A%5BDeepfake+Res
+earch+Tester+%28user%29%5D%3A+%40ai+Find+and+retrieve+the+most+relevant+papers+
+on+deepfake+detection+using+deep+learning+methods%2C+including+approaches+based
++on+CNNs%2C+Vision+Transformers%2C+frequency+analysis%2C+and+temporal+consisten
+cy+checking.%0A%0A%5Bai+%28ai%29%5D%3A+%23%23+Paper+Retrieval%0A%0A%23%23%23+Re
+sult%0A%0ABased+on+my+searches%2C+I+have+retrieved+a+comprehensive+set+of+paper
+s+on+deepfake+detection+using+deep+learning+methods.+Let+me+now+provide+you+wit
+h+the+most+relevant+papers+covering+the+approaches+you+mentioned%3A%0A%0A%23%23
++%2A%2ARelevant+Papers+on+Deepfake+Detection+Using+Deep+Learning+Methods%2A%2A%
+0A%0A%23%23%23+%2A%2A1.+Survey+Papers%2A%2A%0A%2A%2ATitle%3A%2A%2A+Deep+Learnin
+g+Technology+for+Face+Forgery+Detection%3A+A+Survey++%0A%2A%2AAbstract%3A%2A%2A
++Currently%2C+the+rapid+development+of+computer+vision+and+deep+learning+has+en
+abled+the+creation+or+manipulation+of+high-fidelity+facial+images+and+videos+vi
+a+deep+generative+approaches.+This+technology%2C+also+known+as+deepfake%2C+has+
+achieved+dramatic+progress+and+become+increasingly+popular+in+social+media.+How
+ever%2C+the+technology+can+generate+threats+to+personal+privacy+and+national+se
+curity+by+spreading+misinformation.++%0A%2A%2AURL%3A%2A%2A+https%3A%2F%2Farxiv.
+org%2Fabs%2F2405.17371%0A%0A%2A%2ATitle%3A%2A%2A+Deepfake+Generation+and+Detect
+ion%3A+A+Benchmark+and+Survey++%0A%2A%2AAbstract%3A%2A%2A+Deepfake+is+a+technol
+ogy+dedicated+to+creating+highly+realistic+facial+images+and+videos+under+speci
+fic+conditions%2C+which+has+significant+application+potential+in+fields+such+as
++entertainment%2C+movie+production%2C+digital+human+creation%2C+to+name+a+few.+
+With+the+advancements+in+deep+learning%2C+techniques+primarily+represented+by+V
+ariational+Autoencoders+and+Generative+Adversarial+Networks+have+achieved+remar
+kable+progress.++%0A%2A%2AURL%3A%2A%2A+https%3A%2F%2Farxiv.org%2Fabs%2F2404.005
+31%0A%0A%23%23%23+%2A%2A2.+CNN-Based+Approaches%2A%2A%0A%2A%2ATitle%3A%2A%2A+Re
+current+Convolutional+Strategies+for+Face+Manipulation+Detection+in+Videos++%0A
+%2A%2AAbstract%3A%2A%2A+The+spread+of+misinformation+through+synthetically+gene
+rated+yet+realistic+images+and+videos+has+become+a+significant+problem%2C+calli
+ng+for+robust+manipulation+detection+methods.+Despite+the+predominant+effort+of
++detecting+face+manipulation+in+still+images%2C+less+attention+has+been+paid+to
++the+identification+of+tampered+faces+in+videos+by+taking+advantage+of+the+temp
+oral+information+present+in+the+sequences.++%0A%0A...+%5Btruncated%5D%0A%0A%5BD
+eepfake+Research+Tester+%28user%29%5D%3A+%40ai+Extract+and+compare+the+methodol
+ogies+used+in+the+collected+deepfake+detection+papers.+Identify+the+feature+ext
+raction+techniques%2C+network+architectures%2C+loss+functions%2C+training+strat
+egies%2C+and+evaluation+protocols+used+by+each+paper.+Create+a+comparative+tabl
+e+of+methodologies.%0A%0A%5Bai+%28ai%29%5D%3A+%23%23+Methodology+Extraction%0A%
+0A%23%23%23+Methodology+Comparison%0A%0A%23%23+Methodology+Comparison+Matrix%0A
+%0A%7C+Paper+%7C+Design+%7C+Sample+Size+%7C+Population+%7C+Measures+%7C+Statist
+ical+Methods+%7C+Limitations+%7C+Replication+Risk+%7C%0A%7C+---+%7C+---+%7C+---
++%7C+---+%7C+---+%7C+---+%7C+---+%7C+---+%7C%0A%7C++%7C+experimental+%7C+1200+%
+7C+Amazon+Mechanical+Turk+participants+%7C+%5B%27ability+to+differentiate+betwe
+en+real+and+manipulated+videos%27%2C+%27performance+of+state-of-the-art+manipul
+ation+detection+algorithms%27%5D+%7C+%5B%27analysis+of+algorithm+performance%27
+%2C+%27user+study+analysis%27%5D+%7C+%5B%27dataset+limited+to+826+videos%27%2C+
+%22algorithms+only+work+for+specific+attacks+and+don%27t+scale+well%22%2C+%27us
+er+study+limited+to+Amazon+Mechanical+Turk+population%27%5D+%7C+low+%7C%0A%7C++
+%7C+experimental+%7C+3480+%7C+3D+face+point+cloud+dataset+comprising+bona+fide+
+samples+and+two+different+3D+presentation+attack+instruments+%283D+silicone+fac
+e+mask+and+wrap+photo+mask%29+%7C+%5B%27detection+performance+using+three+diffe
+rent+evaluation+protocols%27%2C+%27comparison+with+existing+methods%27%5D+%7C+%
+5B%5D+%7C+%5B%5D+%7C+medium+%7C%0A%7C++%7C+experimental+%7C+None+%7C+None+%7C+%
+5B%27accuracy%27%2C+%27generalization+ability%27%5D+%7C+%5B%27cross-dataset+eva
+luation%27%5D+%7C+%5B%5D+%7C+low+%7C%0A%7C++%7C+experimental+%7C+None+%7C+None+
+%7C+%5B%27accuracy%27%5D+%7C+%5B%5D+%7C+%5B%5D+%7C+medium+%7C%0A%7C++%7C+experi
+mental+%7C+None+%7C+None+%7C+%5B%27performance+evaluation+of+deepfake+detection
++methods%27%5D+%7C+%5B%5D+%7C+%5B%5D+%7C+medium+%7C%0A%7C++%7C+experimental+%7C
++None+%7C+video+deepfake+dataset+from+DDL+Challenge+Track+2+%7C+%5B%27AUC%27%2C
++%27AP+%28Average+Precision%29%27%2C+%27AR+%28Average+Recall%29%27%2C+%27final+
+challenge+score%27%5D+%7C+%5B%5D+%7C+%5B%5D+%7C+medium+%7C%0A%7C++%7C+experimen
+tal+%7C+None+%7C+None+%7C+%5B%27accuracy+rate%27%2C+%27Euclidean+distance%27%5D
++%7C+%5B%27Euclidean+distance+classifier%27%5D+%7C+%5B%27uses+images+from+low-c
+ost+devices+with+inferior+image+quality%27%2C+%27only+processes+frontal+faces%2
+7%5D+%7C+medium+%7C%0A%7C++%7C+experimental+%7C+None+%7C+None+%7C+%5B%27accurac
+y%27%2C+%27F1-score%27%2C+%27pixel-level+forgery+localization%27%5D+%7C+%5B%27a
+blation+studies%27%2C+%27qualitative+analysis%27%5D+%7C+%5B%5D+%7C+medium+%7C%0
+A%7C++%7C+systematic+review+%7C+None+%7C+None+%7C+%5B%27overview+of+deepfake+te
+chniques%27%2C+%27analysis+of+deepfake+dataset+characteristics%27%2C+%27systema
+tic+review+of+detect%0A...+%5Btruncated%5D%0A%0A%5BDeepfake+Research+Tester+%28
+user%29%5D%3A+%40ai+Identify+research+gaps+and+opportunities+in+deepfake+detect
+ion.+Analyze+what+problems+remain+unsolved%2C+what+scenarios+are+poorly+address
+ed%2C+cross-dataset+generalization+challenges%2C+real-time+detection+limitation
+s%2C+and+areas+where+current+methods+fail.+Suggest+promising+future+research+di
+rections.%0A%0A%5Bai+%28ai%29%5D%3A+%23%23+Gap+Analysis%0A%0A%23%23%23+Research
++Gaps%0A%0ABased+on+the+provided+literature+review+context+and+sources%2C+here+
+is+a+comprehensive+gap+analysis+for+deepfake+detection+research.%0A%0A%23%23%23
++%2A%2AIdentified+Research+Gaps%2A%2A%0A%0A%2A%2A1.+Gap%3A+Detection+of+Partial
+ly+Manipulated+%28%22Undercover%22%29+Video+Segments%2A%2A%0A%2A+++%2A%2ADescri
+ption%3A%2A%2A+Most+detection+research+focuses+on+classifying+entire+videos+or+
+frames+as+real+or+fake.+There+is+a+significant+gap+in+methods+specifically+desi
+gned+to+%2A%2Alocalize+and+identify+short%2C+manipulated+segments+within+otherw
+ise+authentic+videos%2A%2A%2C+a+more+subtle+and+realistic+attack+vector+%5BUnde
+rcover+Deepfakes%3A+Detecting+Fake+Segments+in+Videos%5D%28http%3A%2F%2Farxiv.o
+rg%2Fabs%2F2305.06564v4%29.%0A%2A+++%2A%2ASignificance%3A%2A%2A+%F0%9F%94%B4+%2
+A%2AHigh%2A%2A.+This+represents+a+critical+real-world+threat+where+short%2C+tar
+geted+manipulations+can+change+the+meaning+of+a+conversation+or+event+without+r
+aising+suspicion+by+making+an+entire+video+appear+fake.%0A%2A+++%2A%2ASuggested
++Approaches%3A%2A%2A%0A++++%2A+++Develop+%2A%2Atemporal+segmentation+models%2A%
+2A+that+can+analyze+video+at+a+fine-grained+clip+level+and+flag+inconsistencies
+%2C+rather+than+just+providing+a+video-level+score+%5BUndercover+Deepfakes%3A+D
+etecting+Fake+Segments+in+Videos%5D%28http%3A%2F%2Farxiv.org%2Fabs%2F2305.06564
+v4%29.%0A++++%2A+++Implement+%2A%2Acontrastive+learning+strategies%2A%2A+to+lea
+rn+representations+that+distinguish+between+authentic+and+manipulated+segments+
+within+the+same+video+sequence+%5BUndercover+Deepfakes%3A+Detecting+Fake+Segmen
+ts+in+Videos%5D%28http%3A%2F%2Farxiv.org%2Fabs%2F2305.06564v4%29.%0A++++%2A+++C
+ombine+frame-level+artifact+detection+with+%2A%2Atemporal+consistency+graphs%2A
+%2A+to+identify+abrupt+feature+shifts+indicative+of+a+localized+manipulation+%5
+BRecurrent+Convolutional+Strategies+for+Face+Manipulation+Det%5D%28http%3A%2F%2
+Farxiv.org%2Fabs%2F1905.00582v3%29.%0A%0A%2A%2A2.+Gap%3A+Cross-Domain+and+Cross
+-Manipulation+Generalization%2A%2A%0A%2A+++%2A%2ADescription%3A%2A%2A+Many+deep
++learning+detectors+excel+on+the+datasets+they+are+trained+on+but+suffer+severe
++performance+degradation+when+faced+with+unseen+manipulation+techniques+%28e.g.
+%2C+a+model+trained+on+FaceS%0A...+%5Btruncated%5D%0A%0A%5BDeepfake+Research+Te
+ster+%28user%29%5D%3A+%40ai+Assess+the+novelty+of+each+collected+paper.+Evaluat
+e+how+each+paper+contributes+new+ideas+to+deepfake+detection%2C+whether+through
++novel+architectures%2C+new+training+approaches%2C+new+datasets%2C+or+new+evalu
+ation+metrics.+Identify+the+most+innovative+contributions+and+redundant+approac
+hes.%0A%0A%5Bai+%28ai%29%5D%3A+%23%23+Novelty+Assessment%0A%0A%23%23%23+Novelty
++Assessment%0A%0AError+assessing+novelty%3A+%0A%0A%2A%2AArtifacts%2A%2A%0A-+3bc
+3a437-e40f-467d-b028-416fb7b5a755%0A%0A_Completed+in+76524ms_%0A%0A%5BDeepfake+
+Research+Tester+%28user%29%5D%3A+%40ai+Fact-check+the+key+claims+made+in+the+de
+epfake+detection+papers.+Verify+whether+the+reported+accuracy+metrics+are+consi
+stent+with+the+datasets+used%2C+check+if+claimed+improvements+over+baselines+ar
+e+valid%2C+and+assess+whether+the+experimental+setups+are+sound+and+reproducibl
+e.%0A%0A%5Bai+%28ai%29%5D%3A+%23%23+Fact+Check%0A%0A%23%23%23+Fact+Check%0A%0A%
+23%23+Fact-Checking+Report%3A+Deepfake+Detection+Papers%0A%0A%23%23%23+%2A%2ACl
+aim+Assessment%2A%2A%0A%0A%2A%2AOverall+Claim%3A%2A%2A+The+papers+present+valid
++accuracy+metrics%2C+improvements+over+baselines%2C+and+sound+experimental+setu
+ps.%0A%0A%2A%2AAnalysis+of+Sub-Claims%3A%2A%2A%0A%0A---%0A%0A%23%23%23%23+%2A%2
+A1.+Sub-claim%3A+%22Deepfake+detection+models+achieve+high+accuracy+on+standard
++benchmarks%22%2A%2A%0A-+%2A%2AClassification%3A%2A%2A+%E2%9C%85+%2A%2ASupporte
+d%2A%2A%0A-+%2A%2AEvidence%3A%2A%2A++%0A++-+Survey+papers+confirm+high+performa
+nce+on+controlled+datasets%3A+%22techniques+primarily+represented+by+Variationa
+l+Autoencoders+and+Generative+Adversarial+Networks+have+achieved+impressive+gen
+eration+results%22+and+corresponding+detection+methods+show+high+accuracy+%5BDe
+epfake+Generation+and+Detection%3A+A+Benchmark+and+Survey%5D%28http%3A%2F%2Farx
+iv.org%2Fabs%2F2403.17881v4%29.++%0A++-+Specific+models+report+strong+metrics%3
+A+%22accuracy%2C+F1-score%2C+pixel-level+forgery+localization%22+are+commonly+r
+eported+with+high+values+%5BContext+from+earlier+methodology+table%5D.%0A-+%2A%
+2AConfidence%3A%2A%2A+%2A%2AHigh%2A%2A+%E2%80%93+Multiple+sources+confirm+high+
+accuracy+on+in-distribution+tests.%0A%0A---%0A%0A%23%23%23%23+%2A%2A2.+Sub-clai
+m%3A+%22Reported+improvements+over+baselines+are+valid%22%2A%2A%0A-+%2A%2AClass
+ification%3A%2A%2A+%E2%9A%A0%EF%B8%8F+%2A%2AUnclear%2A%2A%0A-+%2A%2AEvidence%3A
+%2A%2A++%0A++-+Improvements+are+claimed+but+often+lack+rigorous+cross-dataset+v
+alidation%3A+%22Many+deep+learning+detectors+excel+on+the+datasets+they+are+tra
+ined+on+but+suffer+severe+performance+degradation+when+faced+with+unseen+manipu
+lation+techniques%22+%5BContext+from+Gap+Analysis%5D.++%0A++-+Cross-domain+gene
+ralization+is+a+known+weakness%3A+%22they+suffer+from+sharp+performance+degrada
+tion+when+faced+with+cross-dataset+scenarios+where+unseen+deepfake+techniques+a
+re+tested%22+%5BCrossDF%3A+Improving+Cross-Domain+Deepfake+Detection+with+Deep%
+5D%28https%3A%2F%2Farxiv.org%2Fabs%2F2310.00359v3%29.%0A-+%2A%2AConfidence%3A%2
+A%2A+%2A%2AMedium%2A%2A+%E2%80%93+While+improvements+on+specific+datasets+are+p
+lausible%2C+general+superiority+claims+are+questionable+without+cross-dataset+t
+esting.%0A%0A---%0A%0A%23%23%23%23+%2A%2A3.+Sub-claim%3A+%22Experimental+setups
++are+sound+and+reproducible%22%2A%2A%0A-+%2A%2AClassificati%0A...+%5Btruncated%
+5D%0A%0A%5BDeepfake+Research+Tester+%28user%29%5D%3A+%40ai+As+a+research+mentor
+%2C+advise+on+deepfake+detection+research.+Based+on+the+collected+papers%2C+wha
+t+would+be+the+most+promising+research+direction+for+a+new+PhD+student%3F+What+
+skills+and+knowledge+areas+should+they+focus+on%3F+What+are+the+key+methodologi
+cal+pitfalls+to+avoid%3F%0A%0A%5Bai+%28ai%29%5D%3A+%23%23+Research+Mentor%0A%0A
+%23%23%23+Mentor+Advice%0A%0AError+providing+mentoring%3A+%0A%0A%2A%2AArtifacts
+%2A%2A%0A-+d94bb5a5-5153-484c-b9a2-fc86f25ed031%0A%0A_Completed+in+74777ms_%0A%
+0A%5BDeepfake+Research+Tester+%28user%29%5D%3A+%40ai+Create+a+detailed+research
++plan+for+a+project+on+developing+a+novel+deepfake+detection+method+that+improv
+es+cross-dataset+generalization.+Include+milestones%2C+timeline%2C+required+res
+ources%2C+datasets+to+use%2C+baseline+methods+to+compare+against%2C+and+evaluat
+ion+metrics.%0A%0A%5Bai+%28ai%29%5D%3A+%23%23+Research+Planning%0A%0A%23%23%23+
+Research+Plan%0A%0AError+planning+research%3A+%0A%0A%2A%2AArtifacts%2A%2A%0A-+f
+4ff2a4b-2cc5-4af6-81db-3c5d62b00ccf%0A%0A_Completed+in+78668ms_%0A%0ACurrent+us
+er+request%3A+%40ai+Write+a+comprehensive+research+paper+titled+%22A+Comparativ
+e+Survey+of+Deep+Learning+Methods+for+Deepfake+Detection%3A+Architectures%2C+Da
+tasets%2C+and+Challenges%22.+The+paper+should+include%3A%0A1.+Abstract+summariz
+ing+key+findings%0A2.+Introduction+with+motivation+and+problem+statement%0A3.+B
+ackground+on+deepfake+generation+techniques%0A4.+Taxonomy+of+detection+methods+
+%28CNN-based%2C+Transformer-based%2C+Frequency-based%2C+Temporal-based%29%0A5.+
+Comparative+analysis+of+methods+with+performance+tables%0A6.+Discussion+of+cros
+s-dataset+generalization+challenges%0A7.+Analysis+of+detection+robustness+again
+st+compression+and+social+media+degradation%0A8.+Open+challenges+and+future+res
+earch+directions%0A9.+Conclusion%0A%0AUse+the+collected+papers+as+references+an
+d+cite+them+appropriately.%29&start=0&max_results=3&sortBy=relevance&sortOrder=
+descending'
+For more information check: 
+https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414
+INFO:     127.0.0.1:34910 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:35830 - "GET /health HTTP/1.1" 200 OK
+_tool_write_paper_draft failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+INFO:     172.18.0.3:58414 - "POST /agentic/stream HTTP/1.1" 200 OK
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1180, in _tool_write_paper_draft
+    sub_queries = await self._call_llm_json(
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 289, in _call_llm_json
+    raw = await self._call_llm(
+          ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
+_tool_write_paper_draft failed: 
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 520, in wait_for
+    return await fut
+           ^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 425, in ainvoke
+    llm_result = await self.agenerate_prompt(
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1134, in agenerate_prompt
+    return await self.agenerate(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1054, in agenerate
+    results = await asyncio.gather(
+              ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_core/language_models/
+chat_models.py", line 1361, in _agenerate_with_cache
+    result = await self._agenerate(
+             ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/langchain_openai/chat_models/ba
+se.py", line 1726, in _agenerate
+    raw_response = await self.async_client.with_raw_response.create(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_legacy_response.py", 
+line 384, in wrapped
+    return cast(LegacyAPIResponse[R], await func(*args, **kwargs))
+                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/resources/chat/completio
+ns/completions.py", line 2700, in create
+    return await self._post(
+           ^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1884, in post
+    return await self.request(cast_to, opts, stream=stream, 
+stream_cls=stream_cls)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/openai/_base_client.py", line 
+1604, in request
+    response = await self._client.send(
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1643, 
+in send
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 1637, 
+in send
+    await response.aread()
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 979, 
+in aread
+    self._content = b"".join([part async for part in self.aiter_bytes()])
+                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 997, 
+in aiter_bytes
+    async for raw_bytes in self.aiter_raw():
+  File "/usr/local/lib/python3.12/site-packages/httpx/_models.py", line 1055, 
+in aiter_raw
+    async for raw_stream_bytes in self.stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_client.py", line 176, 
+in __aiter__
+    async for chunk in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpx/_transports/default.py", 
+line 271, in __aiter__
+    async for part in self._httpcore_stream:
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 407, in __aiter__
+    raise exc from None
+  File 
+"/usr/local/lib/python3.12/site-packages/httpcore/_async/connection_pool.py", 
+line 403, in __aiter__
+    async for part in self._stream:
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 342, in __aiter__
+    raise exc
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 334, in __aiter__
+    async for chunk in self._connection._receive_response_body(**kwargs):
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 203, in _receive_response_body
+    event = await self._receive_event(timeout=timeout)
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_async/http11.py", 
+line 217, in _receive_event
+    data = await self._network_stream.read(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/httpcore/_backends/anyio.py", 
+line 35, in read
+    return await self._stream.receive(max_bytes=max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+244, in receive
+    data = await self._call_sslobject_method(self._ssl_object.read, max_bytes)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/streams/tls.py", line 
+187, in _call_sslobject_method
+    data = await self.transport_stream.receive()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/anyio/_backends/_asyncio.py", 
+line 1269, in receive
+    await self._protocol.read_event.wait()
+  File "/usr/local/lib/python3.12/asyncio/locks.py", line 212, in wait
+    await fut
+asyncio.exceptions.CancelledError
+INFO:     172.18.0.3:58412 - "POST /agentic/stream HTTP/1.1" 200 OK
+INFO:     127.0.0.1:47942 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:42378 - "GET /health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:58414 - "GET /health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:58414 - "POST /reports/group/35c3d910-b159-4194-9fab-049ba0832ea0/generate HTTP/1.1" 200 OK
+INFO:     172.18.0.3:58412 - "GET /health HTTP/1.1" 200 OK
+INFO:     172.18.0.3:58412 - "POST /reports/group/5b4c0149-7ac3-4bec-ae71-1bebf90e0d64/generate HTTP/1.1" 200 OK
+INFO:     127.0.0.1:40738 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:58988 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:43044 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:44854 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:45402 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:49008 - "GET /health HTTP/1.1" 200 OK
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/agentic.py", line 1210, in _tool_write_paper_draft
+    raw = await self._call_llm(system_prompt, user_prompt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 193, in async_wrapped
+    return await copy(fn, *args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 112, in __call__
+    do = await self.iter(retry_state=retry_state)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 157, in iter
+    result = await action(retry_state)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/_utils.py", line 111, 
+in inner
+    return call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/site-packages/tenacity/__init__.py", line 
+393, in <lambda>
+    self._add_action_func(lambda rs: rs.outcome.result())
+                                     ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 449, in 
+result
+    return self.__get_result()
+           ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/concurrent/futures/_base.py", line 401, in 
+__get_result
+    raise self._exception
+  File "/usr/local/lib/python3.12/site-packages/tenacity/asyncio/__init__.py", 
+line 116, in __call__
+    result = await fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/agentic.py", line 274, in _call_llm
+    response = await asyncio.wait_for(
+               ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/tasks.py", line 519, in wait_for
+    async with timeouts.timeout(timeout):
+               ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.12/asyncio/timeouts.py", line 115, in __aexit__
+    raise TimeoutError from exc_val
+TimeoutError
