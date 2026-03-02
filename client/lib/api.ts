@@ -630,7 +630,9 @@ export type AgenticTaskType =
   | 'research_mentor'
   | 'paper_writing'
   | 'research_planning'
-  | 'deep_research';
+  | 'deep_research'
+  | 'methodology_extraction'
+  | 'reviewer_anticipation';
 
 export interface AgenticRunResponse {
   task_type: AgenticTaskType;
@@ -638,4 +640,34 @@ export interface AgenticRunResponse {
   artifacts: string[];
   metadata: Record<string, unknown>;
   latency_ms: number;
+}
+
+export interface IntentClassifiedEvent {
+  task_type: string | null;
+  similarity: number;
+  ambiguous: boolean;
+  alternatives: Array<{ intent: string; score: number }>;
+}
+
+export interface MethodologyRow {
+  paper_title: string;
+  design: string;
+  sample_size: string;
+  population: string;
+  measures: string;
+  statistical_methods: string;
+  limitations: string;
+  replication_risk: string;
+}
+
+export interface ReviewerCritique {
+  critique: string;
+  reasoning: string;
+  suggested_response: string;
+  severity: 'low' | 'medium' | 'high';
+}
+
+export interface CitationAnchoredSentence {
+  text: string;
+  source_ids: string[];
 }

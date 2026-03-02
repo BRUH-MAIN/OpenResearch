@@ -1,4 +1,4 @@
-"""Agentic orchestration service using LangGraph and LangChain-Groq."""
+"""Agentic orchestration service using LangGraph — DeepSeek primary, Groq fallback."""
 
 from __future__ import annotations
 
@@ -25,7 +25,6 @@ try:
     from langgraph.prebuilt import create_react_agent
     from langchain_core.tools import tool
     from langchain_core.runnables import RunnableConfig
-    from langchain_groq import ChatGroq
     from langchain_core.messages import SystemMessage, HumanMessage, AnyMessage
     from langgraph.graph.message import add_messages
     _LANGCHAIN_AVAILABLE = True
@@ -33,22 +32,44 @@ try:
 except Exception as exc:  # pragma: no cover - optional dependency import
     create_react_agent = None  # type: ignore[assignment]
     tool = None  # type: ignore[assignment]
-    ChatGroq = None  # type: ignore[assignment]
     SystemMessage = None  # type: ignore[assignment]
     HumanMessage = None  # type: ignore[assignment]
     _LANGCHAIN_AVAILABLE = False
     _LANGCHAIN_IMPORT_ERROR = exc
 
+# LLM provider imports (both optional)
+try:
+    from langchain_openai import ChatOpenAI  # DeepSeek via OpenAI-compat
+except Exception:  # pragma: no cover
+    ChatOpenAI = None  # type: ignore[assignment]
+
+try:
+    from langchain_groq import ChatGroq
+except Exception:  # pragma: no cover
+    ChatGroq = None  # type: ignore[assignment]
+
 from .config import get_settings
 from .database import database
 from .vector_store import vector_store
 from .reranker import reranker
-from .intent_classifier import classify_intent
+from .intent_classifier import classify_intent, classify_intent_detailed
 from .tools.arxiv import search_arxiv
 from .tools.web_search import search_web
+from .tools.methodology_extractor import extract_methodology_for_papers
+from .tools.reviewer_anticipator import anticipate_reviewer_critiques
+from .tools.citation_anchor import anchor_citations
+from .tools.gap_finder import find_embedding_space_gaps
 
 # Default timeout for a single LLM call (seconds).
-_LLM_CALL_TIMEOUT = 60
+_LLM_CALL_TIMEOUT = 180
+
+# Intents where a single tool suffices — used for ReAct short-circuit.
+_SINGLE_TOOL_INTENTS: dict[str, str] = {
+    "fact_check": "_tool_fact_check",
+    "research_mentor": "_tool_provide_mentoring",
+    "methodology_extraction": "_tool_extract_methodology",
+    "reviewer_anticipation": "_tool_anticipate_reviews",
+}
 
 
 class AgentState(TypedDict, total=False):
@@ -84,9 +105,11 @@ class AgenticService:
 
     def __init__(self):
         self._llm: Any = None
+        self._fallback_llm: Any = None
         self._llm_cache: dict[str, Any] = {}
         self._initialized = False
         self._api_key: Optional[str] = None
+        self._provider: Optional[str] = None
 
     def initialize(self) -> bool:
         if not _LANGCHAIN_AVAILABLE:
@@ -96,21 +119,49 @@ class AgenticService:
             )
             return False
         settings = get_settings()
-        if not settings.groq_api_key:
-            logger.warning("Groq API key not set - agentic features unavailable")
+
+        # --- Try DeepSeek first (primary) ---
+        if ChatOpenAI is not None and settings.deepseek_api_key:
+            try:
+                self._llm = ChatOpenAI(
+                    api_key=settings.deepseek_api_key,
+                    model=settings.deepseek_model,
+                    base_url=settings.deepseek_base_url,
+                    temperature=0.2,
+                )
+                self._api_key = settings.deepseek_api_key
+                self._provider = "deepseek"
+                logger.info("Agentic primary LLM: DeepSeek (%s)", settings.deepseek_model)
+            except Exception as e:
+                logger.warning("DeepSeek init failed for agentic: %s", e)
+                self._llm = None
+
+        # --- Groq as fallback (or primary if DeepSeek unavailable) ---
+        if ChatGroq is not None and settings.groq_api_key:
+            try:
+                groq_llm = ChatGroq(
+                    temperature=0.2,
+                    model_name=settings.groq_model,
+                    api_key=settings.groq_api_key,
+                )
+                if self._llm is None:
+                    self._llm = groq_llm
+                    self._api_key = settings.groq_api_key
+                    self._provider = "groq"
+                    logger.info("Agentic primary LLM (fallback): Groq (%s)", settings.groq_model)
+                else:
+                    self._fallback_llm = groq_llm
+                    logger.info("Agentic fallback LLM: Groq (%s)", settings.groq_model)
+            except Exception as e:
+                logger.warning("Groq init failed for agentic: %s", e)
+
+        if self._llm is None:
+            logger.warning("No LLM provider available — agentic features disabled")
             return False
 
-        self._api_key = settings.groq_api_key
-
-        self._llm = ChatGroq(
-            temperature=0.2,
-            model_name=settings.groq_model,
-            api_key=settings.groq_api_key,
-        )
-        self._llm_cache = {settings.groq_model: self._llm}
-
+        self._llm_cache = {(self._provider or "default"): self._llm}
         self._initialized = True
-        logger.info("Agentic service initialized")
+        logger.info("Agentic service initialized (provider: %s)", self._provider)
         return True
 
     @property
@@ -151,6 +202,8 @@ class AgenticService:
             "paper_writing": [self._tool_retrieve_papers, self._tool_write_paper_draft],
             "research_planning": [self._tool_plan_research],
             "deep_research": [self._tool_deep_research],
+            "methodology_extraction": [self._tool_retrieve_papers, self._tool_extract_methodology],
+            "reviewer_anticipation": [self._tool_retrieve_papers, self._tool_anticipate_reviews],
         }
 
         selected_tools = task_tool_map.get(effective_task) or [self._tool_retrieve_papers, self._tool_survey_literature]
@@ -174,11 +227,23 @@ class AgenticService:
         cached = self._llm_cache.get(model_name)
         if cached:
             return cached
-        llm = ChatGroq(
-            api_key=self._api_key,
-            model_name=model_name,
-            temperature=temperature,
-        )
+        # Create a new LLM instance using the active provider
+        settings = get_settings()
+        if self._provider == "deepseek" and ChatOpenAI is not None:
+            llm = ChatOpenAI(
+                api_key=settings.deepseek_api_key,
+                model=model_name,
+                base_url=settings.deepseek_base_url,
+                temperature=temperature,
+            )
+        elif ChatGroq is not None:
+            llm = ChatGroq(
+                api_key=self._api_key,
+                model_name=model_name,
+                temperature=temperature,
+            )
+        else:
+            return self._llm  # fall back to default
         self._llm_cache[model_name] = llm
         return llm
 
@@ -206,10 +271,16 @@ class AgenticService:
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt),
         ]
-        response = await asyncio.wait_for(
-            llm.ainvoke(messages),
-            timeout=timeout,
-        )
+        try:
+            response = await asyncio.wait_for(
+                llm.ainvoke(messages),
+                timeout=timeout,
+            )
+        except (asyncio.TimeoutError, TimeoutError) as te:
+            raise TimeoutError(
+                f"LLM call timed out after {timeout}s. "
+                f"Prompt length: system={len(system_prompt)}, user={len(user_prompt)}"
+            ) from te
         return response.content if hasattr(response, "content") else str(response)
 
     async def _call_llm_json(
@@ -218,6 +289,7 @@ class AgenticService:
         user_prompt: str,
         model_name: Optional[str] = None,
         temperature: float = 0.2,
+        timeout: float = _LLM_CALL_TIMEOUT,
     ) -> Any:
         """Call the LLM expecting a JSON response. Retries on parse failure."""
         for attempt in range(3):
@@ -226,6 +298,7 @@ class AgenticService:
                 user_prompt + "\n\nReturn valid JSON only, no other text.",
                 model_name=model_name,
                 temperature=temperature,
+                timeout=timeout,
             )
             cleaned = re.sub(r"^```(?:json)?\s*", "", raw.strip())
             cleaned = re.sub(r"\s*```$", "", cleaned)
@@ -545,9 +618,25 @@ class AgenticService:
                             group_id=group_id, query=str(sq), limit=5
                         )
                         for res in results:
+                            # Title resolution: JOIN title > metadata title > first line of content > paper_id
+                            title = res.get("title") or ""
+                            if not title:
+                                meta = res.get("metadata") or {}
+                                title = meta.get("title", "")
+                            if not title:
+                                content = res.get("content", "")
+                                first_line = content.split("\n")[0].strip() if content else ""
+                                if first_line and len(first_line) < 200:
+                                    title = first_line
+                                else:
+                                    title = res.get("paper_id", "DB Chunk")
+                            url = res.get("url") or ""
+                            if not url:
+                                meta = res.get("metadata") or {}
+                                url = meta.get("url", "")
                             results_list.append({
-                                "title": res.get("title", res.get("paper_id", "DB Chunk")),
-                                "url": res.get("url", ""),
+                                "title": title,
+                                "url": url,
                                 "snippet": res.get("content", ""),
                                 "src_type": "vector_store",
                             })
@@ -653,6 +742,12 @@ class AgenticService:
             else:
                 replacement = f"*{title}*"
             text = text.replace(marker, replacement)
+
+        # Remove any leftover [SN] markers the LLM hallucinated beyond valid sources
+        valid_ids = {src["id"] for src in sources}
+        def _strip_invalid(m: re.Match) -> str:
+            return "" if m.group(1) not in valid_ids else m.group(0)
+        text = re.sub(r"\[(S\d+)\]", _strip_invalid, text)
         return text
 
     def _build_reference_section(self, sources: list[dict]) -> str:
@@ -664,10 +759,16 @@ class AgenticService:
             title = src["title"]
             url = src["url"]
             src_type = src["type"]
+            # Skip sources with no meaningful title (e.g. raw "system" paper_id)
+            if not title or title.lower() in ("system", "untitled", "db chunk"):
+                continue
             if url:
                 lines.append(f"{i}. [{title}]({url}) — *{src_type}*")
             else:
                 lines.append(f"{i}. {title} — *{src_type}*")
+        # If all sources were filtered out, return empty
+        if len(lines) <= 1:
+            return ""
         return "\n".join(lines)
 
     # ------------------------------------------------------------------
@@ -874,42 +975,47 @@ class AgenticService:
         except Exception as exc:
             logger.error("_tool_survey_literature failed: %s", exc, exc_info=True)
             return f"Error surveying literature: {exc}"
-    async def _tool_analyze_gaps(self, literature_review_context: str, config: RunnableConfig) -> str:
+    async def _tool_analyze_gaps(self, literature_review_context: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
         """Identify research gaps, unresolved debates, and underexplored areas."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Generate sub-queries for gap analysis — include full context so
-            # queries stay on topic when conversation history is present.
-            sub_queries = await self._call_llm_json(
-                system_prompt=(
-                    "You are a research strategist. Given the research context below "
-                    "(which may include conversation history), generate 3-5 focused "
-                    "search queries to find potential research gaps, underexplored areas, "
-                    "and recent developments related to THE SPECIFIC TOPIC the user is "
-                    "researching. Do NOT generate queries about unrelated topics. "
-                    "Return a JSON array of strings."
-                ),
-                user_prompt=f"Topic context:\n{literature_review_context[:3000]}",
-                temperature=0.2,
-            )
-            if not isinstance(sub_queries, list):
-                sub_queries = [literature_review_context[:200]]
+            if pre_context:
+                context_text, sources = pre_context
+            else:
+                # Generate sub-queries for gap analysis — include full context so
+                # queries stay on topic when conversation history is present.
+                sub_queries = await self._call_llm_json(
+                    system_prompt=(
+                        "You are a research strategist. Given the research context below "
+                        "(which may include conversation history), generate 3-5 focused "
+                        "search queries to find potential research gaps, underexplored areas, "
+                        "and recent developments related to THE SPECIFIC TOPIC the user is "
+                        "researching. Do NOT generate queries about unrelated topics. "
+                        "Return a JSON array of strings."
+                    ),
+                    user_prompt=f"Topic context:\n{literature_review_context[:3000]}",
+                    temperature=0.2,
+                )
+                if not isinstance(sub_queries, list):
+                    sub_queries = [literature_review_context[:200]]
 
-            context_text, sources = await self._gather_context(
-                query=literature_review_context[:500],
-                sub_queries=sub_queries,
-                group_id=group_id,
-            )
+                context_text, sources = await self._gather_context(
+                    query=literature_review_context[:500],
+                    sub_queries=sub_queries,
+                    group_id=group_id,
+                )
 
             system_prompt = (
                 "You are the Gap Analysis Agent. Identify research gaps, unresolved debates, "
                 "and underexplored areas based on the provided context.\n\n"
                 "RULES:\n"
-                "1. Cite sources using [S1], [S2], etc.\n"
-                "2. Rate each gap: 🔴 High / 🟡 Medium / 🟢 Low significance\n"
-                "3. Suggest concrete approaches for each gap with supporting references\n"
-                "4. Structure output with clear numbered gaps\n"
-                "5. Be thorough and detailed"
+                "1. Cite sources using ONLY the [S1], [S2], etc. markers from the provided sources below.\n"
+                "2. Do NOT invent or fabricate any references, author names, journal names, or DOIs. "
+                "Only cite [SN] markers that appear in the provided sources.\n"
+                "3. Rate each gap: 🔴 High / 🟡 Medium / 🟢 Low significance\n"
+                "4. Suggest concrete approaches for each gap with supporting references\n"
+                "5. Structure output with clear numbered gaps\n"
+                "6. Be thorough and detailed"
             )
             user_prompt = (
                 f"Literature review context:\n{literature_review_context[:3000]}\n\n"
@@ -925,31 +1031,34 @@ class AgenticService:
             logger.error("_tool_analyze_gaps failed: %s", exc, exc_info=True)
             return f"Error analyzing gaps: {exc}"
 
-    async def _tool_fact_check(self, claim: str, config: RunnableConfig) -> str:
+    async def _tool_fact_check(self, claim: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
         """Verify claims against available context. Returns supported, contradicted, or unclear with evidence."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Generate search queries to verify the claim — include
-            # conversation context so queries remain on the right topic.
-            sub_queries = await self._call_llm_json(
-                system_prompt=(
-                    "You are a fact-checking strategist. The user's claim may reference "
-                    "an ongoing conversation — use the full context to understand what "
-                    "specific topic and papers they are referring to. Generate 3-5 "
-                    "search queries to find evidence that supports or contradicts the "
-                    "given claim. Return a JSON array of strings."
-                ),
-                user_prompt=f"Claim to verify: {claim}",
-                temperature=0.2,
-            )
-            if not isinstance(sub_queries, list):
-                sub_queries = [claim]
+            if pre_context:
+                context_text, sources = pre_context
+            else:
+                # Generate search queries to verify the claim — include
+                # conversation context so queries remain on the right topic.
+                sub_queries = await self._call_llm_json(
+                    system_prompt=(
+                        "You are a fact-checking strategist. The user's claim may reference "
+                        "an ongoing conversation — use the full context to understand what "
+                        "specific topic and papers they are referring to. Generate 3-5 "
+                        "search queries to find evidence that supports or contradicts the "
+                        "given claim. Return a JSON array of strings."
+                    ),
+                    user_prompt=f"Claim to verify: {claim}",
+                    temperature=0.2,
+                )
+                if not isinstance(sub_queries, list):
+                    sub_queries = [claim]
 
-            context_text, sources = await self._gather_context(
-                query=claim,
-                sub_queries=sub_queries,
-                group_id=group_id,
-            )
+                context_text, sources = await self._gather_context(
+                    query=claim,
+                    sub_queries=sub_queries,
+                    group_id=group_id,
+                )
 
             system_prompt = (
                 "You are the Fact-Checking Agent. Verify the claim against the provided evidence.\n\n"
@@ -974,41 +1083,45 @@ class AgenticService:
             logger.error("_tool_fact_check failed: %s", exc, exc_info=True)
             return f"Error fact checking: {exc}"
 
-    async def _tool_assess_novelty(self, idea: str, config: RunnableConfig) -> str:
+    async def _tool_assess_novelty(self, idea: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
         """Compare an idea against existing papers and assess novelty."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Generate search queries for prior art — include conversation
-            # context so queries find work related to the actual idea.
-            sub_queries = await self._call_llm_json(
-                system_prompt=(
-                    "You are a novelty assessment strategist. The user's idea may "
-                    "reference an ongoing conversation — use the full context to "
-                    "understand their specific research idea. Generate 3-5 search "
-                    "queries to find existing work similar to the idea. Aim to find "
-                    "overlapping research. Return a JSON array of strings."
-                ),
-                user_prompt=f"Idea to assess: {idea}",
-                temperature=0.2,
-            )
-            if not isinstance(sub_queries, list):
-                sub_queries = [idea]
+            if pre_context:
+                context_text, sources = pre_context
+            else:
+                # Generate search queries for prior art — include conversation
+                # context so queries find work related to the actual idea.
+                sub_queries = await self._call_llm_json(
+                    system_prompt=(
+                        "You are a novelty assessment strategist. The user's idea may "
+                        "reference an ongoing conversation — use the full context to "
+                        "understand their specific research idea. Generate 3-5 search "
+                        "queries to find existing work similar to the idea. Aim to find "
+                        "overlapping research. Return a JSON array of strings."
+                    ),
+                    user_prompt=f"Idea to assess: {idea}",
+                    temperature=0.2,
+                )
+                if not isinstance(sub_queries, list):
+                    sub_queries = [idea]
 
-            context_text, sources = await self._gather_context(
-                query=idea,
-                sub_queries=sub_queries,
-                group_id=group_id,
-            )
+                context_text, sources = await self._gather_context(
+                    query=idea,
+                    sub_queries=sub_queries,
+                    group_id=group_id,
+                )
 
             system_prompt = (
                 "You are the Novelty Assessment Agent. Compare the idea against existing work.\n\n"
                 "RULES:\n"
-                "1. Cite all related work using [S1], [S2], etc.\n"
-                "2. Provide a novelty score (0-100) with detailed justification\n"
-                "3. List specific overlaps with existing work (cite sources)\n"
-                "4. Identify the unique contributions of the idea\n"
-                "5. Suggest differentiation strategies with references\n"
-                "6. Use a structured format with clear sections"
+                "1. Cite all related work using ONLY the [S1], [S2], etc. markers from the provided sources.\n"
+                "2. Do NOT invent or fabricate any references. Only cite [SN] markers that appear in the sources.\n"
+                "3. Provide a novelty score (0-100) with detailed justification\n"
+                "4. List specific overlaps with existing work (cite sources)\n"
+                "5. Identify the unique contributions of the idea\n"
+                "6. Suggest differentiation strategies with references\n"
+                "7. Use a structured format with clear sections"
             )
             user_prompt = (
                 f"Idea to assess: {idea}\n\n"
@@ -1024,42 +1137,46 @@ class AgenticService:
             logger.error("_tool_assess_novelty failed: %s", exc, exc_info=True)
             return f"Error assessing novelty: {exc}"
 
-    async def _tool_provide_mentoring(self, query: str, config: RunnableConfig) -> str:
+    async def _tool_provide_mentoring(self, query: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
         """Provide personalized guidance, methodology advice, and next steps."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Generate search queries for resources — include conversation
-            # context so queries pertain to the actual research topic.
-            sub_queries = await self._call_llm_json(
-                system_prompt=(
-                    "You are a research mentor. The student's question may reference "
-                    "an ongoing conversation — use the full context to understand their "
-                    "specific research topic. Generate 3-5 search queries to find "
-                    "helpful resources, methodologies, tutorials, and seminal papers "
-                    "DIRECTLY relevant to their topic. Do NOT generate generic or "
-                    "unrelated queries. Return a JSON array of strings."
-                ),
-                user_prompt=f"Student question: {query}",
-                temperature=0.2,
-            )
-            if not isinstance(sub_queries, list):
-                sub_queries = [query]
+            if pre_context:
+                context_text, sources = pre_context
+            else:
+                # Generate search queries for resources — include conversation
+                # context so queries pertain to the actual research topic.
+                sub_queries = await self._call_llm_json(
+                    system_prompt=(
+                        "You are a research mentor. The student's question may reference "
+                        "an ongoing conversation — use the full context to understand their "
+                        "specific research topic. Generate 3-5 search queries to find "
+                        "helpful resources, methodologies, tutorials, and seminal papers "
+                        "DIRECTLY relevant to their topic. Do NOT generate generic or "
+                        "unrelated queries. Return a JSON array of strings."
+                    ),
+                    user_prompt=f"Student question: {query}",
+                    temperature=0.2,
+                )
+                if not isinstance(sub_queries, list):
+                    sub_queries = [query]
 
-            context_text, sources = await self._gather_context(
-                query=query,
-                sub_queries=sub_queries,
-                group_id=group_id,
-            )
+                context_text, sources = await self._gather_context(
+                    query=query,
+                    sub_queries=sub_queries,
+                    group_id=group_id,
+                )
 
             system_prompt = (
                 "You are the Research Mentor Agent. Provide detailed, actionable guidance.\n\n"
                 "RULES:\n"
-                "1. Cite resources using [S1], [S2], etc.\n"
-                "2. Recommend seminal papers with proper citations\n"
-                "3. Suggest specific methodologies with references\n"
-                "4. Provide step-by-step next actions\n"
-                "5. Include recommended tools, datasets, or frameworks with links\n"
-                "6. Be encouraging but rigorous"
+                "1. Cite resources using ONLY the [S1], [S2], etc. markers from the provided sources.\n"
+                "2. Do NOT invent or fabricate any references. Only cite [SN] markers that appear in the sources.\n"
+                "3. Recommend seminal papers with proper citations\n"
+                "4. Suggest specific methodologies with references\n"
+                "5. Provide step-by-step next actions\n"
+                "6. Include recommended tools, datasets, or frameworks with links\n"
+                "7. Be encouraging but rigorous"
             )
             user_prompt = (
                 f"Student query: {query}\n\n"
@@ -1075,24 +1192,27 @@ class AgenticService:
             logger.error("_tool_provide_mentoring failed: %s", exc, exc_info=True)
             return f"Error providing mentoring: {exc}"
 
-    async def _tool_write_paper_draft(self, paper_request: str, config: RunnableConfig) -> str:
+    async def _tool_write_paper_draft(self, paper_request: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
         """Draft a structured paper outline and key sections."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Generate queries for reference gathering
-            sub_queries = await self._call_llm_json(
-                system_prompt="You are an academic writing assistant. Generate 3-5 search queries to find reference material for the paper topic. Return a JSON array of strings.",
-                user_prompt=f"Paper topic: {paper_request}",
-                temperature=0.2,
-            )
-            if not isinstance(sub_queries, list):
-                sub_queries = [paper_request]
+            if pre_context:
+                context_text, sources = pre_context
+            else:
+                # Generate queries for reference gathering
+                sub_queries = await self._call_llm_json(
+                    system_prompt="You are an academic writing assistant. Generate 3-5 search queries to find reference material for the paper topic. Return a JSON array of strings.",
+                    user_prompt=f"Paper topic: {paper_request}",
+                    temperature=0.2,
+                )
+                if not isinstance(sub_queries, list):
+                    sub_queries = [paper_request]
 
-            context_text, sources = await self._gather_context(
-                query=paper_request,
-                sub_queries=sub_queries,
-                group_id=group_id,
-            )
+                context_text, sources = await self._gather_context(
+                    query=paper_request,
+                    sub_queries=sub_queries,
+                    group_id=group_id,
+                )
 
             system_prompt = (
                 "You are the Paper Writing Agent. Draft a structured academic paper.\n\n"
@@ -1118,34 +1238,38 @@ class AgenticService:
             logger.error("_tool_write_paper_draft failed: %s", exc, exc_info=True)
             return f"Error writing paper draft: {exc}"
 
-    async def _tool_plan_research(self, request: str, config: RunnableConfig) -> str:
+    async def _tool_plan_research(self, request: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
         """Create a milestone-based plan with dependencies, timeline estimates, and resources."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Generate queries for methodology & best practices search
-            sub_queries = await self._call_llm_json(
-                system_prompt="You are a research planning strategist. Generate 3-5 search queries to find methodologies, best practices, tools, and existing approaches for the research plan. Return a JSON array of strings.",
-                user_prompt=f"Research plan request: {request}",
-                temperature=0.2,
-            )
-            if not isinstance(sub_queries, list):
-                sub_queries = [request]
+            if pre_context:
+                context_text, sources = pre_context
+            else:
+                # Generate queries for methodology & best practices search
+                sub_queries = await self._call_llm_json(
+                    system_prompt="You are a research planning strategist. Generate 3-5 search queries to find methodologies, best practices, tools, and existing approaches for the research plan. Return a JSON array of strings.",
+                    user_prompt=f"Research plan request: {request}",
+                    temperature=0.2,
+                )
+                if not isinstance(sub_queries, list):
+                    sub_queries = [request]
 
-            context_text, sources = await self._gather_context(
-                query=request,
-                sub_queries=sub_queries,
-                group_id=group_id,
-            )
+                context_text, sources = await self._gather_context(
+                    query=request,
+                    sub_queries=sub_queries,
+                    group_id=group_id,
+                )
 
             system_prompt = (
                 "You are the Research Planning Agent. Create a comprehensive, milestone-based plan.\n\n"
                 "RULES:\n"
-                "1. Cite methodologies and resources using [S1], [S2], etc.\n"
-                "2. Include: Milestones with timeline estimates, dependencies between tasks,\n"
+                "1. Cite methodologies and resources using ONLY the [S1], [S2], etc. markers from the provided sources.\n"
+                "2. Do NOT invent or fabricate any references. Only cite [SN] markers that appear in the sources.\n"
+                "3. Include: Milestones with timeline estimates, dependencies between tasks,\n"
                 "   recommended tools/datasets (with links), potential risks\n"
-                "3. Link each milestone to relevant references\n"
-                "4. Be specific and actionable\n"
-                "5. Include a Gantt-chart style text timeline"
+                "4. Link each milestone to relevant references\n"
+                "5. Be specific and actionable\n"
+                "6. Include a Gantt-chart style text timeline"
             )
             user_prompt = (
                 f"Research plan request: {request}\n\n"
@@ -1161,32 +1285,35 @@ class AgenticService:
             logger.error("_tool_plan_research failed: %s", exc, exc_info=True)
             return f"Error planning research: {exc}"
 
-    async def _tool_deep_research(self, query: str, config: RunnableConfig) -> str:
+    async def _tool_deep_research(self, query: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
         """Conduct deep research by generating sub-queries, gathering sources, and writing a comprehensive report."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Step 1: Generate search queries
-            plan_system = (
-                "You are a research planner. Generate a focused set of search queries to answer the user question. "
-                "Return a JSON array of 4-6 concise, diverse search queries."
-            )
-            plan_text = await self._call_llm(
-                plan_system,
-                f"User question: {query}\nReturn JSON array only.",
-                temperature=0.2,
-            )
-            queries = self._parse_json_list(plan_text)
-            if not queries:
-                queries = [re.sub(r"@ai", "", query, flags=re.IGNORECASE).strip() or query]
+            if pre_context:
+                context_text, sources = pre_context
+            else:
+                # Step 1: Generate search queries
+                plan_system = (
+                    "You are a research planner. Generate a focused set of search queries to answer the user question. "
+                    "Return a JSON array of 4-6 concise, diverse search queries."
+                )
+                plan_text = await self._call_llm(
+                    plan_system,
+                    f"User question: {query}\nReturn JSON array only.",
+                    temperature=0.2,
+                )
+                queries = self._parse_json_list(plan_text)
+                if not queries:
+                    queries = [re.sub(r"@ai", "", query, flags=re.IGNORECASE).strip() or query]
 
-            # Step 2: Gather sources from all channels
-            context_text, sources = await self._gather_context(
-                query=query,
-                sub_queries=queries,
-                group_id=group_id,
-                include_web=True,
-                include_arxiv=True,
-            )
+                # Step 2: Gather sources from all channels
+                context_text, sources = await self._gather_context(
+                    query=query,
+                    sub_queries=queries,
+                    group_id=group_id,
+                    include_web=True,
+                    include_arxiv=True,
+                )
 
             # Step 3: Summarize sources
             summaries = await self._summarize_sources(query, [
@@ -1197,7 +1324,8 @@ class AgenticService:
             # Step 4: Synthesize notes
             compression_system = (
                 "You are a research synthesizer. Combine source summaries into coherent notes. "
-                "Keep citations like [S1], [S2] in the text."
+                "Keep citations like [S1], [S2] in the text. Do NOT invent new references — "
+                "only use [SN] markers from the provided summaries."
             )
             notes = await self._call_llm(
                 compression_system,
@@ -1210,11 +1338,12 @@ class AgenticService:
             report_system = (
                 "You are the Deep Research Agent. Write a comprehensive report.\n\n"
                 "RULES:\n"
-                "1. Use citations [S1], [S2], etc. throughout the text\n"
-                "2. Include: Executive Summary, Key Findings, Evidence & Analysis, "
+                "1. Use ONLY the citations [S1], [S2], etc. that appear in the research notes below.\n"
+                "2. Do NOT invent or fabricate any references, author names, journal names, or DOIs.\n"
+                "3. Include: Executive Summary, Key Findings, Evidence & Analysis, "
                 "Open Questions, and Future Directions\n"
-                "3. Be thorough, detailed, and evidence-based\n"
-                "4. Each claim must be backed by a citation"
+                "4. Be thorough, detailed, and evidence-based\n"
+                "5. Each claim must be backed by a citation from the notes"
             )
             report = await self._call_llm(
                 report_system,
@@ -1229,6 +1358,227 @@ class AgenticService:
         except Exception as exc:
             logger.error("_tool_deep_research failed: %s", exc, exc_info=True)
             return f"Error in deep research: {exc}"
+
+    async def _tool_extract_methodology(self, query: str, config: RunnableConfig) -> str:
+        """Extract and compare methodologies from papers into a structured matrix."""
+        group_id = config.get("configurable", {}).get("group_id")
+        try:
+            # Gather papers from group + arxiv
+            papers = await self._get_group_papers(group_id) if group_id else []
+            try:
+                ax_resp = await search_arxiv(query=query, limit=15)
+                papers.extend(ax_resp.get("papers", []))
+            except Exception as exc:
+                logger.warning("ArXiv search failed for methodology extraction: %s", exc)
+
+            # Fallback: use _gather_context to build synthetic paper entries from web/vector sources
+            if not papers:
+                try:
+                    sub_queries = await self._call_llm_json(
+                        system_prompt=(
+                            "Generate 3-5 search queries to find academic papers with detailed "
+                            "methodology sections on this topic. Return a JSON array of strings."
+                        ),
+                        user_prompt=f"Topic: {query}",
+                        temperature=0.2,
+                    )
+                    if not isinstance(sub_queries, list):
+                        sub_queries = [query]
+                    _, sources = await self._gather_context(
+                        query=query, sub_queries=sub_queries, group_id=group_id,
+                    )
+                    # Convert sources into paper-like dicts the extractor can use
+                    for src in sources:
+                        if src.get("snippet"):
+                            papers.append({
+                                "title": src.get("title", "Untitled"),
+                                "abstract": src.get("snippet", ""),
+                                "url": src.get("url", ""),
+                            })
+                except Exception as exc:
+                    logger.warning("Fallback context gather for methodology failed: %s", exc)
+
+            if not papers:
+                return "No papers available for methodology extraction."
+
+            # Use the methodology extractor tool
+            rows = await extract_methodology_for_papers(self._call_llm, papers[:12])
+
+            if not rows:
+                return "Could not extract methodology details from available papers."
+
+            # Format as markdown table
+            headers = ["Paper", "Design", "Sample Size", "Population", "Measures", "Statistical Methods", "Limitations", "Replication Risk"]
+            lines = ["## Methodology Comparison Matrix\n"]
+            lines.append("| " + " | ".join(headers) + " |")
+            lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
+            for row in rows:
+                cells = [
+                    str(row.get("paper_title", ""))[:40],
+                    str(row.get("design", "N/A")),
+                    str(row.get("sample_size", "N/A")),
+                    str(row.get("population", "N/A")),
+                    str(row.get("measures", "N/A")),
+                    str(row.get("statistical_methods", "N/A")),
+                    str(row.get("limitations", "N/A")),
+                    str(row.get("replication_risk", "N/A")),
+                ]
+                lines.append("| " + " | ".join(cells) + " |")
+
+            result = "\n".join(lines)
+
+            # Store as artifact
+            artifact_state: AgentState = {
+                "group_id": group_id,
+                "prompt": query,
+            }  # type: ignore[typeddict-item]
+            await self._store_artifact(
+                state=artifact_state,
+                artifact_type="methodology_matrix",
+                content=result,
+                metadata={"paper_count": len(rows)},
+            )
+
+            return result
+        except Exception as exc:
+            logger.error("_tool_extract_methodology failed: %s", exc, exc_info=True)
+            return f"Error extracting methodologies: {exc}"
+
+    async def _tool_anticipate_reviews(self, query: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
+        """Predict likely peer-review critiques for a research direction."""
+        group_id = config.get("configurable", {}).get("group_id")
+        try:
+            if pre_context:
+                context_text, sources = pre_context
+            else:
+                # Gather literature context
+                sub_queries = await self._call_llm_json(
+                    system_prompt=(
+                        "You are a peer-review strategist. Generate 3-5 search queries to "
+                        "find methodological norms, common criticisms, and standards in the "
+                        "relevant field. Return a JSON array of strings."
+                    ),
+                    user_prompt=f"Research direction: {query}",
+                    temperature=0.2,
+                )
+                if not isinstance(sub_queries, list):
+                    sub_queries = [query]
+
+                context_text, sources = await self._gather_context(
+                    query=query, sub_queries=sub_queries, group_id=group_id,
+                )
+
+            result = await anticipate_reviewer_critiques(
+                self._call_llm, query, context_text,
+            )
+
+            if not result or not result.get("critiques"):
+                return "Could not generate reviewer critique predictions."
+
+            # Format output
+            lines = ["## Anticipated Reviewer Critiques\n"]
+            for i, c in enumerate(result["critiques"], 1):
+                severity = c.get("severity", "medium").upper()
+                lines.append(f"### {i}. [{severity}] {c.get('critique', '')}")
+                lines.append(f"**Reasoning:** {c.get('reasoning', '')}")
+                lines.append(f"**Suggested response:** {c.get('suggested_response', '')}\n")
+
+            formatted = "\n".join(lines)
+            formatted = self._resolve_references(formatted, sources)
+            formatted += self._build_reference_section(sources)
+            return formatted
+        except Exception as exc:
+            logger.error("_tool_anticipate_reviews failed: %s", exc, exc_info=True)
+            return f"Error anticipating reviews: {exc}"
+
+    async def _tool_find_embedding_gaps(self, query: str, config: RunnableConfig) -> str:
+        """Find understudied areas via embedding-space clustering."""
+        group_id = config.get("configurable", {}).get("group_id")
+        try:
+            from .embeddings import embedding_service
+
+            # Gather papers and their embeddings
+            papers = await self._get_group_papers(group_id) if group_id else []
+            try:
+                ax_resp = await search_arxiv(query=query, limit=20)
+                papers.extend(ax_resp.get("papers", []))
+            except Exception:
+                pass
+
+            if len(papers) < 5:
+                return "Not enough papers (need at least 5) for embedding-space gap analysis."
+
+            paper_embeddings = []
+            for p in papers:
+                text = f"{p.get('title', '')} {p.get('abstract', '')}"
+                emb = await embedding_service.generate_embedding(text)
+                if emb is not None:
+                    paper_embeddings.append({"embedding": emb, "paper": p})
+
+            if len(paper_embeddings) < 5:
+                return "Could not generate enough embeddings for gap analysis."
+
+            gaps = await find_embedding_space_gaps(paper_embeddings, query, self._call_llm)
+
+            if not gaps:
+                return "No significant embedding-space gaps detected in the current literature."
+
+            lines = ["## Embedding-Space Research Gaps\n"]
+            for i, gap in enumerate(gaps, 1):
+                severity = gap.get("severity", "medium").upper()
+                lines.append(f"### {i}. [{severity}] {gap.get('gap', 'Unknown gap')}")
+                lines.append(f"**Papers in cluster:** {gap.get('paper_count', 0)}")
+                questions = gap.get("questions", [])
+                if questions:
+                    lines.append("**Unanswered questions:**")
+                    for q in questions:
+                        lines.append(f"  - {q}")
+                reps = gap.get("representative_papers", [])
+                if reps:
+                    lines.append("**Representative papers:** " + "; ".join(reps))
+                lines.append("")
+
+            return "\n".join(lines)
+        except Exception as exc:
+            logger.error("_tool_find_embedding_gaps failed: %s", exc, exc_info=True)
+            return f"Error in embedding gap analysis: {exc}"
+
+    async def get_relevant_artifacts(
+        self, group_id: str, query: str, limit: int = 5,
+    ) -> list[dict]:
+        """Retrieve and score past artifacts by relevance to the current query.
+
+        Uses vector store similarity search on stored artifacts, then reranks.
+        """
+        if not vector_store.is_connected or not group_id:
+            return []
+        try:
+            results = await vector_store.search_group_vectors(
+                group_id=group_id,
+                query=query,
+                limit=limit * 2,
+                content_types=None,
+                paper_id=None,
+            )
+            # Keep only artifact types
+            artifact_types = {
+                "literature_survey", "gap_analysis", "fact_check",
+                "novelty_assessment", "research_mentor", "paper_writing",
+                "research_planning", "deep_research", "methodology_matrix",
+            }
+            artifacts = [
+                r for r in results
+                if r.get("content_type") in artifact_types
+                   or (r.get("metadata") or {}).get("artifact_type") in artifact_types
+            ]
+            if len(artifacts) > 1 and reranker.is_available:
+                artifacts = await reranker.rerank(
+                    query=query, results=artifacts, top_k=limit, content_key="content",
+                )
+            return artifacts[:limit]
+        except Exception as exc:
+            logger.warning("get_relevant_artifacts failed: %s", exc)
+            return []
 
     # ------------------------------------------------------------------
     # Session history helper
@@ -1280,10 +1630,13 @@ class AgenticService:
         # Auto-classify intent when task_type is missing or "auto"
         effective_task = task
         if not effective_task or effective_task == "auto":
-            intent, score, _phrase = classify_intent(raw_prompt)
+            detailed = classify_intent_detailed(raw_prompt)
+            intent = detailed.get("intent")
+            score = detailed.get("score", 0.0)
             if intent:
                 logger.info(
-                    "Auto-classified intent: %s (score=%.3f)", intent, score
+                    "Auto-classified intent: %s (score=%.3f, ambiguous=%s)",
+                    intent, score, detailed.get("ambiguous", False),
                 )
                 effective_task = intent
             else:
@@ -1331,41 +1684,66 @@ class AgenticService:
             "messages": [{"role": "user", "content": user_content}]
         }
 
-        agent = self._get_agent_for_task(effective_task)
-
-        try:
-            final_state = await agent.ainvoke(
-                initial_input,
-                config={
-                    "configurable": {
-                        "group_id": request.get("group_id"),
-                        "user_id": request.get("user_id")
-                    }
-                }
+        # --- ReAct short-circuit: skip full agent loop for single-tool intents ---
+        shortcut_method_name = _SINGLE_TOOL_INTENTS.get(effective_task)
+        if shortcut_method_name and hasattr(self, shortcut_method_name):
+            logger.info(
+                "[trace=%s] Short-circuiting ReAct — calling %s directly",
+                trace_id, shortcut_method_name,
             )
-
-            messages = final_state.get("messages", [])
-            final_response = "Task completed, but no response was generated."
-            if messages and hasattr(messages[-1], "content"):
-                final_response = self._extract_text_from_possible_json(messages[-1].content)
-            elif messages and isinstance(messages[-1], dict):
-                final_response = self._extract_text_from_possible_json(messages[-1].get("content", final_response))
-
-            # Validate that the agent actually used tools (not just internal knowledge)
-            tool_messages = [m for m in messages if hasattr(m, "type") and m.type == "tool"]
-            errors = []
-            if not tool_messages:
-                logger.warning(
-                    "[trace=%s] Agent returned response without using any tools — "
-                    "result may be based on internal knowledge only",
-                    trace_id,
+            tool_fn = getattr(self, shortcut_method_name)
+            tool_config: RunnableConfig = {
+                "configurable": {
+                    "group_id": request.get("group_id"),
+                    "user_id": request.get("user_id"),
+                }
+            }
+            try:
+                final_response = await tool_fn(raw_prompt, tool_config)
+                errors: list[str] = []
+            except Exception as exc:
+                logger.error(
+                    "[trace=%s] Short-circuit tool %s failed: %s",
+                    trace_id, shortcut_method_name, exc, exc_info=True,
                 )
-                errors.append("Agent did not use tools — response may lack grounded sources")
+                final_response = f"Execution failed: {exc}"
+                errors = [str(exc)]
+        else:
+            agent = self._get_agent_for_task(effective_task)
 
-        except Exception as exc:
-            logger.error("DeepAgent execution failed: %s", exc, exc_info=True)
-            final_response = f"Execution failed: {exc}"
-            errors = [str(exc)]
+            try:
+                final_state = await agent.ainvoke(
+                    initial_input,
+                    config={
+                        "configurable": {
+                            "group_id": request.get("group_id"),
+                            "user_id": request.get("user_id")
+                        }
+                    }
+                )
+
+                messages = final_state.get("messages", [])
+                final_response = "Task completed, but no response was generated."
+                if messages and hasattr(messages[-1], "content"):
+                    final_response = self._extract_text_from_possible_json(messages[-1].content)
+                elif messages and isinstance(messages[-1], dict):
+                    final_response = self._extract_text_from_possible_json(messages[-1].get("content", final_response))
+
+                # Validate that the agent actually used tools (not just internal knowledge)
+                tool_messages = [m for m in messages if hasattr(m, "type") and m.type == "tool"]
+                errors = []
+                if not tool_messages:
+                    logger.warning(
+                        "[trace=%s] Agent returned response without using any tools — "
+                        "result may be based on internal knowledge only",
+                        trace_id,
+                    )
+                    errors.append("Agent did not use tools — response may lack grounded sources")
+
+            except Exception as exc:
+                logger.error("DeepAgent execution failed: %s", exc, exc_info=True)
+                final_response = f"Execution failed: {exc}"
+                errors = [str(exc)]
 
         latency_ms = int((time.time() - start_time) * 1000)
 
@@ -1383,6 +1761,8 @@ class AgenticService:
             "research_mentor": "mentor_advice",
             "paper_writing": "paper_draft",
             "research_planning": "research_plan",
+            "methodology_extraction": "methodology_matrix",
+            "reviewer_anticipation": "reviewer_critiques",
         }
         result_key = key_map.get(effective_task, "result")
 
@@ -1431,9 +1811,11 @@ class AgenticService:
 
         effective_task = task
         if not effective_task or effective_task == "auto":
-            intent, score, _phrase = classify_intent(raw_prompt)
+            detailed = classify_intent_detailed(raw_prompt)
+            intent = detailed.get("intent")
+            score = detailed.get("score", 0.0)
             if intent:
-                logger.info("Auto-classified intent: %s (score=%.3f)", intent, score)
+                logger.info("Auto-classified intent: %s (score=%.3f, ambiguous=%s)", intent, score, detailed.get("ambiguous", False))
                 effective_task = intent
             else:
                 effective_task = "literature_survey"
@@ -1654,7 +2036,16 @@ class AgenticService:
                     "Please write the detailed literature review now, ensuring to include the comparative Markdown table."
                 )
 
-                final_response = await self._call_llm(system_prompt, user_prompt, temperature=0.3)
+                try:
+                    final_response = await self._call_llm(system_prompt, user_prompt, temperature=0.3)
+                except (TimeoutError, asyncio.TimeoutError) as te:
+                    logger.error("Literature survey LLM synthesis timed out: %s", te)
+                    # Provide a partial response instead of crashing
+                    final_response = (
+                        "## Literature Review (Partial — Synthesis Timed Out)\n\n"
+                        "The synthesis step timed out. Below are the relevant excerpts found:\n\n"
+                        f"{context_text[:4000]}"
+                    )
                 
                 steps[4]["status"] = "done"
                 steps[4]["detail"] = "Review completed."
@@ -1718,6 +2109,20 @@ class AgenticService:
                         {"icon": "file-search", "label": "Searching arXiv", "status": "pending", "detail": ""},
                         {"icon": "layers", "label": "Summarizing sources", "status": "pending", "detail": ""},
                         {"icon": "brain", "label": "Writing research report", "status": "pending", "detail": ""},
+                    ],
+                    "methodology_extraction": [
+                        {"icon": "search", "label": "Analyzing research topic", "status": "active", "detail": "Identifying papers..."},
+                        {"icon": "database", "label": "Gathering group papers", "status": "pending", "detail": ""},
+                        {"icon": "file-search", "label": "Searching arXiv papers", "status": "pending", "detail": ""},
+                        {"icon": "layers", "label": "Extracting methodology data", "status": "pending", "detail": ""},
+                        {"icon": "brain", "label": "Building comparison matrix", "status": "pending", "detail": ""},
+                    ],
+                    "reviewer_anticipation": [
+                        {"icon": "search", "label": "Analyzing research direction", "status": "active", "detail": "Generating field queries..."},
+                        {"icon": "database", "label": "Searching field norms", "status": "pending", "detail": ""},
+                        {"icon": "globe", "label": "Searching review standards", "status": "pending", "detail": ""},
+                        {"icon": "file-search", "label": "Finding common critiques", "status": "pending", "detail": ""},
+                        {"icon": "brain", "label": "Predicting reviewer critiques", "status": "pending", "detail": ""},
                     ],
                 }
 
@@ -1806,14 +2211,20 @@ class AgenticService:
                         f"Current user request: {query}"
                     )
 
+                # Pass pre-gathered context to tools so they skip their own
+                # _gather_context calls (avoids redundant LLM + search work).
+                gathered = (context_text, sources)
+
                 tool_map = {
-                    "gap_analysis": lambda: self._tool_analyze_gaps(enriched_query, tool_config),
-                    "fact_check": lambda: self._tool_fact_check(enriched_query, tool_config),
-                    "novelty_assessment": lambda: self._tool_assess_novelty(enriched_query, tool_config),
-                    "research_mentor": lambda: self._tool_provide_mentoring(enriched_query, tool_config),
-                    "paper_writing": lambda: self._tool_write_paper_draft(enriched_query, tool_config),
-                    "research_planning": lambda: self._tool_plan_research(enriched_query, tool_config),
-                    "deep_research": lambda: self._tool_deep_research(enriched_query, tool_config),
+                    "gap_analysis": lambda: self._tool_analyze_gaps(enriched_query, tool_config, pre_context=gathered),
+                    "fact_check": lambda: self._tool_fact_check(enriched_query, tool_config, pre_context=gathered),
+                    "novelty_assessment": lambda: self._tool_assess_novelty(enriched_query, tool_config, pre_context=gathered),
+                    "research_mentor": lambda: self._tool_provide_mentoring(enriched_query, tool_config, pre_context=gathered),
+                    "paper_writing": lambda: self._tool_write_paper_draft(enriched_query, tool_config, pre_context=gathered),
+                    "research_planning": lambda: self._tool_plan_research(enriched_query, tool_config, pre_context=gathered),
+                    "deep_research": lambda: self._tool_deep_research(enriched_query, tool_config, pre_context=gathered),
+                    "methodology_extraction": lambda: self._tool_extract_methodology(enriched_query, tool_config),
+                    "reviewer_anticipation": lambda: self._tool_anticipate_reviews(enriched_query, tool_config, pre_context=gathered),
                 }
 
                 tool_fn = tool_map.get(effective_task)
@@ -1865,6 +2276,8 @@ class AgenticService:
             "research_mentor": "mentor_advice",
             "paper_writing": "paper_draft",
             "research_planning": "research_plan",
+            "methodology_extraction": "methodology_matrix",
+            "reviewer_anticipation": "reviewer_critiques",
         }
         result_key = key_map.get(str(effective_task), "result")
 

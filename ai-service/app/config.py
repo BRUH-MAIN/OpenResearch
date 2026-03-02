@@ -19,7 +19,12 @@ class Settings(BaseSettings):
     # Database Configuration
     database_url: str = ""
     
-    # Groq API
+    # DeepSeek API (primary LLM provider)
+    deepseek_api_key: str = ""
+    deepseek_model: str = "deepseek-chat"
+    deepseek_base_url: str = "https://api.deepseek.com/v1"
+
+    # Groq API (fallback LLM provider)
     groq_api_key: str = ""
     groq_model: str = "llama-3.1-8b-instant"
     groq_available_models: list[str] = [
@@ -29,6 +34,9 @@ class Settings(BaseSettings):
         "gemma2-9b-it",
         "mixtral-8x7b-32768",
     ]
+
+    # LLM provider selection: "deepseek" (default) or "groq"
+    llm_provider: str = "deepseek"
 
     # Web Search (Tavily)
     tavily_api_key: str = ""

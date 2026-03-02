@@ -144,7 +144,9 @@ export type AgenticTaskType =
   | 'research_mentor'
   | 'paper_writing'
   | 'research_planning'
-  | 'deep_research';
+  | 'deep_research'
+  | 'methodology_extraction'
+  | 'reviewer_anticipation';
 
 export interface AgenticRunRequest {
   task_type: AgenticTaskType;
@@ -173,6 +175,16 @@ export interface IntentClassifyResponse {
   similarity: number;
   threshold: number;
   matched_phrase?: string | null;
+}
+
+export interface IntentClassifyDetailedResponse {
+  task_type?: string | null;
+  similarity: number;
+  threshold: number;
+  matched_phrase?: string | null;
+  ambiguous: boolean;
+  fallback: boolean;
+  alternatives: Array<{ intent: string; score: number }>;
 }
 
 export interface AgenticChatResponse {
@@ -211,7 +223,7 @@ export function validateAiTrigger(content: string, fieldName: string = 'prompt')
 class AIClient {
   private timeout: number;
 
-  constructor(timeout: number = 120000) {
+  constructor(timeout: number = 300000) {
     this.timeout = timeout;
   }
 
@@ -514,10 +526,15 @@ class AIClient {
             } else if (data.type === 'complete') {
               finalResult = data as unknown as AgenticRunResponse;
             } else if (data.type === 'error') {
-              throw new Error(data.error);
+              throw new Error(data.error || 'AI service returned an error');
             }
           } catch (e) {
-            // Ignore parse errors for incomplete chunks
+            // Re-throw intentional errors (from error events), only ignore JSON parse errors
+            if (e instanceof SyntaxError) {
+              // Ignore parse errors for incomplete chunks
+              continue;
+            }
+            throw e;
           }
         }
       }
@@ -543,6 +560,20 @@ class AIClient {
     validateAiTrigger(request.prompt, 'prompt');
 
     const response = await this.request<IntentClassifyResponse>('/agentic/classify-intent', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+
+    return response;
+  }
+
+  /**
+   * Classify intent with ambiguity detection and alternatives
+   */
+  async classifyAgenticIntentDetailed(request: IntentClassifyRequest): Promise<IntentClassifyDetailedResponse> {
+    validateAiTrigger(request.prompt, 'prompt');
+
+    const response = await this.request<IntentClassifyDetailedResponse>('/agentic/classify-intent-detailed', {
       method: 'POST',
       body: JSON.stringify(request),
     });

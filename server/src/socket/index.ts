@@ -222,6 +222,19 @@ export function initializeSocket(httpServer: HttpServer) {
               return;
             }
 
+            // Emit intent classification to the client for transparency
+            try {
+              const intentResult = await aiClient.classifyAgenticIntentDetailed({ prompt: content });
+              io.to(`session:${sessionId}`).emit('ai:intent_classified', {
+                task_type: intentResult.task_type,
+                similarity: intentResult.similarity,
+                ambiguous: intentResult.ambiguous,
+                alternatives: intentResult.alternatives || [],
+              });
+            } catch (intentErr) {
+              socketLogger.warn({ err: intentErr }, 'Intent classification failed (non-fatal)');
+            }
+
             // Create placeholder AI message in DB with empty content
             const [aiMessagePlaceholder] = await db
               .insert(messages)
