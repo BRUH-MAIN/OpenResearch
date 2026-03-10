@@ -20,7 +20,7 @@ async def search_web(query: str, limit: int = 5) -> dict:
     """
     api_key = os.getenv("TAVILY_API_KEY", "")
     if not api_key:
-        logger.debug("TAVILY_API_KEY not set – skipping web search")
+        logger.warning("TAVILY_API_KEY not set – web search disabled. Add it to .env.docker to enable.")
         return {"results": [], "count": 0}
 
     payload = {

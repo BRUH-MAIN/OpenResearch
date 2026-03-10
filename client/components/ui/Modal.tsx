@@ -13,6 +13,8 @@ interface ModalProps {
   closeOnBackdropClick?: boolean;
   closeOnEscape?: boolean;
   className?: string;
+  bodyClassName?: string;
+  footerClassName?: string;
 }
 
 const sizeClasses = {
@@ -32,6 +34,8 @@ export function Modal({
   closeOnBackdropClick = true,
   closeOnEscape = true,
   className = '',
+  bodyClassName = '',
+  footerClassName = '',
 }: ModalProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
@@ -57,7 +61,10 @@ export function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 'var(--z-modal)' }}>
+    <div
+      className="fixed inset-0 flex items-center justify-center p-2 sm:p-4"
+      style={{ zIndex: 'var(--z-modal)' }}
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -70,16 +77,17 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
-        className={`relative w-full ${sizeClasses[size]} mx-4 rounded-xl shadow-2xl animate-scale-in ${className}`}
+        className={`relative w-full ${sizeClasses[size]} mx-2 sm:mx-4 rounded-2xl shadow-2xl animate-scale-in overflow-hidden ${className}`}
         style={{
           background: 'var(--color-bg-secondary)',
           border: '1px solid var(--color-border-primary)',
+          maxHeight: 'calc(100dvh - 1rem)',
         }}
       >
         {/* Header */}
         {title && (
           <div
-            className="flex items-center justify-between px-6 py-4 border-b"
+            className="flex items-center justify-between px-4 py-4 sm:px-6 border-b"
             style={{ borderColor: 'var(--color-border-primary)' }}
           >
             <h2
@@ -112,7 +120,7 @@ export function Modal({
         {!title && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1 rounded-lg transition-colors"
+            className="absolute top-4 right-4 p-1 rounded-lg transition-colors z-10"
             aria-label="Close modal"
             style={{ color: 'var(--color-text-tertiary)' }}
             onMouseEnter={(e) => {
@@ -129,12 +137,12 @@ export function Modal({
         )}
 
         {/* Content */}
-        <div className="px-6 py-4">{children}</div>
+        <div className={`px-4 py-4 sm:px-6 overflow-y-auto ${bodyClassName}`}>{children}</div>
 
         {/* Footer */}
         {footer && (
           <div
-            className="flex items-center justify-end gap-3 px-6 py-4 border-t"
+            className={`flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 px-4 py-4 sm:px-6 border-t ${footerClassName}`}
             style={{ borderColor: 'var(--color-border-primary)' }}
           >
             {footer}

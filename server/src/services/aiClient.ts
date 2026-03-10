@@ -143,10 +143,8 @@ export type AgenticTaskType =
   | 'novelty_assessment'
   | 'research_mentor'
   | 'paper_writing'
-  | 'research_planning'
   | 'deep_research'
-  | 'methodology_extraction'
-  | 'reviewer_anticipation';
+  | 'methodology_extraction';
 
 export interface AgenticRunRequest {
   task_type: AgenticTaskType;
@@ -205,6 +203,71 @@ export interface HealthResponse {
 
 export interface AIServiceError {
   detail: string;
+}
+
+// ============ Workflow Types ============
+
+export interface WorkflowTemplateInfo {
+  template_id: string;
+  title: string;
+  description: string;
+  research_type: string;
+  estimated_minutes: number;
+  step_count: number;
+  steps: Array<Record<string, unknown>>;
+}
+
+export interface WorkflowPlanRequest {
+  goal: string;
+  group_id?: string;
+  user_id: string;
+  session_id?: string;
+  preferred_template?: string;
+}
+
+export interface WorkflowPlanResponse {
+  workflow_id: string;
+  template_id?: string;
+  title: string;
+  description: string;
+  research_type: string;
+  estimated_minutes: number;
+  steps: Array<Record<string, unknown>>;
+  status: string;
+}
+
+export interface WorkflowStartRequest {
+  workflow_id: string;
+  user_feedback?: string;
+}
+
+export interface WorkflowStepApprovalRequest {
+  workflow_id: string;
+  step_index: number;
+  approved: boolean;
+  feedback?: string;
+}
+
+export interface WorkflowStatusResponse {
+  workflow_id: string;
+  status: string;
+  current_step_index: number;
+  total_steps: number;
+  steps: Array<Record<string, unknown>>;
+  final_output?: Record<string, unknown>;
+}
+
+export interface WorkflowEvent {
+  type: string;
+  workflow_id?: string;
+  step_index?: number;
+  step_name?: string;
+  agent_type?: string;
+  content?: string;
+  message?: string;
+  error?: string;
+  result?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 /**
@@ -320,7 +383,7 @@ class AIClient {
   async *groupAIChatStream(
     request: GroupAIChatRequest
   ): AsyncGenerator<{ token?: string; done?: boolean; latency_ms?: number; sources?: Array<{ id: string; type: string; similarity?: number }>; model?: string; error?: string }> {
-    validateAiTrigger(request.prompt);
+    // Note: @ai trigger validation removed — explicit agent selection bypasses @ai requirement
 
     logger.info(`Group AI chat stream for group: ${request.group_id}, session: ${request.session_id || 'none'}`);
 
@@ -478,7 +541,8 @@ class AIClient {
    */
   async runAgenticTaskStream(
     request: AgenticRunRequest,
-    onProgress: (message: string) => void
+    onProgress: (message: string) => void,
+    onToken?: (token: string) => void
   ): Promise<AgenticRunResponse> {
     logger.info(`Agentic task stream: ${request.task_type}`);
 
@@ -523,6 +587,10 @@ class AIClient {
             const data = JSON.parse(line);
             if (data.type === 'progress') {
               onProgress(data.message);
+            } else if (data.type === 'token') {
+              if (onToken && data.content) {
+                onToken(data.content);
+              }
             } else if (data.type === 'complete') {
               finalResult = data as unknown as AgenticRunResponse;
             } else if (data.type === 'error') {
@@ -571,7 +639,7 @@ class AIClient {
    * Classify intent with ambiguity detection and alternatives
    */
   async classifyAgenticIntentDetailed(request: IntentClassifyRequest): Promise<IntentClassifyDetailedResponse> {
-    validateAiTrigger(request.prompt, 'prompt');
+    // Note: @ai trigger validation removed — explicit agent selection bypasses @ai requirement
 
     const response = await this.request<IntentClassifyDetailedResponse>('/agentic/classify-intent-detailed', {
       method: 'POST',
@@ -602,6 +670,169 @@ class AIClient {
     logger.info(`Report generated: ${response.filename} (${response.file_size} bytes)`);
 
     return response;
+  }
+
+  /**
+   * Build a citation relationship graph
+   */
+  async buildCitationGraph(request: { query: string; group_id?: string }): Promise<{
+    graph: { nodes: any[]; edges: any[] };
+    source_count: number;
+  }> {
+    logger.info('Building citation graph');
+    const response = await this.request<{ graph: { nodes: any[]; edges: any[] }; source_count: number }>(
+      '/citation-graph/build',
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    );
+    return response;
+  }
+
+  // ============ Workflow Methods ============
+
+  /**
+   * List available workflow templates
+   */
+  async listWorkflowTemplates(): Promise<WorkflowTemplateInfo[]> {
+    return this.request<WorkflowTemplateInfo[]>('/workflows/templates');
+  }
+
+  /**
+   * Plan a research workflow from a goal
+   */
+  async planWorkflow(request: WorkflowPlanRequest): Promise<WorkflowPlanResponse> {
+    logger.info(`Planning workflow for group: ${request.group_id}, goal: ${request.goal.slice(0, 80)}...`);
+    return this.request<WorkflowPlanResponse>('/workflows/plan', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  /**
+   * Start an approved workflow — returns NDJSON stream.
+   * Calls onEvent for each workflow event.
+   */
+  async startWorkflowStream(
+    request: WorkflowStartRequest,
+    onEvent: (event: WorkflowEvent) => void,
+  ): Promise<void> {
+    logger.info(`Starting workflow stream: ${request.workflow_id}`);
+    await this._streamWorkflowRequest('/workflows/start', request, onEvent);
+  }
+
+  /**
+   * Approve a workflow checkpoint step and resume — returns NDJSON stream.
+   */
+  async approveWorkflowStepStream(
+    request: WorkflowStepApprovalRequest,
+    onEvent: (event: WorkflowEvent) => void,
+  ): Promise<void> {
+    if (!request.approved) {
+      // Non-streaming rejection
+      const result = await this.request<{ status: string; message: string }>('/workflows/approve-step', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+      onEvent({ type: 'workflow:step:rejected', workflow_id: request.workflow_id, ...result });
+      return;
+    }
+    logger.info(`Approving step ${request.step_index} for workflow: ${request.workflow_id}`);
+    await this._streamWorkflowRequest('/workflows/approve-step', request, onEvent);
+  }
+
+  /**
+   * Cancel a workflow
+   */
+  async cancelWorkflow(workflowId: string): Promise<{ status: string; workflow_id: string }> {
+    return this.request<{ status: string; workflow_id: string }>('/workflows/cancel', {
+      method: 'POST',
+      body: JSON.stringify({ workflow_id: workflowId }),
+    });
+  }
+
+  /**
+   * Get workflow status and steps
+   */
+  async getWorkflowStatus(workflowId: string): Promise<WorkflowStatusResponse> {
+    return this.request<WorkflowStatusResponse>(`/workflows/${workflowId}/status`);
+  }
+
+  /**
+   * List workflows for a group
+   */
+  async listGroupWorkflows(groupId: string, limit = 20): Promise<{ workflows: any[]; total: number }> {
+    return this.request<{ workflows: any[]; total: number }>(
+      `/workflows/group/${groupId}?limit=${limit}`
+    );
+  }
+
+  /**
+   * Internal helper: stream a workflow NDJSON endpoint and dispatch events.
+   */
+  private async _streamWorkflowRequest(
+    endpoint: string,
+    body: WorkflowStartRequest | WorkflowStepApprovalRequest,
+    onEvent: (event: WorkflowEvent) => void,
+  ): Promise<void> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Request failed' })) as { detail?: string };
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('No response body for workflow stream');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const event = JSON.parse(line) as WorkflowEvent;
+            onEvent(event);
+          } catch {
+            // Ignore malformed lines
+          }
+        }
+      }
+
+      // Remaining buffer
+      if (buffer.trim()) {
+        try {
+          onEvent(JSON.parse(buffer) as WorkflowEvent);
+        } catch {
+          // Ignore
+        }
+      }
+
+      clearTimeout(timeoutId);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
   }
 
   /**

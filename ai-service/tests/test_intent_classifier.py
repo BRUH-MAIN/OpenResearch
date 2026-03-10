@@ -65,7 +65,8 @@ class TestIntentPhrases:
             "novelty_assessment",
             "research_mentor",
             "paper_writing",
-            "research_planning",
+            "methodology_extraction",
+            "reviewer_anticipation",
         }
         assert set(INTENT_PHRASES.keys()) == expected
 

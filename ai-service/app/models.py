@@ -3,33 +3,6 @@
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional, Literal, Any
 from datetime import datetime
-import re
-
-
-# ============ @ai Trigger Validation ============
-
-def validate_ai_trigger(prompt: str) -> str:
-    """Validate that prompt contains @ai trigger."""
-    if not prompt or '@ai' not in prompt.lower():
-        raise ValueError("Prompt must contain @ai trigger")
-    return prompt
-
-
-# ============ Request Models ============
-
-class ChatRequest(BaseModel):
-    """Request for chat Q&A endpoint."""
-    question: str = Field(..., min_length=1, max_length=2000, description="The question to ask")
-    session_id: Optional[str] = Field(None, description="Session ID for context")
-    user_id: Optional[str] = Field(None, description="User ID for personalization")
-    include_papers: bool = Field(True, description="Include linked papers in context")
-    max_context_messages: int = Field(30, ge=1, le=100, description="Max messages to include")
-
-
-class SummarizeRequest(BaseModel):
-    """Request for session summarization."""
-    session_id: str = Field(..., description="Session ID to summarize")
-    max_messages: int = Field(100, ge=1, le=500)
 
 
 class GroupAIChatRequest(BaseModel):
@@ -126,10 +99,8 @@ AgenticTaskType = Literal[
     "novelty_assessment",
     "research_mentor",
     "paper_writing",
-    "research_planning",
     "deep_research",
     "methodology_extraction",
-    "reviewer_anticipation",
 ]
 
 
@@ -149,28 +120,6 @@ class AgenticRunRequest(BaseModel):
         if "@ai" not in v.lower():
             raise ValueError("Prompt must contain @ai trigger. AI only responds when triggered by @ai.")
         return v
-
-
-# ============ Response Models ============
-
-class ChatResponse(BaseModel):
-    """Response from chat Q&A endpoint."""
-    answer: str
-    sources: list[str] = Field(default_factory=list, description="Message IDs used as sources")
-    model: str
-    latency_ms: int
-    context_messages_used: int = 0
-    papers_used: int = 0
-
-
-class SummaryResponse(BaseModel):
-    """Response from summarization endpoint."""
-    summary: str
-    key_points: list[str]
-    participant_count: int
-    message_count: int
-    model: str
-    latency_ms: int
 
 
 class GroupAIChatResponse(BaseModel):
@@ -283,3 +232,77 @@ class ErrorResponse(BaseModel):
     error: str
     detail: Optional[str] = None
     code: Optional[str] = None
+
+
+# ============ Workflow Models ============
+
+WorkflowStatus = Literal[
+    "planning", "awaiting_approval", "running", "paused",
+    "completed", "failed", "cancelled",
+]
+
+WorkflowStepStatus = Literal[
+    "pending", "running", "awaiting_approval", "approved",
+    "rejected", "completed", "failed", "skipped",
+]
+
+
+class WorkflowPlanRequest(BaseModel):
+    """Request to plan a research workflow."""
+    goal: str = Field(..., min_length=10, max_length=4000, description="Research goal in natural language")
+    group_id: Optional[str] = Field(None, description="Group ID for context isolation (optional — workflows can run without a group)")
+    user_id: str = Field(..., description="User initiating the workflow")
+    session_id: Optional[str] = Field(None, description="Session ID for context")
+    preferred_template: Optional[str] = Field(None, description="Preferred template ID (bypasses AI planning)")
+
+
+class WorkflowPlanResponse(BaseModel):
+    """Response containing the planned workflow."""
+    workflow_id: str
+    template_id: Optional[str] = None
+    title: str
+    description: str
+    research_type: str
+    estimated_minutes: int
+    steps: list[dict] = Field(default_factory=list)
+    status: str = "awaiting_approval"
+
+
+class WorkflowStartRequest(BaseModel):
+    """Request to start (approve) a planned workflow."""
+    workflow_id: str = Field(..., description="Workflow run ID to start")
+    user_feedback: Optional[str] = Field(None, description="Optional user feedback on the plan")
+
+
+class WorkflowStepApprovalRequest(BaseModel):
+    """Request to approve or reject a workflow step at a checkpoint."""
+    workflow_id: str = Field(..., description="Workflow run ID")
+    step_index: int = Field(..., ge=0, description="Step index to approve/reject")
+    approved: bool = Field(..., description="True to approve, False to reject")
+    feedback: Optional[str] = Field(None, description="User feedback or revision instructions")
+
+
+class WorkflowCancelRequest(BaseModel):
+    """Request to cancel a running workflow."""
+    workflow_id: str = Field(..., description="Workflow run ID to cancel")
+
+
+class WorkflowStatusResponse(BaseModel):
+    """Response with workflow status."""
+    workflow_id: str
+    status: str
+    current_step_index: int
+    total_steps: int
+    steps: list[dict] = Field(default_factory=list)
+    final_output: Optional[dict] = None
+
+
+class WorkflowTemplateInfo(BaseModel):
+    """Info about an available workflow template."""
+    template_id: str
+    title: str
+    description: str
+    research_type: str
+    estimated_minutes: int
+    step_count: int
+    steps: list[dict] = Field(default_factory=list)

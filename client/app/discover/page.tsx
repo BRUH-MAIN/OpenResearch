@@ -6,13 +6,12 @@ import { Button, Card, CardBody, CardHeader, Badge, Input } from '@/components/u
 import {
   Search,
   Loader2,
-  TrendingUp,
-  Sparkles,
   BookOpen,
   ExternalLink,
   Plus,
   Users,
   Filter,
+  Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { api, Paper, PaperRecommendation, Group } from '@/lib/api';
@@ -21,9 +20,6 @@ import Link from 'next/link';
 
 export default function DiscoverPage() {
   const { accessToken } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'trending' | 'forYou' | 'forGroup'>('trending');
-  const [trendingPapers, setTrendingPapers] = useState<Array<Paper & { trendScore: number; groupCount?: number; reason: string }>>([]);
-  const [personalRecommendations, setPersonalRecommendations] = useState<PaperRecommendation[]>([]);
   const [groupRecommendations, setGroupRecommendations] = useState<PaperRecommendation[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
@@ -33,35 +29,15 @@ export default function DiscoverPage() {
 
   useEffect(() => {
     if (accessToken) {
-      loadTrending();
       loadGroups();
     }
   }, [accessToken]);
 
   useEffect(() => {
-    if (activeTab === 'forYou' && personalRecommendations.length === 0) {
-      loadPersonalRecommendations();
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab === 'forGroup' && selectedGroupId) {
+    if (selectedGroupId) {
       loadGroupRecommendations(selectedGroupId);
     }
-  }, [activeTab, selectedGroupId]);
-
-  const loadTrending = async () => {
-    if (!accessToken) return;
-    try {
-      setIsLoading(true);
-      const response = await api.getTrendingPapers(accessToken);
-      setTrendingPapers(response.trending);
-    } catch (err) {
-      toast.error('Failed to load trending papers');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [selectedGroupId]);
 
   const loadGroups = async () => {
     if (!accessToken) return;
@@ -73,19 +49,6 @@ export default function DiscoverPage() {
       }
     } catch (err) {
       console.error('Failed to load groups:', err);
-    }
-  };
-
-  const loadPersonalRecommendations = async () => {
-    if (!accessToken) return;
-    try {
-      setIsLoading(true);
-      const response = await api.getRecommendationsForUser(accessToken, 20);
-      setPersonalRecommendations(response.recommendations);
-    } catch (err) {
-      toast.error('Failed to load recommendations');
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -127,12 +90,7 @@ export default function DiscoverPage() {
     );
   };
 
-  const currentPapers =
-    activeTab === 'trending'
-      ? filteredPapers(trendingPapers)
-      : activeTab === 'forYou'
-        ? filteredPapers(personalRecommendations)
-        : filteredPapers(groupRecommendations);
+  const currentPapers = filteredPapers(groupRecommendations);
 
   if (!accessToken) {
     return (
@@ -165,57 +123,21 @@ export default function DiscoverPage() {
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab('trending')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${activeTab === 'trending'
-                ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-primary)]'
-              }`}
+        {/* Group Selector */}
+        <div className="mb-6 flex gap-4 items-center">
+          <Users className="w-5 h-5 text-[#14FFEC]" />
+          <select
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+            className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
           >
-            <TrendingUp className="w-4 h-4" />
-            Trending
-          </button>
-          <button
-            onClick={() => setActiveTab('forYou')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${activeTab === 'forYou'
-                ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-primary)]'
-              }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            For You
-          </button>
-          <button
-            onClick={() => setActiveTab('forGroup')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${activeTab === 'forGroup'
-                ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                : 'bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-[var(--color-text-primary)] border border-[var(--color-border-primary)]'
-              }`}
-          >
-            <Users className="w-4 h-4" />
-            For Group
-          </button>
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
         </div>
-
-        {/* Group Selector (for group tab) */}
-        {activeTab === 'forGroup' && (
-          <div className="mb-6 flex gap-4 items-center">
-            <Filter className="w-5 h-5 text-[var(--color-text-tertiary)]" />
-            <select
-              value={selectedGroupId}
-              onChange={(e) => setSelectedGroupId(e.target.value)}
-              className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
-            >
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        )}
 
         {/* Search */}
         <div className="mb-6">

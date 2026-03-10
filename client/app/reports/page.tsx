@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
-import { Button, Card, CardBody, CardHeader, Badge } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, Badge, Modal } from '@/components/ui';
 import {
   FileText,
   Download,
@@ -272,107 +272,102 @@ function ReportsPageContent() {
           </div>
         )}
 
-        {/* Create Report Modal */}
-        {showCreateModal && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[500] p-4 animate-fade-in">
-            <div className="relative w-full max-w-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-2xl shadow-2xl animate-scale-in">
-              <div className="px-6 py-5 border-b border-[var(--color-border-primary)]">
-                <h2 className="text-xl font-semibold text-[var(--color-text-primary)]">Generate Research Report</h2>
-                <p className="text-sm text-[var(--color-text-tertiary)] mt-1">
-                  Create a PDF report summarizing your group&apos;s research activity
-                </p>
+        <Modal
+          isOpen={showCreateModal}
+          onClose={() => setShowCreateModal(false)}
+          title="Generate Research Report"
+          size="lg"
+          footer={(
+            <>
+              <Button
+                variant="ghost"
+                onClick={() => setShowCreateModal(false)}
+                disabled={isGenerating}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleGenerateReport}
+                disabled={isGenerating || reportConfig.sections.length === 0}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FileText className="w-4 h-4 mr-2" />
+                    Generate Report
+                  </>
+                )}
+              </Button>
+            </>
+          )}
+        >
+          <p className="text-sm text-[var(--color-text-tertiary)] mt-1 mb-5">
+            Create a PDF report summarizing your group&apos;s research activity
+          </p>
+
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                Report Type
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {(['weekly', 'monthly', 'custom'] as const).map((type) => (
+                  <button
+                    key={type}
+                    onClick={() => setReportConfig((prev) => ({ ...prev, reportType: type }))}
+                    className={`px-4 py-2 rounded-xl capitalize text-sm font-medium transition-all ${reportConfig.reportType === type
+                        ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
+                        : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-white'
+                      }`}
+                  >
+                    {type}
+                  </button>
+                ))}
               </div>
-              <div className="px-6 py-5 space-y-5">
-                {/* Report Type */}
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                    Report Type
-                  </label>
-                  <div className="flex gap-2">
-                    {(['weekly', 'monthly', 'custom'] as const).map((type) => (
-                      <button
-                        key={type}
-                        onClick={() => setReportConfig((prev) => ({ ...prev, reportType: type }))}
-                        className={`px-4 py-2 rounded-xl capitalize text-sm font-medium transition-all ${reportConfig.reportType === type
-                            ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                            : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-white'
-                          }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+            </div>
 
-                {/* Custom Title */}
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                    Custom Title (optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={reportConfig.customTitle}
-                    onChange={(e) =>
-                      setReportConfig((prev) => ({ ...prev, customTitle: e.target.value }))
-                    }
-                    placeholder={`${group?.name} Research Report`}
-                    className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
-                  />
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                Custom Title (optional)
+              </label>
+              <input
+                type="text"
+                value={reportConfig.customTitle}
+                onChange={(e) =>
+                  setReportConfig((prev) => ({ ...prev, customTitle: e.target.value }))
+                }
+                placeholder={`${group?.name} Research Report`}
+                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
+              />
+            </div>
 
-                {/* Sections */}
-                <div>
-                  <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                    Include Sections
-                  </label>
-                  <div className="flex flex-wrap gap-2">
-                    {['overview', 'papers', 'discussions', 'insights', 'summary', 'citations'].map(
-                      (section) => (
-                        <button
-                          key={section}
-                          onClick={() => toggleSection(section)}
-                          className={`px-3 py-1.5 rounded-full text-sm capitalize font-medium transition-all ${reportConfig.sections.includes(section)
-                              ? 'bg-[#0D7377]/20 text-[#14FFEC] border border-[#0D7377]/40'
-                              : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-transparent hover:bg-[var(--color-bg-hover)] hover:text-white'
-                            }`}
-                        >
-                          {section}
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Actions */}
-              <div className="px-6 py-4 border-t border-[var(--color-border-primary)] bg-[var(--color-bg-tertiary)] rounded-b-2xl flex justify-end gap-3">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowCreateModal(false)}
-                  disabled={isGenerating}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleGenerateReport}
-                  disabled={isGenerating || reportConfig.sections.length === 0}
-                >
-                  {isGenerating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                      Generating...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-4 h-4 mr-2" />
-                      Generate Report
-                    </>
-                  )}
-                </Button>
+            <div>
+              <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+                Include Sections
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {['overview', 'papers', 'discussions', 'insights', 'summary', 'citations'].map(
+                  (section) => (
+                    <button
+                      key={section}
+                      onClick={() => toggleSection(section)}
+                      className={`px-3 py-1.5 rounded-full text-sm capitalize font-medium transition-all ${reportConfig.sections.includes(section)
+                          ? 'bg-[#0D7377]/20 text-[#14FFEC] border border-[#0D7377]/40'
+                          : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-transparent hover:bg-[var(--color-bg-hover)] hover:text-white'
+                        }`}
+                    >
+                      {section}
+                    </button>
+                  )
+                )}
               </div>
             </div>
           </div>
-        )}
+        </Modal>
       </div>
     </div>
   );

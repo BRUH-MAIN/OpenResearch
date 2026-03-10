@@ -48,14 +48,3 @@ export function useSavePaper() {
     });
 }
 
-/** Unsave a paper */
-export function useUnsavePaper() {
-    const token = useAuthStore((s) => s.accessToken);
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (paperId: string) => api.unsavePaper(token!, paperId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: SAVED_PAPERS_KEY });
-        },
-    });
-}

@@ -56,8 +56,6 @@ from .intent_classifier import classify_intent, classify_intent_detailed
 from .tools.arxiv import search_arxiv
 from .tools.web_search import search_web
 from .tools.methodology_extractor import extract_methodology_for_papers
-from .tools.reviewer_anticipator import anticipate_reviewer_critiques
-from .tools.citation_anchor import anchor_citations
 from .tools.gap_finder import find_embedding_space_gaps
 
 # Default timeout for a single LLM call (seconds).
@@ -68,7 +66,6 @@ _SINGLE_TOOL_INTENTS: dict[str, str] = {
     "fact_check": "_tool_fact_check",
     "research_mentor": "_tool_provide_mentoring",
     "methodology_extraction": "_tool_extract_methodology",
-    "reviewer_anticipation": "_tool_anticipate_reviews",
 }
 
 
@@ -200,10 +197,8 @@ class AgenticService:
             "novelty_assessment": [self._tool_retrieve_papers, self._tool_assess_novelty],
             "research_mentor": [self._tool_provide_mentoring],
             "paper_writing": [self._tool_retrieve_papers, self._tool_write_paper_draft],
-            "research_planning": [self._tool_plan_research],
             "deep_research": [self._tool_deep_research],
             "methodology_extraction": [self._tool_retrieve_papers, self._tool_extract_methodology],
-            "reviewer_anticipation": [self._tool_retrieve_papers, self._tool_anticipate_reviews],
         }
 
         selected_tools = task_tool_map.get(effective_task) or [self._tool_retrieve_papers, self._tool_survey_literature]
@@ -246,6 +241,36 @@ class AgenticService:
             return self._llm  # fall back to default
         self._llm_cache[model_name] = llm
         return llm
+
+    async def _call_llm_stream(
+        self,
+        system_prompt: str,
+        user_prompt: str,
+        model_name: Optional[str] = None,
+        temperature: float = 0.3,
+    ):
+        """Stream LLM response token-by-token. Yields individual token strings."""
+        if not self._llm:
+            raise RuntimeError("Agentic LLM not initialized")
+        if SystemMessage is None or HumanMessage is None:
+            raise RuntimeError("LangChain message classes not available")
+
+        llm = self._get_llm(model_name=model_name, temperature=temperature)
+        messages = [
+            SystemMessage(content=system_prompt),
+            HumanMessage(content=user_prompt),
+        ]
+        try:
+            async for chunk in llm.astream(messages):
+                token = chunk.content if hasattr(chunk, "content") else str(chunk)
+                if token:
+                    yield token
+        except Exception as primary_err:
+            # If the primary model fails, try fallback non-streaming
+            logger.warning("LLM stream failed: %s — falling back to non-streaming", primary_err)
+            response = await llm.ainvoke(messages)
+            text = response.content if hasattr(response, "content") else str(response)
+            yield text
 
     @retry(
         stop=stop_after_attempt(3),
@@ -493,6 +518,21 @@ class AgenticService:
             return []
         return await database.get_group_papers(group_id)
 
+    def _normalize_text_field(self, value: Any) -> str:
+        """Normalize heterogeneous metadata fields to a readable string."""
+        if value is None:
+            return ""
+        if isinstance(value, str):
+            return value.strip()
+        if isinstance(value, (list, tuple, set)):
+            flattened: list[str] = []
+            for item in value:
+                normalized = self._normalize_text_field(item)
+                if normalized:
+                    flattened.append(normalized)
+            return ", ".join(flattened)
+        return str(value).strip()
+
     def _format_papers(self, papers: list[dict], max_items: int = 8) -> str:
         if not papers:
             return "No papers available."
@@ -588,21 +628,31 @@ class AgenticService:
         """
         source_registry: list[dict] = []
         seen_urls: set[str] = set()
+        seen_titles: set[str] = set()
         sid = 0
 
-        def _add(title: str, url: str, snippet: str, src_type: str):
+        def _add(title: str, url: str, snippet: str, src_type: str, authors: str = "", year: str = "", venue: str = ""):
             nonlocal sid
             if url and url in seen_urls:
                 return
+            # De-duplicate vector store sources by normalised title
+            norm_title = (title or "").strip().lower()
+            if norm_title and norm_title in seen_titles:
+                return
             if url:
                 seen_urls.add(url)
+            if norm_title:
+                seen_titles.add(norm_title)
             sid += 1
             source_registry.append({
                 "id": f"S{sid}",
-                "title": title or "Untitled",
-                "url": url or "",
+                "title": self._normalize_text_field(title) or "Untitled",
+                "url": self._normalize_text_field(url),
                 "type": src_type,
-                "snippet": snippet[:500] if snippet else "",
+                "snippet": self._normalize_text_field(snippet)[:500],
+                "authors": self._normalize_text_field(authors),
+                "year": self._normalize_text_field(year),
+                "venue": self._normalize_text_field(venue),
             })
 
         # 1) Vector store search (hybrid: vector + BM25 + RRF)
@@ -634,11 +684,22 @@ class AgenticService:
                             if not url:
                                 meta = res.get("metadata") or {}
                                 url = meta.get("url", "")
+                            # Construct arXiv URL from paper_id if no URL present
+                            if not url:
+                                paper_id = res.get("paper_id", "")
+                                if paper_id and paper_id not in ("system", "untitled"):
+                                    url = f"https://arxiv.org/abs/{paper_id}"
+                            # Extract author / year metadata when available
+                            meta = res.get("metadata") or {}
+                            authors = meta.get("authors", "")
+                            year = meta.get("year", "")
                             results_list.append({
                                 "title": title,
                                 "url": url,
                                 "snippet": res.get("content", ""),
                                 "src_type": "vector_store",
+                                "authors": authors,
+                                "year": year,
                             })
                     except Exception as exc:
                         logger.warning("Hybrid search failed for %r: %s", sq, exc)
@@ -673,6 +734,8 @@ class AgenticService:
                                 "url": item.get("url", item.get("id", "")),
                                 "snippet": item.get("abstract", ""),
                                 "src_type": "arxiv",
+                                "authors": ", ".join(item.get("authors", [])) if isinstance(item.get("authors"), list) else item.get("authors", ""),
+                                "year": item.get("published", "")[:4] if item.get("published") else "",
                             })
                     except Exception as exc:
                         logger.warning("ArXiv search failed for %r: %s", sq, exc)
@@ -688,6 +751,9 @@ class AgenticService:
                 url=item["url"],
                 snippet=item["snippet"],
                 src_type=item["src_type"],
+                authors=item.get("authors", ""),
+                year=item.get("year", ""),
+                venue=item.get("venue", ""),
             )
 
         # 4) Fallback to group papers if nothing found
@@ -727,45 +793,101 @@ class AgenticService:
 
     def _resolve_references(self, text: str, sources: list[dict]) -> str:
         """
-        Replace [S1], [S2] etc. in LLM output with clickable markdown links.
+        Replace [S1], [S2] etc. in LLM output with IEEE-style numbered bracket
+        citations that link to the paper.
 
-        Example: [S1] → [Smith et al. — "Title"](https://arxiv.org/abs/...)
+        Numbers are assigned by order of first appearance in the text so that
+        the References section at the bottom lists entries as [1], [2], [3]...
+        in reading order.
+
+        Example: [S3] appears first → becomes [[1]](url), [S1] next → [[2]](url)
         """
+        import re as _re
+
+        # Detect which source IDs are actually cited and in what order
+        cited_order: list[str] = []
+        seen: set[str] = set()
+        for m in _re.finditer(r"\[(S\d+)\]", text):
+            sid = m.group(1)
+            if sid not in seen:
+                seen.add(sid)
+                cited_order.append(sid)
+
+        # Build mapping: source id -> appearance-ordered number
+        sid_to_num: dict[str, int] = {}
+        for num, sid in enumerate(cited_order, 1):
+            sid_to_num[sid] = num
+
+        # Also add any uncited sources at the end (preserving original order)
+        next_num = len(cited_order) + 1
+        for src in sources:
+            if src["id"] not in sid_to_num:
+                sid_to_num[src["id"]] = next_num
+                next_num += 1
+
+        # Replace markers with numbered links
         for src in sources:
             marker = f"[{src['id']}]"
             if marker not in text:
                 continue
-            title = src["title"][:60]
+            num = sid_to_num[src["id"]]
             url = src["url"]
             if url:
-                replacement = f"[{title}]({url})"
+                replacement = f"[[{num}]]({url})"
             else:
-                replacement = f"*{title}*"
+                replacement = f"[{num}]"
             text = text.replace(marker, replacement)
 
         # Remove any leftover [SN] markers the LLM hallucinated beyond valid sources
         valid_ids = {src["id"] for src in sources}
-        def _strip_invalid(m: re.Match) -> str:
+        def _strip_invalid(m: _re.Match) -> str:
             return "" if m.group(1) not in valid_ids else m.group(0)
-        text = re.sub(r"\[(S\d+)\]", _strip_invalid, text)
+        text = _re.sub(r"\[(S\d+)\]", _strip_invalid, text)
+
+        # Store the resolved ordering so _build_reference_section can use it
+        self._last_citation_order = sid_to_num
         return text
 
     def _build_reference_section(self, sources: list[dict]) -> str:
-        """Build a ## References section with numbered clickable links."""
+        """Build a ## References section in IEEE citation format.
+
+        Entries are ordered by first citation appearance in the text (set by
+        _resolve_references) so [1] always comes before [2] etc.
+        """
         if not sources:
             return ""
+
+        # Use the appearance order from _resolve_references if available
+        sid_to_num: dict[str, int] = getattr(self, "_last_citation_order", {})
+        if not sid_to_num:
+            # Fallback to original order
+            sid_to_num = {src["id"]: i for i, src in enumerate(sources, 1)}
+
+        # Sort sources by their assigned reference number
+        sorted_sources = sorted(sources, key=lambda s: sid_to_num.get(s["id"], 9999))
+
         lines = ["\n\n## References\n"]
-        for i, src in enumerate(sources, 1):
-            title = src["title"]
-            url = src["url"]
-            src_type = src["type"]
-            # Skip sources with no meaningful title (e.g. raw "system" paper_id)
+        for src in sorted_sources:
+            title = self._normalize_text_field(src.get("title", ""))
+            url = self._normalize_text_field(src.get("url", ""))
+            authors = self._normalize_text_field(src.get("authors", ""))
+            year = self._normalize_text_field(src.get("year", ""))
+            # Skip sources with no meaningful title
             if not title or title.lower() in ("system", "untitled", "db chunk"):
                 continue
+            num = sid_to_num.get(src["id"], 0)
+            # Build IEEE-style entry: [N] Authors, "Title," year. [Online]. Available: url
+            parts = []
+            if authors:
+                parts.append(authors)
+            parts.append(f'"{title}"')
+            if year:
+                parts.append(year)
+            entry = ", ".join(parts)
             if url:
-                lines.append(f"{i}. [{title}]({url}) — *{src_type}*")
+                lines.append(f"[{num}] {entry}. [Online]. Available: [{url}]({url})")
             else:
-                lines.append(f"{i}. {title} — *{src_type}*")
+                lines.append(f"[{num}] {entry}.")
         # If all sources were filtered out, return empty
         if len(lines) <= 1:
             return ""
@@ -1084,14 +1206,12 @@ class AgenticService:
             return f"Error fact checking: {exc}"
 
     async def _tool_assess_novelty(self, idea: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
-        """Compare an idea against existing papers and assess novelty."""
+        """Compare an idea against existing papers and assess novelty using hybrid rubric + embedding approach."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
             if pre_context:
                 context_text, sources = pre_context
             else:
-                # Generate search queries for prior art — include conversation
-                # context so queries find work related to the actual idea.
                 sub_queries = await self._call_llm_json(
                     system_prompt=(
                         "You are a novelty assessment strategist. The user's idea may "
@@ -1112,25 +1232,97 @@ class AgenticService:
                     group_id=group_id,
                 )
 
+            # ── Phase 1: Embedding-based similarity ──
+            # Compute cosine similarity between the idea and each source snippet
+            from app.embeddings import embedding_service
+            import numpy as np
+
+            embedding_similarities: list[float] = []
+            avg_similarity = 0.0
+            max_similarity = 0.0
+            try:
+                idea_emb, _ = await embedding_service.generate_embedding(idea, task_type="RETRIEVAL_QUERY")
+                idea_vec = np.array(idea_emb)
+                for src in sources[:15]:
+                    snippet = src.get("snippet", "")
+                    if not snippet:
+                        continue
+                    src_emb, _ = await embedding_service.generate_embedding(snippet, task_type="RETRIEVAL_DOCUMENT")
+                    src_vec = np.array(src_emb)
+                    cos_sim = float(np.dot(idea_vec, src_vec) / (np.linalg.norm(idea_vec) * np.linalg.norm(src_vec) + 1e-9))
+                    embedding_similarities.append(cos_sim)
+                if embedding_similarities:
+                    avg_similarity = sum(embedding_similarities) / len(embedding_similarities)
+                    max_similarity = max(embedding_similarities)
+            except Exception as exc:
+                logger.warning("Embedding similarity computation failed: %s", exc)
+
+            # Convert similarity to a novelty signal (higher similarity = lower novelty)
+            # Scale: 0.0 sim → 100 novelty, 1.0 sim → 0 novelty (linear)
+            embedding_novelty = max(0, min(100, int((1.0 - max_similarity) * 100)))
+
+            # ── Phase 2: LLM rubric-based assessment ──
             system_prompt = (
                 "You are the Novelty Assessment Agent. Compare the idea against existing work.\n\n"
                 "RULES:\n"
                 "1. Cite all related work using ONLY the [S1], [S2], etc. markers from the provided sources.\n"
                 "2. Do NOT invent or fabricate any references. Only cite [SN] markers that appear in the sources.\n"
-                "3. Provide a novelty score (0-100) with detailed justification\n"
-                "4. List specific overlaps with existing work (cite sources)\n"
-                "5. Identify the unique contributions of the idea\n"
-                "6. Suggest differentiation strategies with references\n"
-                "7. Use a structured format with clear sections"
+                "3. Score the idea on each of these 4 dimensions (each 1-5 scale):\n"
+                "   a) **Originality** — How novel is the core concept? (1=derivative, 5=groundbreaking)\n"
+                "   b) **Technical Novelty** — How new are the methods/techniques? (1=standard, 5=first-of-its-kind)\n"
+                "   c) **Practical Impact** — How significant is the potential impact? (1=incremental, 5=transformative)\n"
+                "   d) **Differentiation** — How distinct from closest existing work? (1=very similar, 5=clearly distinct)\n"
+                "4. For each dimension, cite specific evidence from sources.\n"
+                "5. End with a section '## Rubric Scores' containing EXACTLY this format:\n"
+                "   - Originality: N/5\n"
+                "   - Technical Novelty: N/5\n"
+                "   - Practical Impact: N/5\n"
+                "   - Differentiation: N/5\n"
+                "6. List specific overlaps with existing work (cite sources)\n"
+                "7. Identify the unique contributions of the idea\n"
+                "8. Suggest differentiation strategies with references"
             )
             user_prompt = (
                 f"Idea to assess: {idea}\n\n"
                 f"Existing work found:\n{context_text}\n\n"
-                "Provide a comprehensive novelty assessment with citations."
+                f"Embedding analysis: avg cosine similarity to prior art = {avg_similarity:.3f}, "
+                f"max similarity = {max_similarity:.3f} (higher = more similar to existing work).\n\n"
+                "Provide a comprehensive novelty assessment with the rubric scores."
             )
 
             raw = await self._call_llm(system_prompt, user_prompt)
+
+            # ── Phase 3: Parse rubric scores and compute composite ──
+            rubric_scores: dict[str, int] = {}
+            for dim in ("Originality", "Technical Novelty", "Practical Impact", "Differentiation"):
+                m = re.search(rf"{dim}:\s*(\d)/5", raw)
+                if m:
+                    rubric_scores[dim] = int(m.group(1))
+            
+            if rubric_scores:
+                rubric_avg = sum(rubric_scores.values()) / len(rubric_scores)
+                rubric_novelty = int(rubric_avg * 20)  # Scale 1-5 → 20-100
+            else:
+                rubric_novelty = 50  # fallback
+
+            # Composite: 40% embedding signal + 60% rubric score
+            composite_score = int(0.4 * embedding_novelty + 0.6 * rubric_novelty)
+            composite_score = max(0, min(100, composite_score))
+
+            # ── Phase 4: Append composite score summary ──
+            score_section = (
+                f"\n\n## Composite Novelty Score: {composite_score}/100\n\n"
+                f"| Method | Score | Weight |\n"
+                f"|--------|-------|--------|\n"
+                f"| Embedding Distance | {embedding_novelty}/100 | 40% |\n"
+                f"| Rubric Assessment | {rubric_novelty}/100 | 60% |\n"
+                f"| **Composite** | **{composite_score}/100** | — |\n\n"
+                f"*Embedding analysis based on cosine similarity against {len(embedding_similarities)} sources "
+                f"(avg={avg_similarity:.3f}, max={max_similarity:.3f}).*\n"
+            )
+
             result = self._resolve_references(raw, sources)
+            result += score_section
             result += self._build_reference_section(sources)
             return result
         except Exception as exc:
@@ -1218,11 +1410,12 @@ class AgenticService:
                 "You are the Paper Writing Agent. Draft a structured academic paper.\n\n"
                 "RULES:\n"
                 "1. Include inline citations using [S1], [S2], etc.\n"
-                "2. Produce: Title, Abstract, Introduction (with background & citations), "
+                "2. Use markdown heading syntax exactly: '# <Title>' for the title and '## <Section>' for all main sections.\n"
+                "3. Produce: Title, Abstract, Introduction (with background & citations), "
                 "Related Work, Proposed Approach/Outline, and Conclusion\n"
-                "3. Cite relevant sources throughout the text\n"
-                "4. Follow academic writing conventions\n"
-                "5. Make the introduction thorough with proper literature context"
+                "4. Cite relevant sources throughout the text\n"
+                "5. Follow academic writing conventions\n"
+                "6. Make the introduction thorough with proper literature context"
             )
             user_prompt = (
                 f"Paper topic: {paper_request}\n\n"
@@ -1237,53 +1430,6 @@ class AgenticService:
         except Exception as exc:
             logger.error("_tool_write_paper_draft failed: %s", exc, exc_info=True)
             return f"Error writing paper draft: {exc}"
-
-    async def _tool_plan_research(self, request: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
-        """Create a milestone-based plan with dependencies, timeline estimates, and resources."""
-        group_id = config.get("configurable", {}).get("group_id")
-        try:
-            if pre_context:
-                context_text, sources = pre_context
-            else:
-                # Generate queries for methodology & best practices search
-                sub_queries = await self._call_llm_json(
-                    system_prompt="You are a research planning strategist. Generate 3-5 search queries to find methodologies, best practices, tools, and existing approaches for the research plan. Return a JSON array of strings.",
-                    user_prompt=f"Research plan request: {request}",
-                    temperature=0.2,
-                )
-                if not isinstance(sub_queries, list):
-                    sub_queries = [request]
-
-                context_text, sources = await self._gather_context(
-                    query=request,
-                    sub_queries=sub_queries,
-                    group_id=group_id,
-                )
-
-            system_prompt = (
-                "You are the Research Planning Agent. Create a comprehensive, milestone-based plan.\n\n"
-                "RULES:\n"
-                "1. Cite methodologies and resources using ONLY the [S1], [S2], etc. markers from the provided sources.\n"
-                "2. Do NOT invent or fabricate any references. Only cite [SN] markers that appear in the sources.\n"
-                "3. Include: Milestones with timeline estimates, dependencies between tasks,\n"
-                "   recommended tools/datasets (with links), potential risks\n"
-                "4. Link each milestone to relevant references\n"
-                "5. Be specific and actionable\n"
-                "6. Include a Gantt-chart style text timeline"
-            )
-            user_prompt = (
-                f"Research plan request: {request}\n\n"
-                f"Available methodologies and resources:\n{context_text}\n\n"
-                "Create the detailed research plan with referenced resources."
-            )
-
-            raw = await self._call_llm(system_prompt, user_prompt)
-            result = self._resolve_references(raw, sources)
-            result += self._build_reference_section(sources)
-            return result
-        except Exception as exc:
-            logger.error("_tool_plan_research failed: %s", exc, exc_info=True)
-            return f"Error planning research: {exc}"
 
     async def _tool_deep_research(self, query: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
         """Conduct deep research by generating sub-queries, gathering sources, and writing a comprehensive report."""
@@ -1359,25 +1505,33 @@ class AgenticService:
             logger.error("_tool_deep_research failed: %s", exc, exc_info=True)
             return f"Error in deep research: {exc}"
 
-    async def _tool_extract_methodology(self, query: str, config: RunnableConfig) -> str:
-        """Extract and compare methodologies from papers into a structured matrix."""
+    async def _tool_extract_methodology(
+        self,
+        query: str,
+        config: RunnableConfig,
+        papers: Optional[list[dict]] = None,
+    ) -> str:
+        """Build a domain-specific structured comparison matrix from papers."""
         group_id = config.get("configurable", {}).get("group_id")
         try:
-            # Gather papers from group + arxiv
-            papers = await self._get_group_papers(group_id) if group_id else []
-            try:
-                ax_resp = await search_arxiv(query=query, limit=15)
-                papers.extend(ax_resp.get("papers", []))
-            except Exception as exc:
-                logger.warning("ArXiv search failed for methodology extraction: %s", exc)
+            working_papers = list(papers or [])
 
-            # Fallback: use _gather_context to build synthetic paper entries from web/vector sources
-            if not papers:
+            # Gather papers from group + arxiv only if not already supplied by workflow state.
+            if not working_papers:
+                working_papers = await self._get_group_papers(group_id) if group_id else []
+                try:
+                    ax_resp = await search_arxiv(query=query, limit=15)
+                    working_papers.extend(ax_resp.get("papers", []))
+                except Exception as exc:
+                    logger.warning("ArXiv search failed for structured comparison: %s", exc)
+
+            # Fallback: use _gather_context to build paper-like entries from web/vector sources.
+            if not working_papers:
                 try:
                     sub_queries = await self._call_llm_json(
                         system_prompt=(
-                            "Generate 3-5 search queries to find academic papers with detailed "
-                            "methodology sections on this topic. Return a JSON array of strings."
+                            "Generate 3-5 search queries to find academic papers relevant to a "
+                            "structured comparison request on this topic. Return a JSON array of strings."
                         ),
                         user_prompt=f"Topic: {query}",
                         temperature=0.2,
@@ -1390,39 +1544,49 @@ class AgenticService:
                     # Convert sources into paper-like dicts the extractor can use
                     for src in sources:
                         if src.get("snippet"):
-                            papers.append({
+                            working_papers.append({
                                 "title": src.get("title", "Untitled"),
                                 "abstract": src.get("snippet", ""),
                                 "url": src.get("url", ""),
                             })
                 except Exception as exc:
-                    logger.warning("Fallback context gather for methodology failed: %s", exc)
+                    logger.warning("Fallback context gather for structured comparison failed: %s", exc)
 
-            if not papers:
-                return "No papers available for methodology extraction."
+            if not working_papers:
+                return "No papers available for structured comparison."
 
-            # Use the methodology extractor tool
-            rows = await extract_methodology_for_papers(self._call_llm, papers[:12])
+            # Use the dynamic comparison extractor.
+            matrix = await extract_methodology_for_papers(self._call_llm, working_papers[:12])
+            columns = matrix.get("columns", []) if isinstance(matrix, dict) else []
+            rows = matrix.get("rows", []) if isinstance(matrix, dict) else []
 
-            if not rows:
-                return "Could not extract methodology details from available papers."
+            if not columns or not rows:
+                return "Could not extract structured comparison details from available papers."
 
-            # Format as markdown table
-            headers = ["Paper", "Design", "Sample Size", "Population", "Measures", "Statistical Methods", "Limitations", "Replication Risk"]
-            lines = ["## Methodology Comparison Matrix\n"]
+            def _safe_cell(value: Any) -> str:
+                normalized = self._normalize_text_field(value)
+                if not normalized:
+                    normalized = "N/A"
+                normalized = normalized.replace("|", "\\|").replace("\n", " ").strip()
+                return normalized[:220]
+
+            # Format as markdown table with domain-specific dynamic columns.
+            dynamic_headers = [str(c.get("label", c.get("key", "Field"))).strip() for c in columns if isinstance(c, dict)]
+            dynamic_keys = [str(c.get("key", "")).strip() for c in columns if isinstance(c, dict)]
+            headers = ["Paper", "Year"] + dynamic_headers
+            lines = ["## Structured Comparison Matrix\n"]
             lines.append("| " + " | ".join(headers) + " |")
             lines.append("| " + " | ".join(["---"] * len(headers)) + " |")
+
             for row in rows:
+                values = row.get("values", {}) if isinstance(row, dict) else {}
                 cells = [
-                    str(row.get("paper_title", ""))[:40],
-                    str(row.get("design", "N/A")),
-                    str(row.get("sample_size", "N/A")),
-                    str(row.get("population", "N/A")),
-                    str(row.get("measures", "N/A")),
-                    str(row.get("statistical_methods", "N/A")),
-                    str(row.get("limitations", "N/A")),
-                    str(row.get("replication_risk", "N/A")),
+                    _safe_cell(row.get("title", "Untitled")),
+                    _safe_cell(row.get("year", "N/A")),
                 ]
+                for key in dynamic_keys:
+                    value = values.get(key) if isinstance(values, dict) else "N/A"
+                    cells.append(_safe_cell(value))
                 lines.append("| " + " | ".join(cells) + " |")
 
             result = "\n".join(lines)
@@ -1436,60 +1600,17 @@ class AgenticService:
                 state=artifact_state,
                 artifact_type="methodology_matrix",
                 content=result,
-                metadata={"paper_count": len(rows)},
+                metadata={
+                    "paper_count": len(rows),
+                    "column_count": len(dynamic_headers),
+                    "columns": dynamic_headers,
+                },
             )
 
             return result
         except Exception as exc:
             logger.error("_tool_extract_methodology failed: %s", exc, exc_info=True)
-            return f"Error extracting methodologies: {exc}"
-
-    async def _tool_anticipate_reviews(self, query: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
-        """Predict likely peer-review critiques for a research direction."""
-        group_id = config.get("configurable", {}).get("group_id")
-        try:
-            if pre_context:
-                context_text, sources = pre_context
-            else:
-                # Gather literature context
-                sub_queries = await self._call_llm_json(
-                    system_prompt=(
-                        "You are a peer-review strategist. Generate 3-5 search queries to "
-                        "find methodological norms, common criticisms, and standards in the "
-                        "relevant field. Return a JSON array of strings."
-                    ),
-                    user_prompt=f"Research direction: {query}",
-                    temperature=0.2,
-                )
-                if not isinstance(sub_queries, list):
-                    sub_queries = [query]
-
-                context_text, sources = await self._gather_context(
-                    query=query, sub_queries=sub_queries, group_id=group_id,
-                )
-
-            result = await anticipate_reviewer_critiques(
-                self._call_llm, query, context_text,
-            )
-
-            if not result or not result.get("critiques"):
-                return "Could not generate reviewer critique predictions."
-
-            # Format output
-            lines = ["## Anticipated Reviewer Critiques\n"]
-            for i, c in enumerate(result["critiques"], 1):
-                severity = c.get("severity", "medium").upper()
-                lines.append(f"### {i}. [{severity}] {c.get('critique', '')}")
-                lines.append(f"**Reasoning:** {c.get('reasoning', '')}")
-                lines.append(f"**Suggested response:** {c.get('suggested_response', '')}\n")
-
-            formatted = "\n".join(lines)
-            formatted = self._resolve_references(formatted, sources)
-            formatted += self._build_reference_section(sources)
-            return formatted
-        except Exception as exc:
-            logger.error("_tool_anticipate_reviews failed: %s", exc, exc_info=True)
-            return f"Error anticipating reviews: {exc}"
+            return f"Error extracting structured comparison: {exc}"
 
     async def _tool_find_embedding_gaps(self, query: str, config: RunnableConfig) -> str:
         """Find understudied areas via embedding-space clustering."""
@@ -1564,7 +1685,7 @@ class AgenticService:
             artifact_types = {
                 "literature_survey", "gap_analysis", "fact_check",
                 "novelty_assessment", "research_mentor", "paper_writing",
-                "research_planning", "deep_research", "methodology_matrix",
+                "deep_research", "methodology_matrix",
             }
             artifacts = [
                 r for r in results
@@ -1760,9 +1881,7 @@ class AgenticService:
             "novelty_assessment": "novelty",
             "research_mentor": "mentor_advice",
             "paper_writing": "paper_draft",
-            "research_planning": "research_plan",
             "methodology_extraction": "methodology_matrix",
-            "reviewer_anticipation": "reviewer_critiques",
         }
         result_key = key_map.get(effective_task, "result")
 
@@ -1907,6 +2026,7 @@ class AgenticService:
                 
                 steps[0]["status"] = "done"
                 steps[0]["detail"] = f"Generated {len(sub_queries)} queries"
+                steps[0]["sub_steps"] = [str(q)[:80] for q in sub_queries[:5]]
                 steps[1]["status"] = "active"
                 steps[1]["detail"] = "Querying vector store..."
                 yield yield_progress()
@@ -2037,7 +2157,10 @@ class AgenticService:
                 )
 
                 try:
-                    final_response = await self._call_llm(system_prompt, user_prompt, temperature=0.3)
+                    final_response = ""
+                    async for token in self._call_llm_stream(system_prompt, user_prompt, temperature=0.3):
+                        final_response += token
+                        yield json.dumps({"type": "token", "content": token}) + "\n"
                 except (TimeoutError, asyncio.TimeoutError) as te:
                     logger.error("Literature survey LLM synthesis timed out: %s", te)
                     # Provide a partial response instead of crashing
@@ -2095,13 +2218,6 @@ class AgenticService:
                         {"icon": "file-search", "label": "Searching arXiv references", "status": "pending", "detail": ""},
                         {"icon": "brain", "label": "Drafting paper", "status": "pending", "detail": ""},
                     ],
-                    "research_planning": [
-                        {"icon": "search", "label": "Analyzing research goals", "status": "active", "detail": "Generating methodology queries..."},
-                        {"icon": "database", "label": "Searching group methodologies", "status": "pending", "detail": ""},
-                        {"icon": "globe", "label": "Finding best practices", "status": "pending", "detail": ""},
-                        {"icon": "file-search", "label": "Searching academic frameworks", "status": "pending", "detail": ""},
-                        {"icon": "brain", "label": "Building research plan", "status": "pending", "detail": ""},
-                    ],
                     "deep_research": [
                         {"icon": "search", "label": "Planning research queries", "status": "active", "detail": "Generating sub-queries..."},
                         {"icon": "database", "label": "Searching vector store", "status": "pending", "detail": ""},
@@ -2111,18 +2227,11 @@ class AgenticService:
                         {"icon": "brain", "label": "Writing research report", "status": "pending", "detail": ""},
                     ],
                     "methodology_extraction": [
-                        {"icon": "search", "label": "Analyzing research topic", "status": "active", "detail": "Identifying papers..."},
+                        {"icon": "search", "label": "Analyzing comparison request", "status": "active", "detail": "Identifying the right dimensions..."},
                         {"icon": "database", "label": "Gathering group papers", "status": "pending", "detail": ""},
                         {"icon": "file-search", "label": "Searching arXiv papers", "status": "pending", "detail": ""},
-                        {"icon": "layers", "label": "Extracting methodology data", "status": "pending", "detail": ""},
+                        {"icon": "layers", "label": "Extracting structured fields", "status": "pending", "detail": ""},
                         {"icon": "brain", "label": "Building comparison matrix", "status": "pending", "detail": ""},
-                    ],
-                    "reviewer_anticipation": [
-                        {"icon": "search", "label": "Analyzing research direction", "status": "active", "detail": "Generating field queries..."},
-                        {"icon": "database", "label": "Searching field norms", "status": "pending", "detail": ""},
-                        {"icon": "globe", "label": "Searching review standards", "status": "pending", "detail": ""},
-                        {"icon": "file-search", "label": "Finding common critiques", "status": "pending", "detail": ""},
-                        {"icon": "brain", "label": "Predicting reviewer critiques", "status": "pending", "detail": ""},
                     ],
                 }
 
@@ -2167,6 +2276,7 @@ class AgenticService:
 
                 steps[0]["status"] = "done"
                 steps[0]["detail"] = f"Generated {len(sub_queries)} queries"
+                steps[0]["sub_steps"] = [str(q)[:80] for q in sub_queries[:5]]
                 steps[1]["status"] = "active"
                 steps[1]["detail"] = "Querying vector store..."
                 yield yield_progress()
@@ -2221,10 +2331,8 @@ class AgenticService:
                     "novelty_assessment": lambda: self._tool_assess_novelty(enriched_query, tool_config, pre_context=gathered),
                     "research_mentor": lambda: self._tool_provide_mentoring(enriched_query, tool_config, pre_context=gathered),
                     "paper_writing": lambda: self._tool_write_paper_draft(enriched_query, tool_config, pre_context=gathered),
-                    "research_planning": lambda: self._tool_plan_research(enriched_query, tool_config, pre_context=gathered),
                     "deep_research": lambda: self._tool_deep_research(enriched_query, tool_config, pre_context=gathered),
                     "methodology_extraction": lambda: self._tool_extract_methodology(enriched_query, tool_config),
-                    "reviewer_anticipation": lambda: self._tool_anticipate_reviews(enriched_query, tool_config, pre_context=gathered),
                 }
 
                 tool_fn = tool_map.get(effective_task)
@@ -2251,6 +2359,12 @@ class AgenticService:
                             elif isinstance(msg, dict) and "content" in msg and msg["content"]:
                                 final_response = self._extract_text_from_possible_json(msg["content"])
 
+                # Stream the completed tool result as chunked tokens for live rendering
+                if final_response and final_response != "Task completed, but no response was generated.":
+                    CHUNK_SIZE = 80
+                    for i in range(0, len(final_response), CHUNK_SIZE):
+                        yield json.dumps({"type": "token", "content": final_response[i:i + CHUNK_SIZE]}) + "\n"
+
                 steps[synth_idx]["status"] = "done"
                 steps[synth_idx]["detail"] = "Completed."
                 # Mark any remaining intermediate steps as done
@@ -2275,9 +2389,7 @@ class AgenticService:
             "novelty_assessment": "novelty",
             "research_mentor": "mentor_advice",
             "paper_writing": "paper_draft",
-            "research_planning": "research_plan",
             "methodology_extraction": "methodology_matrix",
-            "reviewer_anticipation": "reviewer_critiques",
         }
         result_key = key_map.get(str(effective_task), "result")
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import { useEffect, useRef, useCallback, useState, startTransition } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from './auth';
 import { Message, IntentClassifiedEvent } from './api';
@@ -24,6 +24,30 @@ export function useSocket(sessionId: string | null) {
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [aiError, setAIError] = useState<AIError | null>(null);
   const [intentEvent, setIntentEvent] = useState<IntentClassifiedEvent | null>(null);
+  const [streamingMessageIds, setStreamingMessageIds] = useState<Set<string>>(new Set());
+
+  // ── rAF-batched token buffer for smooth streaming ──
+  const tokenBufferRef = useRef<Map<string, string>>(new Map());
+  const rafIdRef = useRef<number | null>(null);
+
+  const flushTokenBuffer = useCallback(() => {
+    rafIdRef.current = null;
+    const buffer = tokenBufferRef.current;
+    if (buffer.size === 0) return;
+
+    const snapshot = new Map(buffer);
+    buffer.clear();
+
+    startTransition(() => {
+      setMessages((prev) =>
+        prev.map((msg) => {
+          const pending = snapshot.get(msg.id);
+          if (pending === undefined) return msg;
+          return { ...msg, content: (msg.content || '') + pending };
+        })
+      );
+    });
+  }, []);
 
   // Connect socket
   useEffect(() => {
@@ -82,19 +106,49 @@ export function useSocket(sessionId: string | null) {
       );
     });
 
-    // Streaming: append each token to the AI message content
+    // Streaming: buffer tokens and flush via rAF for smooth rendering
     socket.on('ai:token', (data: { messageId: string; token: string }) => {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === data.messageId
-            ? { ...msg, content: (msg.content || '') + data.token }
-            : msg
-        )
-      );
+      // Track this message as actively streaming
+      setStreamingMessageIds((prev) => {
+        if (prev.has(data.messageId)) return prev;
+        const next = new Set(prev);
+        next.add(data.messageId);
+        return next;
+      });
+
+      // If this is the first token for this message, clear any existing
+      // progress/placeholder content so tokens start fresh
+      const buf = tokenBufferRef.current;
+      if (!buf.has(data.messageId)) {
+        setMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === data.messageId ? { ...msg, content: '' } : msg
+          )
+        );
+      }
+
+      // Append token to the buffer
+      buf.set(data.messageId, (buf.get(data.messageId) || '') + data.token);
+
+      // Schedule a flush on the next animation frame (if not already scheduled)
+      if (rafIdRef.current === null) {
+        rafIdRef.current = requestAnimationFrame(flushTokenBuffer);
+      }
     });
 
-    // Streaming complete: finalize message with full content + metadata
+    // Streaming complete: flush any remaining tokens, finalize with full content
     socket.on('ai:token:done', (data: { messageId: string; content: string; metadata: Record<string, unknown> }) => {
+      // Clear any buffered tokens for this message
+      tokenBufferRef.current.delete(data.messageId);
+
+      // Remove from streaming set
+      setStreamingMessageIds((prev) => {
+        if (!prev.has(data.messageId)) return prev;
+        const next = new Set(prev);
+        next.delete(data.messageId);
+        return next;
+      });
+
       setMessages((prev) =>
         prev.map((msg) => {
           if (msg.id !== data.messageId) return msg;
@@ -123,11 +177,24 @@ export function useSocket(sessionId: string | null) {
       console.log(`${data.userName} left the session`);
     });
 
+    // ── Workflow orchestration events ──
+    // Forward workflow events from the socket to a window CustomEvent
+    // so WorkflowPanel (and any other listener) can react in real-time.
+    socket.on('workflow:event', (event: Record<string, unknown>) => {
+      window.dispatchEvent(new CustomEvent('workflow:event', { detail: event }));
+    });
+
     socketRef.current = socket;
 
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      // Cancel any pending rAF flush
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+      tokenBufferRef.current.clear();
     };
   }, [isAuthenticated, accessToken]);
 
@@ -143,10 +210,10 @@ export function useSocket(sessionId: string | null) {
     };
   }, [sessionId, isConnected]);
 
-  // Send message
-  const sendMessage = useCallback((content: string) => {
+  // Send message (with optional agent override: 'auto' lets backend classify)
+  const sendMessage = useCallback((content: string, taskType?: string) => {
     if (!socketRef.current || !sessionId) return;
-    socketRef.current.emit('message:send', { sessionId, content });
+    socketRef.current.emit('message:send', { sessionId, content, taskType: taskType || 'auto' });
   }, [sessionId]);
 
   // Typing indicators
@@ -192,6 +259,7 @@ export function useSocket(sessionId: string | null) {
     typingUsers,
     aiError,
     intentEvent,
+    streamingMessageIds,
     sendMessage,
     startTyping,
     stopTyping,

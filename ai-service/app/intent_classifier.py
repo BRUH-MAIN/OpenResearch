@@ -129,20 +129,7 @@ INTENT_PHRASES: dict[str, list[str]] = {
         "generate a paper outline",
         "draft a conclusion for",
     ],
-    # --- Research Planning ---
-    "research_planning": [
-        "plan my research",
-        "create a research timeline",
-        "research roadmap",
-        "design a research plan",
-        "outline my research strategy",
-        "plan the next steps for my research",
-        "create a study plan",
-        "develop a research agenda",
-        "project planning for research",
-        "milestone plan for my project",
-    ],
-    # --- Methodology Extraction ---
+    # --- Structured Comparison ---
     "methodology_extraction": [
         "compare methodologies across papers",
         "extract study designs",
@@ -153,17 +140,11 @@ INTENT_PHRASES: dict[str, list[str]] = {
         "what methods were used",
         "compare statistical approaches",
         "methodology comparison table",
-    ],
-    # --- Reviewer Anticipation ---
-    "reviewer_anticipation": [
-        "anticipate reviewer critiques",
-        "what would reviewers say",
-        "predict peer review feedback",
-        "reviewer concerns about my research",
-        "prepare for peer review",
-        "what critiques will reviewers raise",
-        "preemptive reviewer response",
-        "anticipate objections to my paper",
+        "compare architectures across papers",
+        "build a comparison matrix",
+        "extract structured fields from papers",
+        "compare datasets metrics and methods",
+        "make a structured comparison table",
     ],
 }
 
@@ -195,17 +176,6 @@ def _ensure_initialized() -> None:
         sum(len(v) for v in _intent_embeddings.values()),
         elapsed_ms,
     )
-
-
-def eager_initialize() -> bool:
-    """Eagerly pre-compute intent embeddings at startup.
-
-    Call this during application startup (after embedding_service is ready)
-    to avoid cold-start latency on the first classification request.
-    Returns True if initialization succeeded.
-    """
-    _ensure_initialized()
-    return _initialized
 
 
 def _cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
@@ -256,18 +226,6 @@ def _compute_intent_scores(prompt: str) -> list[tuple[str, float, str]]:
     ]
     ranked.sort(key=lambda x: x[1], reverse=True)
     return ranked
-
-
-def get_top_k_intents(prompt: str, k: int = 3) -> list[dict]:
-    """Return top-k intent alternatives with scores.
-
-    Each entry: ``{"intent": str, "confidence": float, "phrase": str}``
-    """
-    ranked = _compute_intent_scores(prompt)
-    return [
-        {"intent": r[0], "confidence": round(r[1], 4), "phrase": r[2]}
-        for r in ranked[:k]
-    ]
 
 
 def classify_intent_detailed(prompt: str) -> dict:

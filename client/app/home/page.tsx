@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
-import { Button, Card, CardBody, CardHeader, Avatar, Input } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, Avatar, Input, Modal } from '@/components/ui';
 import { Plus, Users, Calendar, Search, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { useGroups, useCreateGroup } from '@/lib/hooks/useGroups';
@@ -148,53 +148,56 @@ export default function HomePage() {
         )}
       </main>
 
-      {/* Create Group Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[500] p-4 animate-fade-in">
-          <div className="bg-[var(--color-bg-secondary)] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[var(--color-border-primary)] animate-scale-in">
-            <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-6">Create New Group</h2>
-            <div className="space-y-5">
-              <Input
-                label="Group Name"
-                placeholder="e.g., AI Research Lab"
-                value={newGroup.name}
-                onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
-              />
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                  Description
-                </label>
-                <textarea
-                  placeholder="What's this group about?"
-                  value={newGroup.description}
-                  onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
-                  className="w-full px-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] resize-none bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
-                  rows={4}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-[var(--color-border-primary)]">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setNewGroup({ name: '', description: '' });
-                }}
-                disabled={createGroup.isPending}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateGroup}
-                disabled={!newGroup.name.trim() || !newGroup.description.trim() || createGroup.isPending}
-                isLoading={createGroup.isPending}
-              >
-                Create Group
-              </Button>
-            </div>
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setNewGroup({ name: '', description: '' });
+        }}
+        title="Create New Group"
+        footer={(
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowCreateModal(false);
+                setNewGroup({ name: '', description: '' });
+              }}
+              disabled={createGroup.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateGroup}
+              disabled={!newGroup.name.trim() || !newGroup.description.trim() || createGroup.isPending}
+              isLoading={createGroup.isPending}
+            >
+              Create Group
+            </Button>
+          </>
+        )}
+      >
+        <div className="space-y-5">
+          <Input
+            label="Group Name"
+            placeholder="e.g., AI Research Lab"
+            value={newGroup.name}
+            onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
+          />
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+              Description
+            </label>
+            <textarea
+              placeholder="What's this group about?"
+              value={newGroup.description}
+              onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
+              className="w-full px-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] resize-none bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
+              rows={4}
+            />
           </div>
         </div>
-      )}
+      </Modal>
     </div>
   );
 }
