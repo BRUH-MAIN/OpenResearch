@@ -41,19 +41,19 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[var(--color-bg-primary)] transition-colors duration-300">
       {/* Header */}
       <header className="px-4 py-6 sm:px-6 lg:px-8 sticky top-0 z-50 glass border-b border-[var(--color-border-primary)]">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
+        <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-br from-[#0D7377] to-[#14FFEC] rounded-xl flex items-center justify-center shadow-lg shadow-[#0D7377]/30">
               <span className="text-white font-bold text-xl">OR</span>
             </div>
-            <span className="text-2xl font-bold text-[var(--color-text-primary)]">OpenResearch</span>
+            <span className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">OpenResearch</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-3 sm:w-auto">
             <Link href="/auth/signin">
-              <Button variant="ghost">Sign In</Button>
+              <Button variant="ghost" className="w-full justify-center sm:w-auto">Sign In</Button>
             </Link>
             <Link href="/auth/signup">
-              <Button>Get Started</Button>
+              <Button className="w-full justify-center sm:w-auto">Get Started</Button>
             </Link>
           </div>
         </div>
@@ -70,7 +70,7 @@ export default function LandingPage() {
             <Sparkles size={16} />
             <span>AI-Powered Research Platform</span>
           </div>
-          <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold text-[var(--color-text-primary)] mb-6 leading-tight">
+          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-[var(--color-text-primary)] mb-6 leading-tight">
             Research, Collaborate,
             <span className="bg-gradient-to-r from-[#0D7377] to-[#14FFEC] bg-clip-text text-transparent">
               {' '}Innovate

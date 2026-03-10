@@ -609,7 +609,7 @@ tbody .markdown-table-row:hover {
 
 .research-chat-stage {
   min-height: 100%;
-  padding: 0 0 20px;
+  padding: 0 0 12px;
 }
 
 .research-empty-state {
@@ -718,8 +718,8 @@ tbody .markdown-table-row:hover {
   display: flex;
   align-items: flex-end;
   gap: 12px;
-  padding: 14px 15px;
-  border-radius: 20px;
+  padding: 12px 14px;
+  border-radius: 18px;
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
   transition: box-shadow var(--transition-base), border-color var(--transition-base), transform var(--transition-base);
 }
@@ -797,6 +797,9 @@ tbody .markdown-table-row:hover {
     var(--color-bg-secondary);
   padding: 16px 17px 15px;
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.1);
+  overflow-wrap: break-word;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .research-ai-card-header {
@@ -1332,7 +1335,7 @@ tbody .markdown-table-row:hover {
 
 @media (max-width: 1024px) {
   .research-chat-stage {
-    padding: 0 0 20px;
+    padding: 0 0 12px;
   }
 
   .research-empty-hero {

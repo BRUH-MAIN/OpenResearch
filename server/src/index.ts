@@ -58,13 +58,24 @@ app.use(helmet({
 }));
 
 // CORS configuration
+const allowedHttpOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3002',
+  'http://localhost:3003',
+  process.env.CLIENT_URL || 'http://localhost:3000',
+].filter(Boolean);
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3002',
-    'http://localhost:3003',
-    process.env.CLIENT_URL || 'http://localhost:3000',
-  ].filter(Boolean),
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedHttpOrigins.includes(origin)) return callback(null, true);
+    try {
+      const clientHost = new URL(process.env.CLIENT_URL || 'http://localhost:3000').hostname;
+      const reqHost = new URL(origin).hostname;
+      if (reqHost === clientHost) return callback(null, true);
+    } catch { /* invalid URL, fall through */ }
+    callback(new Error(`CORS origin not allowed: ${origin}`));
+  },
   credentials: true,
 }));
 

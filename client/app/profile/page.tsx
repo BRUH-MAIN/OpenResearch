@@ -135,8 +135,8 @@ export default function ProfilePage() {
                 )}
               </div>
               {isEditing ? (
-                <div className="flex gap-3">
-                  <Button onClick={handleSaveProfile} disabled={isSaving} isLoading={isSaving}>
+                <div className="grid w-full grid-cols-1 gap-3 sm:flex sm:w-auto">
+                  <Button onClick={handleSaveProfile} disabled={isSaving} isLoading={isSaving} className="w-full justify-center sm:w-auto">
                     Save
                   </Button>
                   <Button variant="ghost" onClick={() => {
@@ -146,12 +146,12 @@ export default function ProfilePage() {
                       email: user.email,
                       interests: user.interests || [],
                     });
-                  }} disabled={isSaving}>
+                  }} disabled={isSaving} className="w-full justify-center sm:w-auto">
                     Cancel
                   </Button>
                 </div>
               ) : (
-                <Button onClick={() => setIsEditing(true)}>
+                <Button onClick={() => setIsEditing(true)} className="w-full justify-center sm:w-auto">
                   <Edit2 size={18} className="mr-2" />
                   Edit Profile
                 </Button>
@@ -244,7 +244,7 @@ export default function ProfilePage() {
                       <Link
                         key={group.id}
                         href={`/group?id=${group.id}`}
-                        className="flex items-center justify-between p-4 bg-[var(--color-bg-primary)] rounded-xl hover:bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] hover:border-[#0D7377]/50 transition-all"
+                        className="flex flex-col items-start gap-4 p-4 bg-[var(--color-bg-primary)] rounded-xl hover:bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] hover:border-[#0D7377]/50 transition-all sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="flex items-center gap-4">
                           <Avatar src={group.avatar} alt={group.name} size="md" />
@@ -253,7 +253,7 @@ export default function ProfilePage() {
                             <p className="text-sm text-[var(--color-text-tertiary)]">{group.memberCount} members</p>
                           </div>
                         </div>
-                        <Button size="sm" variant="ghost">
+                        <Button size="sm" variant="ghost" className="w-full justify-center sm:w-auto">
                           View
                         </Button>
                       </Link>

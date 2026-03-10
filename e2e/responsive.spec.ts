@@ -53,6 +53,12 @@ async function createSessionAPI(page: Page, token: string, groupId: string, titl
   return (await resp.json()) as { id: string };
 }
 
+async function expectNoHorizontalOverflow(page: Page) {
+  await expect
+    .poll(async () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1))
+    .toBeTruthy();
+}
+
 test.describe('Responsive frontend smoke', () => {
   test('home modal and research mobile overlays render', async ({ page }) => {
     const { accessToken } = await loginViaAPI(page);
@@ -62,25 +68,60 @@ test.describe('Responsive frontend smoke', () => {
 
     await page.goto(`${BASE}/home`);
     await expect(page.getByRole('heading', { name: 'My Groups' })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
 
     await page.getByRole('button', { name: /Create Group/i }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Create New Group', exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
     await page.getByRole('button', { name: 'Close modal' }).click();
     await expect(page.getByRole('dialog')).not.toBeVisible();
 
     await page.goto(`${BASE}/research?sessionId=${session.id}`);
     await expect(page.getByText('Research Workspace')).toBeVisible({ timeout: 15000 });
+    await expectNoHorizontalOverflow(page);
 
     const sourcesButton = page.getByRole('button', { name: /Sources/i }).first();
     await expect(sourcesButton).toBeVisible();
     await sourcesButton.click();
     await expect(page.getByRole('heading', { name: 'Sources', exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
     await page.getByRole('button', { name: 'Close modal' }).click();
 
     const workspaceButton = page.getByRole('button', { name: /Workspace/i }).first();
     await expect(workspaceButton).toBeVisible();
     await workspaceButton.click();
     await expect(page.getByRole('heading', { name: 'Workspace', exact: true })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+  });
+
+  test('mobile pages keep primary controls visible without horizontal overflow', async ({ page }) => {
+    const { accessToken } = await loginViaAPI(page);
+    const stamp = Date.now();
+    const group = await createGroupAPI(page, accessToken, `Responsive Discover ${stamp}`);
+
+    await page.goto(`${BASE}/landing`);
+    await expect(page.getByRole('heading', { name: /Research, Collaborate/i })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto(`${BASE}/discover`);
+    await expect(page.getByRole('heading', { name: 'Discover Papers' })).toBeVisible();
+    await expect(page.locator('select')).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto(`${BASE}/paper`);
+    await expect(page.getByRole('heading', { name: 'Explore Papers' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^All Papers$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Saved \(/ })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto(`${BASE}/reports?groupId=${group.id}`);
+    await expect(page.getByRole('heading', { name: new RegExp(`${group.name} Reports`) })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Generate Report/i }).first()).toBeVisible();
+    await expectNoHorizontalOverflow(page);
+
+    await page.goto(`${BASE}/invitations`);
+    await expect(page.getByRole('heading', { name: 'Group Invitations' })).toBeVisible();
+    await expectNoHorizontalOverflow(page);
   });
 });

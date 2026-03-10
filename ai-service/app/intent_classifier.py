@@ -146,6 +146,19 @@ INTENT_PHRASES: dict[str, list[str]] = {
         "compare datasets metrics and methods",
         "make a structured comparison table",
     ],
+    # --- Reviewer Anticipation ---
+    "reviewer_anticipation": [
+        "anticipate reviewer questions",
+        "what will reviewers ask",
+        "address potential reviewer concerns",
+        "reviewer objections",
+        "prepare for peer review",
+        "what criticisms might reviewers have",
+        "strengthen against reviewer feedback",
+        "identify weaknesses reviewers might find",
+        "simulate peer review",
+        "how would reviewers critique this",
+    ],
 }
 
 
