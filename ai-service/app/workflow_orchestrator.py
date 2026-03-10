@@ -272,11 +272,17 @@ class WorkflowOrchestrator:
         self, goal: str, config: dict, step_def: StepDefinition, state: WorkflowState
     ) -> tuple[str, dict | None]:
         max_papers = step_def.agent_config.get("max_papers", 15)
-        years = step_def.agent_config.get("search_recent_years", 3)
 
         import datetime
-        end_date = datetime.date.today().isoformat()
-        start_date = (datetime.date.today() - datetime.timedelta(days=365 * years)).isoformat()
+
+        # Support direct start_date/end_date overrides from the planner
+        if "start_date" in step_def.agent_config:
+            start_date = step_def.agent_config["start_date"]
+            end_date = step_def.agent_config.get("end_date", datetime.date.today().isoformat())
+        else:
+            years = step_def.agent_config.get("search_recent_years", 3)
+            end_date = datetime.date.today().isoformat()
+            start_date = (datetime.date.today() - datetime.timedelta(days=365 * years)).isoformat()
 
         result = await self._agentic._tool_retrieve_papers(
             query=goal, config=config, start_date=start_date, end_date=end_date

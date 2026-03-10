@@ -80,11 +80,14 @@ async def lifespan(app: FastAPI):
     print()
 
     # ── Step 2: Embedding model ────────────────────────────
-    print(f"[2/{total_steps}]  Preparing embedding service …")
-    print(f"         Embeddings load lazily on first use to avoid blocking API startup.")
+    print(f"[2/{total_steps}]  Loading embedding model …")
     t0 = _time.time()
-    results.append(("Embedding model", True, _time.time() - t0))
-    print(f"  ✅  Embedding service ready for lazy initialization ({_time.time() - t0:.1f}s)")
+    if embedding_service.initialize():
+        results.append(("Embedding model", True, _time.time() - t0))
+        print(f"  ✅  Embedding model loaded ({_time.time() - t0:.1f}s)")
+    else:
+        results.append(("Embedding model", False, _time.time() - t0))
+        print(f"  ⚠️   Embedding model failed to load ({_time.time() - t0:.1f}s)")
     print()
 
     # ── Step 3: Database ───────────────────────────────────
