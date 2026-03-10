@@ -213,10 +213,6 @@ class ApiClient {
     });
   }
 
-  async getPaperTags(token: string) {
-    return this.request<string[]>('/api/papers/meta/tags', { token });
-  }
-
   // External Paper Search (arXiv)
   async searchExternalPapers(token: string, query: string, source: 'arxiv' = 'arxiv', limit: number = 10) {
     const params = new URLSearchParams({ query, limit: limit.toString() });
@@ -382,6 +378,96 @@ class ApiClient {
       token,
       body: JSON.stringify(data),
     });
+  }
+
+  async buildCitationGraph(
+    token: string,
+    data: { query: string; groupId?: string }
+  ): Promise<{ graph: { nodes: any[]; edges: any[] }; source_count: number }> {
+    return this.request('/api/ai/citation-graph/build', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  // ==================== WORKFLOW ORCHESTRATION ====================
+
+  async listWorkflowTemplates(token: string): Promise<WorkflowTemplate[]> {
+    return this.request<WorkflowTemplate[]>('/api/ai/workflows/templates', { token });
+  }
+
+  async planWorkflow(
+    token: string,
+    data: {
+      goal: string;
+      groupId?: string;
+      sessionId?: string;
+      preferredTemplate?: string;
+    }
+  ): Promise<WorkflowPlanResponse> {
+    return this.request<WorkflowPlanResponse>('/api/ai/workflows/plan', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  async startWorkflow(
+    token: string,
+    data: { workflowId: string; userFeedback?: string; sessionId?: string }
+  ): Promise<{ status: string; workflowId: string }> {
+    return this.request('/api/ai/workflows/start', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  async approveWorkflowStep(
+    token: string,
+    data: {
+      workflowId: string;
+      stepIndex: number;
+      approved: boolean;
+      feedback?: string;
+      sessionId?: string;
+    }
+  ): Promise<{ status: string; workflowId: string }> {
+    return this.request('/api/ai/workflows/approve-step', {
+      method: 'POST',
+      token,
+      body: JSON.stringify(data),
+    });
+  }
+
+  async cancelWorkflow(
+    token: string,
+    workflowId: string
+  ): Promise<{ status: string; workflow_id: string }> {
+    return this.request('/api/ai/workflows/cancel', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ workflowId }),
+    });
+  }
+
+  async getWorkflowStatus(
+    token: string,
+    workflowId: string
+  ): Promise<WorkflowStatusResponse> {
+    return this.request<WorkflowStatusResponse>(
+      `/api/ai/workflows/${workflowId}/status`,
+      { token }
+    );
+  }
+
+  async listGroupWorkflows(
+    token: string,
+    groupId: string,
+    limit = 20
+  ): Promise<{ workflows: WorkflowRun[]; total: number }> {
+    return this.request(`/api/ai/workflows/group/${groupId}?limit=${limit}`, { token });
   }
 
   async getGroupReports(token: string, groupId: string) {
@@ -622,6 +708,7 @@ export interface Report {
 // ==================== AGENTIC TYPES ====================
 
 export type AgenticTaskType =
+  | 'auto'
   | 'paper_retrieval'
   | 'literature_survey'
   | 'gap_analysis'
@@ -629,10 +716,8 @@ export type AgenticTaskType =
   | 'novelty_assessment'
   | 'research_mentor'
   | 'paper_writing'
-  | 'research_planning'
   | 'deep_research'
-  | 'methodology_extraction'
-  | 'reviewer_anticipation';
+  | 'methodology_extraction';
 
 export interface AgenticRunResponse {
   task_type: AgenticTaskType;
@@ -660,14 +745,110 @@ export interface MethodologyRow {
   replication_risk: string;
 }
 
-export interface ReviewerCritique {
-  critique: string;
-  reasoning: string;
-  suggested_response: string;
-  severity: 'low' | 'medium' | 'high';
-}
-
 export interface CitationAnchoredSentence {
   text: string;
   source_ids: string[];
+}
+
+// ==================== WORKFLOW TYPES ====================
+
+export interface WorkflowTemplate {
+  template_id: string;
+  title: string;
+  description: string;
+  research_type: string;
+  estimated_minutes: number;
+  step_count: number;
+  steps: Array<Record<string, unknown>>;
+}
+
+export interface WorkflowPlanResponse {
+  workflow_id: string;
+  template_id?: string;
+  title: string;
+  description: string;
+  research_type: string;
+  estimated_minutes: number;
+  steps: WorkflowStepInfo[];
+  status: string;
+}
+
+export interface WorkflowStepInfo {
+  step_index: number;
+  agent_type: string;
+  name: string;
+  description?: string;
+  is_checkpoint: boolean;
+  input_keys: string[];
+  output_key: string;
+  agent_config?: Record<string, unknown>;
+}
+
+export type WorkflowRunStatus =
+  | 'planning'
+  | 'awaiting_approval'
+  | 'running'
+  | 'paused'
+  | 'completed'
+  | 'failed'
+  | 'cancelled';
+
+export type WorkflowStepStatus =
+  | 'pending'
+  | 'running'
+  | 'awaiting_approval'
+  | 'approved'
+  | 'rejected'
+  | 'completed'
+  | 'failed'
+  | 'skipped';
+
+export interface WorkflowStatusResponse {
+  workflow_id: string;
+  status: WorkflowRunStatus;
+  current_step_index: number;
+  total_steps: number;
+  steps: WorkflowStepDetail[];
+  final_output?: Record<string, unknown>;
+}
+
+export interface WorkflowStepDetail {
+  id: string;
+  step_index: number;
+  agent_type: string;
+  name: string;
+  status: WorkflowStepStatus;
+  is_checkpoint: boolean;
+  output?: Record<string, unknown>;
+  user_feedback?: string;
+  error_message?: string;
+  started_at?: string;
+  completed_at?: string;
+}
+
+export interface WorkflowRun {
+  id: string;
+  group_id: string;
+  template_id?: string;
+  goal: string;
+  status: WorkflowRunStatus;
+  current_step_index: number;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface WorkflowEvent {
+  type: string;
+  workflow_id?: string;
+  workflowId?: string;
+  step_index?: number;
+  step_name?: string;
+  agent_type?: string;
+  content?: string;
+  output?: string;
+  output_preview?: string;
+  message?: string;
+  error?: string;
+  result?: Record<string, unknown>;
+  [key: string]: unknown;
 }

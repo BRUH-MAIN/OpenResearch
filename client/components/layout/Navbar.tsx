@@ -25,6 +25,11 @@ export function Navbar() {
     { href: '/profile', label: 'Profile', icon: User },
   ];
 
+  const mobileNavLinks = [
+    ...navLinks,
+    { href: '/invitations', label: 'Invites', icon: Mail, badge: pendingCount || undefined },
+  ];
+
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + '/');
 
   // Close dropdown when clicking outside
@@ -37,6 +42,10 @@ export function Navbar() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    setShowNotifications(false);
+  }, [pathname]);
 
   const handleLogout = async () => {
     await logout();
@@ -107,7 +116,7 @@ export function Navbar() {
           </div>
 
           {/* User Menu */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
@@ -158,7 +167,7 @@ export function Navbar() {
 
               {showNotifications && (
                 <div
-                  className="absolute right-0 top-full mt-2 w-64 rounded-xl shadow-xl"
+                  className="absolute right-0 top-full mt-2 w-[min(20rem,calc(100vw-1rem))] rounded-xl shadow-xl"
                   style={{
                     background: 'var(--color-bg-secondary)',
                     border: '1px solid var(--color-border-primary)',
@@ -205,20 +214,20 @@ export function Navbar() {
             </div>
 
             <div
-              className="flex items-center gap-3 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+              className="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-1.5 rounded-xl transition-colors cursor-pointer min-w-0"
               onMouseEnter={(e) => e.currentTarget.style.background = 'var(--color-bg-tertiary)'}
               onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
             >
               <Avatar src={user?.avatar} alt={user?.name || 'User'} size="sm" />
-              <div className="hidden sm:block">
+              <div className="hidden sm:block min-w-0 max-w-40">
                 <p
-                  className="text-sm font-medium leading-tight"
+                  className="text-sm font-medium leading-tight truncate"
                   style={{ color: 'var(--color-text-primary)' }}
                 >
                   {user?.name || 'Loading...'}
                 </p>
                 <p
-                  className="text-xs leading-tight"
+                  className="text-xs leading-tight truncate"
                   style={{ color: 'var(--color-text-muted)' }}
                 >
                   {user?.email}
@@ -262,21 +271,32 @@ export function Navbar() {
           background: 'var(--color-bg-primary)',
         }}
       >
-        <div className="flex justify-around py-2 px-2">
-          {navLinks.map((link) => {
+        <div className="grid grid-cols-4 gap-1 py-2 px-2">
+          {mobileNavLinks.map((link) => {
             const Icon = link.icon;
             const active = isActive(link.href);
             return (
               <Link
                 key={link.href}
                 href={link.href}
-                className="flex flex-col items-center gap-1 px-4 py-2 rounded-xl transition-all duration-200 min-w-[60px]"
+                className="flex flex-col items-center gap-1 px-2 py-2 rounded-xl transition-all duration-200 min-w-0 relative"
                 style={{
                   color: active ? 'var(--color-brand-secondary)' : 'var(--color-text-tertiary)',
                   background: active ? 'rgba(13, 115, 119, 0.1)' : 'transparent',
                 }}
               >
                 <Icon size={20} strokeWidth={active ? 2.5 : 2} />
+                {'badge' in link && link.badge ? (
+                  <span
+                    className="absolute top-1 right-3 min-w-[18px] h-[18px] px-1 text-[10px] font-bold rounded-full flex items-center justify-center"
+                    style={{
+                      background: 'var(--color-brand-secondary)',
+                      color: 'var(--color-bg-primary)',
+                    }}
+                  >
+                    {link.badge > 9 ? '9+' : link.badge}
+                  </span>
+                ) : null}
                 <span className="text-xs font-medium">{link.label}</span>
               </Link>
             );

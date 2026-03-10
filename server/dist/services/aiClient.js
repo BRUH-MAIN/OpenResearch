@@ -8,6 +8,7 @@
  */
 import logger from '../utils/logger.js';
 import { setTimeout, clearTimeout } from 'timers';
+import { TextDecoder } from 'util';
 // Get AI service URL from environment (with fallback)
 function getAiServiceUrl() {
     return process.env.AI_SERVICE_URL || 'http://localhost:8000';
@@ -26,7 +27,7 @@ export function validateAiTrigger(content, fieldName = 'prompt') {
  */
 class AIClient {
     timeout;
-    constructor(timeout = 120000) {
+    constructor(timeout = 300000) {
         this.timeout = timeout;
     }
     get baseUrl() {
@@ -97,6 +98,67 @@ class AIClient {
         return response;
     }
     /**
+     * Stream Group AI Chat tokens via NDJSON
+     * Yields objects: { token: string } or { done: true, latency_ms, sources, ... }
+     */
+    async *groupAIChatStream(request) {
+        // Note: @ai trigger validation removed — explicit agent selection bypasses @ai requirement
+        logger.info(`Group AI chat stream for group: ${request.group_id}, session: ${request.session_id || 'none'}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+        try {
+            const response = await fetch(`${this.baseUrl}/groups/${request.group_id}/ai-chat/stream`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(request),
+                signal: controller.signal,
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Request failed' }));
+                throw new Error(errorData.detail || `HTTP ${response.status}`);
+            }
+            if (!response.body) {
+                throw new Error('No response body');
+            }
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done)
+                    break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                for (const line of lines) {
+                    if (!line.trim())
+                        continue;
+                    try {
+                        const data = JSON.parse(line);
+                        yield data;
+                    }
+                    catch {
+                        // Ignore malformed chunks
+                    }
+                }
+            }
+            // Process remaining buffer
+            if (buffer.trim()) {
+                try {
+                    yield JSON.parse(buffer);
+                }
+                catch {
+                    // Ignore
+                }
+            }
+            clearTimeout(timeoutId);
+        }
+        catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+        }
+    }
+    /**
      * Paper Q&A with @ai trigger
      */
     async paperQuestion(request) {
@@ -162,11 +224,98 @@ class AIClient {
         return response;
     }
     /**
+     * Run an agentic research task and stream progress
+     */
+    async runAgenticTaskStream(request, onProgress, onToken) {
+        logger.info(`Agentic task stream: ${request.task_type}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+        try {
+            const response = await fetch(`${this.baseUrl}/agentic/stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(request),
+                signal: controller.signal,
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Request failed' }));
+                throw new Error(errorData.detail || `HTTP ${response.status}`);
+            }
+            if (!response.body) {
+                throw new Error('No response body');
+            }
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            let finalResult = null;
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done)
+                    break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                for (const line of lines) {
+                    if (!line.trim())
+                        continue;
+                    try {
+                        const data = JSON.parse(line);
+                        if (data.type === 'progress') {
+                            onProgress(data.message);
+                        }
+                        else if (data.type === 'token') {
+                            if (onToken && data.content) {
+                                onToken(data.content);
+                            }
+                        }
+                        else if (data.type === 'complete') {
+                            finalResult = data;
+                        }
+                        else if (data.type === 'error') {
+                            throw new Error(data.error || 'AI service returned an error');
+                        }
+                    }
+                    catch (e) {
+                        // Re-throw intentional errors (from error events), only ignore JSON parse errors
+                        if (e instanceof SyntaxError) {
+                            // Ignore parse errors for incomplete chunks
+                            continue;
+                        }
+                        throw e;
+                    }
+                }
+            }
+            clearTimeout(timeoutId);
+            if (!finalResult) {
+                throw new Error('Stream ended without complete event');
+            }
+            logger.info(`Agentic task stream completed in ${finalResult.latency_ms}ms`);
+            return finalResult;
+        }
+        catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+        }
+    }
+    /**
      * Classify an @ai prompt into an agentic task using embeddings
      */
     async classifyAgenticIntent(request) {
         validateAiTrigger(request.prompt, 'prompt');
         const response = await this.request('/agentic/classify-intent', {
+            method: 'POST',
+            body: JSON.stringify(request),
+        });
+        return response;
+    }
+    /**
+     * Classify intent with ambiguity detection and alternatives
+     */
+    async classifyAgenticIntentDetailed(request) {
+        // Note: @ai trigger validation removed — explicit agent selection bypasses @ai requirement
+        const response = await this.request('/agentic/classify-intent-detailed', {
             method: 'POST',
             body: JSON.stringify(request),
         });
@@ -186,6 +335,137 @@ class AIClient {
         });
         logger.info(`Report generated: ${response.filename} (${response.file_size} bytes)`);
         return response;
+    }
+    /**
+     * Build a citation relationship graph
+     */
+    async buildCitationGraph(request) {
+        logger.info('Building citation graph');
+        const response = await this.request('/citation-graph/build', {
+            method: 'POST',
+            body: JSON.stringify(request),
+        });
+        return response;
+    }
+    // ============ Workflow Methods ============
+    /**
+     * List available workflow templates
+     */
+    async listWorkflowTemplates() {
+        return this.request('/workflows/templates');
+    }
+    /**
+     * Plan a research workflow from a goal
+     */
+    async planWorkflow(request) {
+        logger.info(`Planning workflow for group: ${request.group_id}, goal: ${request.goal.slice(0, 80)}...`);
+        return this.request('/workflows/plan', {
+            method: 'POST',
+            body: JSON.stringify(request),
+        });
+    }
+    /**
+     * Start an approved workflow — returns NDJSON stream.
+     * Calls onEvent for each workflow event.
+     */
+    async startWorkflowStream(request, onEvent) {
+        logger.info(`Starting workflow stream: ${request.workflow_id}`);
+        await this._streamWorkflowRequest('/workflows/start', request, onEvent);
+    }
+    /**
+     * Approve a workflow checkpoint step and resume — returns NDJSON stream.
+     */
+    async approveWorkflowStepStream(request, onEvent) {
+        if (!request.approved) {
+            // Non-streaming rejection
+            const result = await this.request('/workflows/approve-step', {
+                method: 'POST',
+                body: JSON.stringify(request),
+            });
+            onEvent({ type: 'workflow:step:rejected', workflow_id: request.workflow_id, ...result });
+            return;
+        }
+        logger.info(`Approving step ${request.step_index} for workflow: ${request.workflow_id}`);
+        await this._streamWorkflowRequest('/workflows/approve-step', request, onEvent);
+    }
+    /**
+     * Cancel a workflow
+     */
+    async cancelWorkflow(workflowId) {
+        return this.request('/workflows/cancel', {
+            method: 'POST',
+            body: JSON.stringify({ workflow_id: workflowId }),
+        });
+    }
+    /**
+     * Get workflow status and steps
+     */
+    async getWorkflowStatus(workflowId) {
+        return this.request(`/workflows/${workflowId}/status`);
+    }
+    /**
+     * List workflows for a group
+     */
+    async listGroupWorkflows(groupId, limit = 20) {
+        return this.request(`/workflows/group/${groupId}?limit=${limit}`);
+    }
+    /**
+     * Internal helper: stream a workflow NDJSON endpoint and dispatch events.
+     */
+    async _streamWorkflowRequest(endpoint, body, onEvent) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+        try {
+            const response = await fetch(`${this.baseUrl}${endpoint}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body),
+                signal: controller.signal,
+            });
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ detail: 'Request failed' }));
+                throw new Error(errorData.detail || `HTTP ${response.status}`);
+            }
+            if (!response.body) {
+                throw new Error('No response body for workflow stream');
+            }
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let buffer = '';
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done)
+                    break;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || '';
+                for (const line of lines) {
+                    if (!line.trim())
+                        continue;
+                    try {
+                        const event = JSON.parse(line);
+                        onEvent(event);
+                    }
+                    catch {
+                        // Ignore malformed lines
+                    }
+                }
+            }
+            // Remaining buffer
+            if (buffer.trim()) {
+                try {
+                    onEvent(JSON.parse(buffer));
+                }
+                catch {
+                    // Ignore
+                }
+            }
+            clearTimeout(timeoutId);
+        }
+        catch (error) {
+            clearTimeout(timeoutId);
+            throw error;
+        }
     }
     /**
      * Process an @ai message and return the AI response

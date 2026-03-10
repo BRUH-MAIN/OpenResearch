@@ -1,10 +1,131 @@
 import 'dotenv/config';
 import bcrypt from 'bcryptjs';
+import { and, count, eq } from 'drizzle-orm';
 import { db } from './db/index.js';
 import * as schema from './db/schema.js';
 import logger from './utils/logger.js';
 
 const seedLogger = logger.child({ context: 'seed' });
+
+async function ensureUser(user: {
+  name: string;
+  email: string;
+  password: string;
+  avatar: string;
+}) {
+  const [createdOrUpdated] = await db
+    .insert(schema.users)
+    .values(user)
+    .onConflictDoUpdate({
+      target: schema.users.email,
+      set: {
+        name: user.name,
+        password: user.password,
+        avatar: user.avatar,
+        updatedAt: new Date(),
+      },
+    })
+    .returning({ id: schema.users.id });
+
+  return createdOrUpdated;
+}
+
+async function ensureGroup(group: {
+  name: string;
+  description: string;
+  ownerId: string;
+  avatar: string;
+}) {
+  const [existing] = await db
+    .select({ id: schema.groups.id })
+    .from(schema.groups)
+    .where(and(eq(schema.groups.name, group.name), eq(schema.groups.ownerId, group.ownerId)))
+    .limit(1);
+
+  if (existing) {
+    return existing;
+  }
+
+  const [created] = await db
+    .insert(schema.groups)
+    .values(group)
+    .returning({ id: schema.groups.id });
+
+  return created;
+}
+
+async function ensureSession(session: {
+  groupId: string;
+  title: string;
+  status: 'active' | 'archived';
+}) {
+  const [existing] = await db
+    .select({ id: schema.sessions.id })
+    .from(schema.sessions)
+    .where(and(eq(schema.sessions.groupId, session.groupId), eq(schema.sessions.title, session.title)))
+    .limit(1);
+
+  if (existing) {
+    return existing;
+  }
+
+  const [created] = await db
+    .insert(schema.sessions)
+    .values(session)
+    .returning({ id: schema.sessions.id });
+
+  return created;
+}
+
+async function ensureSampleMessages(sessionId: string, messages: Array<{
+  userId: string;
+  content: string;
+  type: 'user' | 'ai';
+}>) {
+  const [messageCount] = await db
+    .select({ value: count() })
+    .from(schema.messages)
+    .where(eq(schema.messages.sessionId, sessionId));
+
+  if ((messageCount?.value ?? 0) > 0) {
+    return;
+  }
+
+  await db.insert(schema.messages).values(
+    messages.map((message) => ({
+      sessionId,
+      userId: message.userId,
+      content: message.content,
+      type: message.type,
+    }))
+  );
+}
+
+async function ensurePaper(paper: {
+  title: string;
+  authors: string[];
+  abstract: string;
+  url: string;
+  publishedDate: string;
+  citations: number;
+}) {
+  const [existing] = await db
+    .select({ id: schema.papers.id })
+    .from(schema.papers)
+    .where(eq(schema.papers.url, paper.url))
+    .limit(1);
+
+  if (existing) {
+    return existing;
+  }
+
+  const [created] = await db
+    .insert(schema.papers)
+    .values(paper)
+    .returning({ id: schema.papers.id });
+
+  return created;
+}
 
 async function seed() {
   seedLogger.info('Seeding database...');
@@ -13,66 +134,66 @@ async function seed() {
     const hashedPassword = await bcrypt.hash('password123', 12);
 
     // Create users
-    const [alice] = await db.insert(schema.users).values({
+    const alice = await ensureUser({
       name: 'Alice Johnson',
       email: 'alice@example.com',
       password: hashedPassword,
       avatar: 'https://ui-avatars.com/api/?name=Alice'
-    }).returning({ id: schema.users.id });
+    });
 
-    const [bob] = await db.insert(schema.users).values({
+    const bob = await ensureUser({
       name: 'Bob Smith',
       email: 'bob@example.com',
       password: hashedPassword,
       avatar: 'https://ui-avatars.com/api/?name=Bob'
-    }).returning({ id: schema.users.id });
+    });
 
-    const [carol] = await db.insert(schema.users).values({
+    const carol = await ensureUser({
       name: 'Carol Williams',
       email: 'carol@example.com',
       password: hashedPassword,
       avatar: 'https://ui-avatars.com/api/?name=Carol'
-    }).returning({ id: schema.users.id });
+    });
 
-    const [david] = await db.insert(schema.users).values({
+    const david = await ensureUser({
       name: 'David Chen',
       email: 'david@example.com',
       password: hashedPassword,
       avatar: 'https://ui-avatars.com/api/?name=David'
-    }).returning({ id: schema.users.id });
+    });
 
-    seedLogger.info('Created users');
+    seedLogger.info('Ensured users');
 
     // Create groups
-    const [aiLab] = await db.insert(schema.groups).values({
+    const aiLab = await ensureGroup({
       name: 'AI Research Lab',
       description: 'Exploring cutting-edge AI and machine learning research',
       ownerId: alice.id,
       avatar: 'https://ui-avatars.com/api/?name=AI'
-    }).returning({ id: schema.groups.id });
+    });
 
-    const [quantumGroup] = await db.insert(schema.groups).values({
+    const quantumGroup = await ensureGroup({
       name: 'Quantum Computing Group',
       description: 'Advancing quantum algorithms and error correction',
       ownerId: bob.id,
       avatar: 'https://ui-avatars.com/api/?name=Quantum'
-    }).returning({ id: schema.groups.id });
+    });
 
-    const [healthGroup] = await db.insert(schema.groups).values({
+    const healthGroup = await ensureGroup({
       name: 'Healthcare Innovation',
       description: 'AI applications in medicine and healthcare',
       ownerId: carol.id,
       avatar: 'https://ui-avatars.com/api/?name=Health'
-    }).returning({ id: schema.groups.id });
+    });
 
-    const [visionLab] = await db.insert(schema.groups).values({
+    const visionLab = await ensureGroup({
       name: 'Computer Vision Lab',
       description: 'Image processing and visual recognition research',
       ownerId: alice.id,
       avatar: 'https://ui-avatars.com/api/?name=Vision'
-    }).returning({ id: schema.groups.id });
+    });
 
-    seedLogger.info('Created groups');
+    seedLogger.info('Ensured groups');
 
     // Add members to groups
     await db.insert(schema.groupMembers).values([
@@ -84,69 +205,65 @@ async function seed() {
       { groupId: quantumGroup.id, userId: alice.id, role: 'member' },
       { groupId: healthGroup.id, userId: carol.id, role: 'owner' },
       { groupId: visionLab.id, userId: alice.id, role: 'owner' },
-    ]);
+    ]).onConflictDoNothing();
 
-    seedLogger.info('Added group members');
+    seedLogger.info('Ensured group members');
 
     // Create sessions
-    const [session1] = await db.insert(schema.sessions).values({
+    const session1 = await ensureSession({
       groupId: aiLab.id,
       title: 'Transformer Architecture Discussion',
       status: 'active'
-    }).returning({ id: schema.sessions.id });
+    });
 
-    const [session2] = await db.insert(schema.sessions).values({
+    const session2 = await ensureSession({
       groupId: aiLab.id,
       title: 'RLHF Implementation Strategy',
       status: 'active'
-    }).returning({ id: schema.sessions.id });
+    });
 
-    const [session3] = await db.insert(schema.sessions).values({
+    const session3 = await ensureSession({
       groupId: aiLab.id,
       title: 'Paper Review: Attention Is All You Need',
       status: 'archived'
-    }).returning({ id: schema.sessions.id });
+    });
 
-    const [session4] = await db.insert(schema.sessions).values({
+    const session4 = await ensureSession({
       groupId: quantumGroup.id,
       title: 'Quantum Error Correction Codes',
       status: 'active'
-    }).returning({ id: schema.sessions.id });
+    });
 
-    seedLogger.info('Created sessions');
+    seedLogger.info('Ensured sessions');
 
     // Create messages
-    await db.insert(schema.messages).values([
+    await ensureSampleMessages(session1.id, [
       {
-        sessionId: session1.id,
         userId: alice.id,
         content: "Hey team! I've been reading about the latest improvements in transformer architectures. Has anyone looked into the new sparse attention mechanisms?",
         type: 'user'
       },
       {
-        sessionId: session1.id,
         userId: bob.id,
         content: 'Yes! I recently implemented a sparse attention variant. The computational savings are significant for longer sequences.',
         type: 'user'
       },
       {
-        sessionId: session1.id,
         userId: carol.id,
         content: "That sounds interesting. Could you share some benchmarks? I'd love to see how it compares to vanilla attention.",
         type: 'user'
       },
       {
-        sessionId: session1.id,
         userId: bob.id,
         content: "Sure! I'll prepare a comparison table with training time, memory usage, and accuracy metrics. Give me a day.",
         type: 'user'
       }
     ]);
 
-    seedLogger.info('Created messages');
+    seedLogger.info('Ensured sample messages');
 
     // Create papers
-    await db.insert(schema.papers).values([
+    for (const paper of [
       {
         title: 'Attention Is All You Need',
         authors: ["Vaswani, A.", "Shazeer, N.", "Parmar, N.", "Uszkoreit, J."],
@@ -195,9 +312,11 @@ async function seed() {
         publishedDate: '2015-05-18',
         citations: 82000
       }
-    ]);
+    ]) {
+      await ensurePaper(paper);
+    }
 
-    seedLogger.info('Created papers');
+    seedLogger.info('Ensured papers');
     seedLogger.info('Seeding complete!');
     seedLogger.info({ email: 'alice@example.com', password: 'password123' }, 'Test credentials');
 

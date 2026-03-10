@@ -1,9 +1,11 @@
 # AI Service Dockerfile
 
-# Stage 1: Model cache — reuses the existing image's cached models to avoid
-# re-downloading 4GB+ of ML models on every code change.
-# To refresh models, rebuild with: docker compose build --no-cache ai-service
-FROM openresearch-ai-service:latest AS model-cache
+# Stage 1: Cache placeholder.
+# Keep the Hugging Face cache path available so later COPY steps succeed even
+# when there is no previously-built local image to reuse as a cache source.
+FROM python:3.12-slim AS model-cache
+
+RUN mkdir -p /root/.cache/huggingface
 
 # Stage 2: Build the application
 FROM python:3.12-slim
@@ -14,6 +16,10 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     curl \
+    texlive-base \
+    texlive-latex-recommended \
+    texlive-latex-extra \
+    texlive-fonts-recommended \
     && curl -LsSf https://astral.sh/uv/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
 

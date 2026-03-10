@@ -11,10 +11,8 @@ const TASK_LABELS: Record<string, string> = {
   novelty_assessment: 'Novelty Assessment',
   research_mentor: 'Research Mentor',
   paper_writing: 'Paper Writing',
-  research_planning: 'Research Planning',
   deep_research: 'Deep Research',
-  methodology_extraction: 'Methodology Extraction',
-  reviewer_anticipation: 'Reviewer Anticipation',
+  methodology_extraction: 'Structured Comparison',
 };
 
 export interface IntentBannerProps {

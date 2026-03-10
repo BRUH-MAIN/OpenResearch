@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
-import { Button, Card, CardBody, CardHeader, Badge, Input } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, Badge, Input, Modal } from '@/components/ui';
 import {
   BookOpen,
   Search,
@@ -15,7 +15,6 @@ import {
   Trash2,
   Send,
   Sparkles,
-  X,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { api, GroupPaper, Group } from '@/lib/api';
@@ -341,35 +340,20 @@ function GroupPapersPageContent() {
         )}
 
         {/* Q&A Modal */}
-        {selectedPaper && qaMode && (
-          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[500] p-4 animate-fade-in">
-            <div className="relative w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-2xl shadow-2xl animate-scale-in">
-              <div className="px-6 py-5 border-b border-[var(--color-border-primary)] flex-shrink-0">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-xl font-semibold flex items-center gap-2 text-[var(--color-text-primary)]">
-                      {qaMode === 'question' ? (
-                        <>
-                          <MessageSquare className="w-5 h-5 text-[var(--color-accent-primary)]" />
-                          Ask a Question
-                        </>
-                      ) : (
-                        <>
-                          <FileText className="w-5 h-5 text-[var(--color-accent-primary)]" />
-                          Paper Summary
-                        </>
-                      )}
-                    </h2>
-                    <p className="text-sm text-[var(--color-text-secondary)] line-clamp-1 mt-1">
-                      {selectedPaper.title}
-                    </p>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={closeQaModal}>
-                    <X className="w-5 h-5" />
-                  </Button>
-                </div>
-              </div>
-              <div className="px-6 py-5 overflow-y-auto flex-1">
+        <Modal
+          isOpen={!!selectedPaper && !!qaMode}
+          onClose={closeQaModal}
+          title={qaMode === 'question' ? 'Ask a Question' : 'Paper Summary'}
+          size="xl"
+          className="max-w-3xl"
+          bodyClassName="space-y-5 max-h-[70dvh]"
+        >
+          {selectedPaper && qaMode && (
+            <>
+              <p className="text-sm text-[var(--color-text-secondary)] line-clamp-2">
+                {selectedPaper.title}
+              </p>
+
                 {/* Question Input (for question mode) */}
                 {qaMode === 'question' && (
                   <div className="mb-4">
@@ -472,10 +456,9 @@ function GroupPapersPageContent() {
                     </div>
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        )}
+            </>
+          )}
+        </Modal>
       </div>
     </div>
   );

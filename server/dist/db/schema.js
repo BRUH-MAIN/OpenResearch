@@ -1,9 +1,9 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey, boolean, customType } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey, boolean, real, customType } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
-// Custom vector type for pgvector
+// Custom vector type for pgvector (SPECTER2 produces 768-dimensional vectors)
 const vector = customType({
     dataType() {
-        return 'vector(1536)';
+        return 'vector(768)';
     },
     toDriver(value) {
         return `[${value.join(',')}]`;
@@ -324,6 +324,76 @@ export const groupReports = pgTable('group_reports', {
     metadata: jsonb('metadata').$type(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
+// Workflow Runs - tracks multi-agent research workflow instances
+export const workflowRuns = pgTable('workflow_runs', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id').references(() => groups.id, { onDelete: 'cascade' }),
+    sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+    userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+    templateId: varchar('template_id', { length: 100 }), // null = AI-planned
+    goal: text('goal').notNull(), // natural language research goal
+    plan: jsonb('plan').$type().notNull(), // full workflow DAG definition
+    status: varchar('status', { length: 50 }).notNull().default('planning'),
+    // 'planning' | 'awaiting_approval' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled'
+    currentStepIndex: integer('current_step_index').default(0),
+    finalOutput: jsonb('final_output').$type(),
+    metadata: jsonb('metadata').$type(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+});
+// Workflow Steps - tracks individual steps within a workflow run
+export const workflowSteps = pgTable('workflow_steps', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    workflowRunId: uuid('workflow_run_id').notNull().references(() => workflowRuns.id, { onDelete: 'cascade' }),
+    stepIndex: integer('step_index').notNull(),
+    agentType: varchar('agent_type', { length: 100 }).notNull(), // maps to AgenticTaskType or special types like 'planner', 'latex_generator'
+    name: varchar('name', { length: 255 }).notNull(), // human-readable step name
+    description: text('description'),
+    status: varchar('status', { length: 50 }).notNull().default('pending'),
+    // 'pending' | 'running' | 'awaiting_approval' | 'approved' | 'rejected' | 'completed' | 'failed' | 'skipped'
+    isCheckpoint: boolean('is_checkpoint').default(false), // pause for human review after this step
+    input: jsonb('input').$type(), // input data for this step
+    output: jsonb('output').$type(), // output data from this step
+    userFeedback: text('user_feedback'), // user's review comments on checkpoint
+    errorMessage: text('error_message'),
+    startedAt: timestamp('started_at', { withTimezone: true }),
+    completedAt: timestamp('completed_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+// Methodology Matrices - stores structured methodology comparisons
+export const methodologyMatrices = pgTable('methodology_matrices', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+    sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    query: text('query').notNull(),
+    rows: jsonb('rows').$type().notNull(),
+    metadata: jsonb('metadata').$type(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+// Claim Lineage Nodes - claim provenance tracking
+export const claimLineageNodes = pgTable('claim_lineage_nodes', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+    sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
+    nodeType: varchar('node_type', { length: 50 }).notNull(), // 'claim' | 'source' | 'synthesis'
+    label: text('label').notNull(),
+    content: text('content'),
+    sourceUrl: text('source_url'),
+    metadata: jsonb('metadata').$type(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
+// Claim Lineage Edges - directed edges between claim nodes
+export const claimLineageEdges = pgTable('claim_lineage_edges', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
+    sourceNodeId: uuid('source_node_id').notNull().references(() => claimLineageNodes.id, { onDelete: 'cascade' }),
+    targetNodeId: uuid('target_node_id').notNull().references(() => claimLineageNodes.id, { onDelete: 'cascade' }),
+    edgeType: varchar('edge_type', { length: 50 }).notNull(), // 'supports' | 'contradicts' | 'derives_from' | 'cites'
+    weight: real('weight').default(1.0),
+    metadata: jsonb('metadata').$type(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+});
 // Relations for new tables
 export const groupPapersRelations = relations(groupPapers, ({ one }) => ({
     group: one(groups, {
@@ -375,6 +445,67 @@ export const groupReportsRelations = relations(groupReports, ({ one }) => ({
     createdByUser: one(users, {
         fields: [groupReports.createdBy],
         references: [users.id],
+    }),
+}));
+export const methodologyMatricesRelations = relations(methodologyMatrices, ({ one }) => ({
+    group: one(groups, {
+        fields: [methodologyMatrices.groupId],
+        references: [groups.id],
+    }),
+    session: one(sessions, {
+        fields: [methodologyMatrices.sessionId],
+        references: [sessions.id],
+    }),
+    user: one(users, {
+        fields: [methodologyMatrices.userId],
+        references: [users.id],
+    }),
+}));
+export const claimLineageNodesRelations = relations(claimLineageNodes, ({ one }) => ({
+    group: one(groups, {
+        fields: [claimLineageNodes.groupId],
+        references: [groups.id],
+    }),
+    session: one(sessions, {
+        fields: [claimLineageNodes.sessionId],
+        references: [sessions.id],
+    }),
+}));
+export const claimLineageEdgesRelations = relations(claimLineageEdges, ({ one }) => ({
+    group: one(groups, {
+        fields: [claimLineageEdges.groupId],
+        references: [groups.id],
+    }),
+    sourceNode: one(claimLineageNodes, {
+        fields: [claimLineageEdges.sourceNodeId],
+        references: [claimLineageNodes.id],
+        relationName: 'sourceNode',
+    }),
+    targetNode: one(claimLineageNodes, {
+        fields: [claimLineageEdges.targetNodeId],
+        references: [claimLineageNodes.id],
+        relationName: 'targetNode',
+    }),
+}));
+export const workflowRunsRelations = relations(workflowRuns, ({ one, many }) => ({
+    group: one(groups, {
+        fields: [workflowRuns.groupId],
+        references: [groups.id],
+    }),
+    session: one(sessions, {
+        fields: [workflowRuns.sessionId],
+        references: [sessions.id],
+    }),
+    user: one(users, {
+        fields: [workflowRuns.userId],
+        references: [users.id],
+    }),
+    steps: many(workflowSteps),
+}));
+export const workflowStepsRelations = relations(workflowSteps, ({ one }) => ({
+    workflowRun: one(workflowRuns, {
+        fields: [workflowSteps.workflowRunId],
+        references: [workflowRuns.id],
     }),
 }));
 //# sourceMappingURL=schema.js.map

@@ -85,7 +85,7 @@ export function initializeSocket(httpServer) {
         // Send message
         socket.on('message:send', async (data) => {
             try {
-                const { sessionId, content } = data;
+                const { sessionId, content, taskType } = data;
                 if (!content?.trim()) {
                     socket.emit('error', { message: 'Message content is required' });
                     return;
@@ -137,13 +137,13 @@ export function initializeSocket(httpServer) {
                 };
                 // Broadcast to all in session (including sender)
                 io.to(`session:${sessionId}`).emit('message:new', messageWithUser);
-                // Check for @ai mention and trigger AI response
-                if (content.toLowerCase().includes('@ai')) {
+                // Check for @ai mention OR explicit agent selection → trigger AI response
+                const hasExplicitAgent = taskType && taskType !== 'auto';
+                if (content.toLowerCase().includes('@ai') || hasExplicitAgent) {
                     try {
                         // Pre-check AI service health before making request
                         const isAvailable = await aiClient.isAvailable();
                         if (!isAvailable) {
-                            // Emit a user-friendly error without crashing
                             socket.emit('ai:error', {
                                 message: 'AI service is not available. Please ensure GROQ_API_KEY is configured.',
                                 code: 'AI_NOT_CONFIGURED',
@@ -151,43 +151,160 @@ export function initializeSocket(httpServer) {
                             });
                             return;
                         }
-                        // Get group ID from session for group-isolated RAG
-                        const aiResponse = await aiClient.processAtAiMessage(content, sessionId, socket.userId, session.groupId // Pass groupId for group-isolated RAG
-                        );
-                        if (aiResponse) {
-                            // Now always a GroupAIChatResponse
-                            const answerText = aiResponse.text;
-                            // Extract metadata safely
-                            const metadataObj = aiResponse.metadata || {};
-                            // Save AI response to database
-                            const [aiMessage] = await db
-                                .insert(messages)
-                                .values({
-                                sessionId,
-                                userId: null, // AI messages have no user
-                                content: answerText,
-                                type: 'ai',
-                                metadata: {
-                                    sources: aiResponse.sources || [],
-                                    model: metadataObj.model || 'groq',
-                                    latency_ms: aiResponse.latency_ms,
-                                    context_items_used: metadataObj.context_items_used || 0,
-                                    vector_ids_used: metadataObj.vector_ids_used || [],
-                                },
-                            })
-                                .returning();
-                            // Broadcast AI response
-                            const aiMessageWithMeta = {
-                                ...aiMessage,
-                                userName: 'AI Assistant',
-                                userAvatar: null,
-                            };
-                            io.to(`session:${sessionId}`).emit('message:new', aiMessageWithMeta);
+                        if (!session.groupId) {
+                            socket.emit('ai:error', {
+                                message: 'AI chat is only supported within research groups.',
+                                code: 'NO_GROUP',
+                                recoverable: true
+                            });
+                            return;
                         }
+                        // Classify intent and determine routing
+                        let classifiedTask = taskType && taskType !== 'auto' ? taskType : null;
+                        const hasExplicitOverride = !!classifiedTask;
+                        try {
+                            const intentResult = await aiClient.classifyAgenticIntentDetailed({ prompt: content });
+                            io.to(`session:${sessionId}`).emit('ai:intent_classified', {
+                                task_type: classifiedTask || intentResult.task_type,
+                                similarity: intentResult.similarity,
+                                ambiguous: intentResult.ambiguous,
+                                alternatives: intentResult.alternatives || [],
+                            });
+                            // Use classified intent when no explicit override
+                            if (!classifiedTask && intentResult.task_type && !intentResult.ambiguous) {
+                                classifiedTask = intentResult.task_type;
+                            }
+                        }
+                        catch (intentErr) {
+                            socketLogger.warn({ err: intentErr }, 'Intent classification failed (non-fatal)');
+                            // If user explicitly selected an agent but classification failed,
+                            // ensure we don't lose the explicit selection
+                        }
+                        // Determine if we should use agentic pipeline or simple chat
+                        const agenticTasks = [
+                            'literature_survey', 'gap_analysis', 'fact_check', 'novelty_assessment',
+                            'research_mentor', 'paper_writing', 'deep_research',
+                            'methodology_extraction', 'reviewer_anticipation',
+                        ];
+                        const useAgenticPipeline = classifiedTask && agenticTasks.includes(classifiedTask);
+                        // Create placeholder AI message in DB with empty content
+                        const [aiMessagePlaceholder] = await db
+                            .insert(messages)
+                            .values({
+                            sessionId,
+                            userId: null,
+                            content: '',
+                            type: 'ai',
+                            metadata: { streaming: true },
+                        })
+                            .returning();
+                        const placeholderWithMeta = {
+                            ...aiMessagePlaceholder,
+                            userName: 'AI Assistant',
+                            userAvatar: null,
+                        };
+                        // Emit placeholder so UI shows the message bubble immediately
+                        io.to(`session:${sessionId}`).emit('message:new', placeholderWithMeta);
+                        // Stream tokens from AI service
+                        let accumulated = '';
+                        let streamMeta = {};
+                        try {
+                            if (useAgenticPipeline) {
+                                // ── Agentic streaming pipeline ──
+                                // Use runAgenticTaskStream for classified agent tasks
+                                socketLogger.info({ taskType: classifiedTask }, 'Routing to agentic pipeline');
+                                const agenticResult = await aiClient.runAgenticTaskStream({
+                                    task_type: classifiedTask,
+                                    prompt: content,
+                                    group_id: session.groupId,
+                                    session_id: sessionId,
+                                    user_id: socket.userId,
+                                }, (progressMessage) => {
+                                    // Forward progress events to client
+                                    io.to(`session:${sessionId}`).emit('agentic:progress', {
+                                        messageId: aiMessagePlaceholder.id,
+                                        content: progressMessage,
+                                    });
+                                }, (token) => {
+                                    // Forward synthesis tokens to client for live streaming
+                                    accumulated += token;
+                                    io.to(`session:${sessionId}`).emit('ai:token', {
+                                        messageId: aiMessagePlaceholder.id,
+                                        token,
+                                    });
+                                });
+                                // Extract result text from agentic response — only overwrite
+                                // accumulated if no tokens were streamed (fallback case)
+                                const resultObj = agenticResult.result || {};
+                                const resultText = Object.values(resultObj)[0] || JSON.stringify(resultObj);
+                                if (!accumulated) {
+                                    accumulated = resultText;
+                                }
+                                streamMeta = {
+                                    task_type: agenticResult.task_type,
+                                    artifacts: agenticResult.artifacts || [],
+                                    latency_ms: agenticResult.latency_ms || 0,
+                                    model: 'agentic',
+                                };
+                            }
+                            else {
+                                // ── Simple chat stream ──
+                                for await (const chunk of aiClient.groupAIChatStream({
+                                    prompt: content,
+                                    group_id: session.groupId,
+                                    session_id: sessionId,
+                                    user_id: socket.userId,
+                                })) {
+                                    if (chunk.error) {
+                                        socketLogger.error({ err: chunk.error }, 'AI stream error chunk');
+                                        break;
+                                    }
+                                    if (chunk.token) {
+                                        accumulated += chunk.token;
+                                        io.to(`session:${sessionId}`).emit('ai:token', {
+                                            messageId: aiMessagePlaceholder.id,
+                                            token: chunk.token,
+                                        });
+                                    }
+                                    if (chunk.done) {
+                                        streamMeta = {
+                                            sources: chunk.sources || [],
+                                            model: chunk.model || 'groq',
+                                            latency_ms: chunk.latency_ms || 0,
+                                            context_items_used: chunk.context_items_used || 0,
+                                            vector_ids_used: chunk.vector_ids_used || [],
+                                        };
+                                    }
+                                }
+                            }
+                        }
+                        catch (streamErr) {
+                            socketLogger.error({ err: streamErr }, 'AI token stream error');
+                            // If we accumulated some text, keep it; otherwise provide error message
+                            if (!accumulated) {
+                                accumulated = 'I encountered an error while generating a response. Please try again.';
+                            }
+                        }
+                        // Update DB message with final content
+                        await db
+                            .update(messages)
+                            .set({
+                            content: accumulated,
+                            metadata: {
+                                ...streamMeta,
+                                streaming: false,
+                            },
+                        })
+                            .where(eq(messages.id, aiMessagePlaceholder.id));
+                        // Notify clients that streaming is done
+                        io.to(`session:${sessionId}`).emit('ai:token:done', {
+                            messageId: aiMessagePlaceholder.id,
+                            content: accumulated,
+                            metadata: streamMeta,
+                        });
                     }
                     catch (aiError) {
                         socketLogger.error({ err: aiError }, 'AI response error');
-                        // Send structured error so client can handle gracefully
                         const errorMessage = aiError instanceof Error ? aiError.message : 'AI service unavailable';
                         const isTimeout = errorMessage.includes('timeout') || errorMessage.includes('timed out');
                         socket.emit('ai:error', {
@@ -374,6 +491,108 @@ export function initializeSocket(httpServer) {
             socket.to(`session:${sessionId}`).emit('user:stopped-typing', {
                 userId: socket.userId,
             });
+        });
+        // ============ Workflow Events ============
+        socket.on('workflow:plan', async (data) => {
+            try {
+                socketLogger.info({ userId: socket.userId, goal: data.goal.slice(0, 80) }, 'Planning workflow');
+                const plan = await aiClient.planWorkflow({
+                    goal: data.goal,
+                    group_id: data.groupId,
+                    user_id: socket.userId,
+                    session_id: data.sessionId,
+                    preferred_template: data.preferredTemplate,
+                });
+                socket.emit('workflow:planned', plan);
+            }
+            catch (error) {
+                const msg = error instanceof Error ? error.message : 'Workflow planning failed';
+                socketLogger.error({ error: msg }, 'Workflow plan error');
+                socket.emit('workflow:error', { error: msg });
+            }
+        });
+        socket.on('workflow:start', async (data) => {
+            try {
+                socketLogger.info({ userId: socket.userId, workflowId: data.workflowId }, 'Starting workflow');
+                const room = data.sessionId ? `session:${data.sessionId}` : undefined;
+                await aiClient.startWorkflowStream({ workflow_id: data.workflowId, user_feedback: data.userFeedback }, (event) => {
+                    const payload = { workflowId: data.workflowId, ...event };
+                    socket.emit('workflow:event', payload);
+                    if (room) {
+                        socket.to(room).emit('workflow:event', payload);
+                    }
+                });
+            }
+            catch (error) {
+                const msg = error instanceof Error ? error.message : 'Workflow execution failed';
+                socketLogger.error({ error: msg }, 'Workflow start error');
+                socket.emit('workflow:error', { workflowId: data.workflowId, error: msg });
+            }
+        });
+        socket.on('workflow:approve', async (data) => {
+            try {
+                socketLogger.info({ workflowId: data.workflowId, stepIndex: data.stepIndex }, 'Approving workflow step');
+                const room = data.sessionId ? `session:${data.sessionId}` : undefined;
+                await aiClient.approveWorkflowStepStream({
+                    workflow_id: data.workflowId,
+                    step_index: data.stepIndex,
+                    approved: true,
+                    feedback: data.feedback,
+                }, (event) => {
+                    const payload = { workflowId: data.workflowId, ...event };
+                    socket.emit('workflow:event', payload);
+                    if (room) {
+                        socket.to(room).emit('workflow:event', payload);
+                    }
+                });
+            }
+            catch (error) {
+                const msg = error instanceof Error ? error.message : 'Step approval failed';
+                socketLogger.error({ error: msg }, 'Workflow approve error');
+                socket.emit('workflow:error', { workflowId: data.workflowId, error: msg });
+            }
+        });
+        socket.on('workflow:reject', async (data) => {
+            try {
+                socketLogger.info({ workflowId: data.workflowId, stepIndex: data.stepIndex }, 'Rejecting workflow step');
+                await aiClient.approveWorkflowStepStream({
+                    workflow_id: data.workflowId,
+                    step_index: data.stepIndex,
+                    approved: false,
+                    feedback: data.feedback,
+                }, (event) => {
+                    const payload = { workflowId: data.workflowId, ...event };
+                    socket.emit('workflow:event', payload);
+                    if (data.sessionId) {
+                        socket.to(`session:${data.sessionId}`).emit('workflow:event', payload);
+                    }
+                });
+            }
+            catch (error) {
+                const msg = error instanceof Error ? error.message : 'Step rejection failed';
+                socketLogger.error({ error: msg }, 'Workflow reject error');
+                socket.emit('workflow:error', { workflowId: data.workflowId, error: msg });
+            }
+        });
+        socket.on('workflow:cancel', async (data) => {
+            try {
+                const result = await aiClient.cancelWorkflow(data.workflowId);
+                socket.emit('workflow:cancelled', result);
+            }
+            catch (error) {
+                const msg = error instanceof Error ? error.message : 'Workflow cancellation failed';
+                socket.emit('workflow:error', { workflowId: data.workflowId, error: msg });
+            }
+        });
+        socket.on('workflow:status', async (data) => {
+            try {
+                const status = await aiClient.getWorkflowStatus(data.workflowId);
+                socket.emit('workflow:status', status);
+            }
+            catch (error) {
+                const msg = error instanceof Error ? error.message : 'Failed to get workflow status';
+                socket.emit('workflow:error', { workflowId: data.workflowId, error: msg });
+            }
         });
         // Disconnect
         socket.on('disconnect', () => {

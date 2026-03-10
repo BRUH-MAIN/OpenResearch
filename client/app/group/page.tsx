@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
-import { Button, Card, CardBody, CardHeader, Avatar, Badge, Input } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, Avatar, Badge, Input, Modal } from '@/components/ui';
 import { Plus, MessageSquare, Calendar, Archive, ArrowLeft, Search, Loader2, Trash2, UserPlus, Users, Mail, BookOpen, FileText } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { api, Group, Session, GroupMember } from '@/lib/api';
@@ -252,7 +252,7 @@ function GroupPageContent() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {activeSessions.map((session) => (
-                <Link key={session.id} href={`/chat?sessionId=${session.id}`}>
+                <Link key={session.id} href={`/research?sessionId=${session.id}`}>
                   <Card hover>
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -306,7 +306,7 @@ function GroupPageContent() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {archivedSessions.map((session) => (
-                <Link key={session.id} href={`/chat?sessionId=${session.id}`}>
+                <Link key={session.id} href={`/research?sessionId=${session.id}`}>
                   <Card hover>
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -352,137 +352,127 @@ function GroupPageContent() {
         )}
       </main>
 
-      {/* Create Session Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[500] p-4 animate-fade-in">
-          <div className="bg-[var(--color-bg-secondary)] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[var(--color-border-primary)] animate-scale-in">
-            <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-6">Create New Session</h2>
-            <div className="space-y-5">
-              <Input
-                label="Session Title"
-                placeholder="e.g., BERT Implementation Discussion"
-                value={newSession.title}
-                onChange={(e) => setNewSession({ title: e.target.value })}
-              />
-            </div>
-            <div className="flex justify-end gap-3 mt-6 pt-6 border-t border-[var(--color-border-primary)]">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowCreateModal(false);
-                  setNewSession({ title: '' });
-                }}
-                disabled={isCreating}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleCreateSession}
-                disabled={!newSession.title.trim() || isCreating}
-                isLoading={isCreating}
-              >
-                Create Session
-              </Button>
-            </div>
+      <Modal
+        isOpen={showCreateModal}
+        onClose={() => {
+          setShowCreateModal(false);
+          setNewSession({ title: '' });
+        }}
+        title="Create New Session"
+        footer={(
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowCreateModal(false);
+                setNewSession({ title: '' });
+              }}
+              disabled={isCreating}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCreateSession}
+              disabled={!newSession.title.trim() || isCreating}
+              isLoading={isCreating}
+            >
+              Create Session
+            </Button>
+          </>
+        )}
+      >
+        <Input
+          label="Session Title"
+          placeholder="e.g., BERT Implementation Discussion"
+          value={newSession.title}
+          onChange={(e) => setNewSession({ title: e.target.value })}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={showInviteModal}
+        onClose={() => {
+          setShowInviteModal(false);
+          setInviteEmail('');
+        }}
+        title="Invite to Group"
+        footer={(
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowInviteModal(false);
+                setInviteEmail('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleInviteByEmail}
+              disabled={!inviteEmail.trim() || isInviting}
+              isLoading={isInviting}
+            >
+              <UserPlus size={18} className="mr-2" />
+              Send Invitation
+            </Button>
+          </>
+        )}
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-[#0D7377] to-[#14FFEC] flex items-center justify-center shrink-0">
+            <Mail size={24} className="text-white" />
           </div>
+          <p className="text-sm text-[var(--color-text-secondary)]">Send an invitation by email</p>
         </div>
-      )}
 
-      {/* Invite Member Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[500] p-4 animate-fade-in">
-          <div className="bg-[var(--color-bg-secondary)] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[var(--color-border-primary)] animate-scale-in">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0D7377] to-[#14FFEC] flex items-center justify-center">
-                <Mail size={24} className="text-white" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-[var(--color-text-primary)]">Invite to Group</h2>
-                <p className="text-sm text-[var(--color-text-secondary)]">Send an invitation by email</p>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleInviteByEmail()}
-                  placeholder="colleague@example.com"
-                  className="w-full px-4 py-3 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] transition-all"
-                  autoFocus
-                />
-              </div>
-              <p className="text-xs text-[var(--color-text-tertiary)]">
-                The user will receive an invitation they can accept or decline.
-              </p>
-            </div>
-
-            <div className="flex gap-3 mt-6">
-              <Button
-                variant="ghost"
-                className="flex-1"
-                onClick={() => {
-                  setShowInviteModal(false);
-                  setInviteEmail('');
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                className="flex-1"
-                onClick={handleInviteByEmail}
-                disabled={!inviteEmail.trim() || isInviting}
-                isLoading={isInviting}
-              >
-                <UserPlus size={18} className="mr-2" />
-                Send Invitation
-              </Button>
-            </div>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
+              Email Address
+            </label>
+            <input
+              type="email"
+              value={inviteEmail}
+              onChange={(e) => setInviteEmail(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleInviteByEmail()}
+              placeholder="colleague@example.com"
+              className="w-full px-4 py-3 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] transition-all"
+              autoFocus
+            />
           </div>
+          <p className="text-xs text-[var(--color-text-tertiary)]">
+            The user will receive an invitation they can accept or decline.
+          </p>
         </div>
-      )}
+      </Modal>
 
-      {/* Members Modal */}
-      {showMembersModal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[500] p-4 animate-fade-in">
-          <div className="bg-[var(--color-bg-secondary)] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-[var(--color-border-primary)] animate-scale-in max-h-[80vh] overflow-hidden flex flex-col">
-            <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-6">Group Members ({members.length})</h2>
-
-            <div className="flex-1 overflow-y-auto space-y-3 mb-4">
-              {members.map(member => (
-                <div
-                  key={member.userId}
-                  className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-xl border border-[var(--color-border-primary)]"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar src={member.avatar} alt={member.name} size="sm" />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium text-[var(--color-text-primary)]">{member.name}</p>
-                        {member.role === 'owner' && (
-                          <Badge variant="primary" size="sm">Owner</Badge>
-                        )}
-                      </div>
-                      <p className="text-sm text-[var(--color-text-tertiary)]">{member.email}</p>
-                    </div>
-                  </div>
+      <Modal
+        isOpen={showMembersModal}
+        onClose={() => setShowMembersModal(false)}
+        title={`Group Members (${members.length})`}
+        footer={<Button variant="ghost" onClick={() => setShowMembersModal(false)}>Close</Button>}
+        bodyClassName="space-y-3 max-h-[65dvh]"
+      >
+        {members.map(member => (
+          <div
+            key={member.userId}
+            className="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-xl border border-[var(--color-border-primary)]"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <Avatar src={member.avatar} alt={member.name} size="sm" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="font-medium text-[var(--color-text-primary)] truncate">{member.name}</p>
+                  {member.role === 'owner' && (
+                    <Badge variant="primary" size="sm">Owner</Badge>
+                  )}
                 </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end pt-4 border-t border-[var(--color-border-primary)]">
-              <Button variant="ghost" onClick={() => setShowMembersModal(false)}>
-                Close
-              </Button>
+                <p className="text-sm text-[var(--color-text-tertiary)] truncate">{member.email}</p>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        ))}
+      </Modal>
     </div>
   );
 }

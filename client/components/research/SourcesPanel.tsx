@@ -5,16 +5,15 @@ import {
   FileText,
   Plus,
   Check,
-  Sparkles,
   File,
   Globe,
   BookOpen,
   PanelLeftClose,
-  Loader2,
   Search,
   ChevronDown,
   ExternalLink,
   Bot,
+  Trash2,
 } from 'lucide-react';
 
 export interface Source {
@@ -33,28 +32,45 @@ export interface Source {
 interface SourcesPanelProps {
   sources: Source[];
   onToggleSource: (id: string) => void;
+  onDeleteSource: (id: string) => void;
   onToggleAll: (enabled: boolean) => void;
   onAddSource: () => void;
-  onDeepResearch: () => void;
-  isDeepResearching?: boolean;
+  selectedAgent: string;
+  onAgentChange: (agent: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   className?: string;
+  variant?: 'sidebar' | 'overlay';
 }
+
+const AGENT_OPTIONS = [
+  { value: 'auto', label: 'Auto (AI decides)', description: 'Intent classifier routes automatically' },
+  { value: 'deep_research', label: 'Deep Research', description: 'Comprehensive multi-source research' },
+  { value: 'literature_survey', label: 'Literature Survey', description: 'Systematic literature review' },
+  { value: 'gap_analysis', label: 'Gap Analysis', description: 'Identify research gaps' },
+  { value: 'fact_check', label: 'Fact Check', description: 'Verify claims against evidence' },
+  { value: 'novelty_assessment', label: 'Novelty Assessment', description: 'Evaluate idea novelty' },
+  { value: 'research_mentor', label: 'Research Mentor', description: 'Guidance and advice' },
+  { value: 'paper_writing', label: 'Paper Writing', description: 'Draft paper sections' },
+  { value: 'methodology_extraction', label: 'Structured Comparison', description: 'Compare architectures, methods, datasets, metrics, and findings' },
+];
 
 export function SourcesPanel({
   sources,
   onToggleSource,
+  onDeleteSource,
   onToggleAll,
   onAddSource,
-  onDeepResearch,
-  isDeepResearching = false,
+  selectedAgent,
+  onAgentChange,
   isCollapsed = false,
   onToggleCollapse,
   className = '',
+  variant = 'sidebar',
 }: SourcesPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [agentDropdownOpen, setAgentDropdownOpen] = useState(false);
 
   const allSelected = sources.length > 0 && sources.every((s) => s.enabled);
   const enabledCount = sources.filter((s) => s.enabled).length;
@@ -100,7 +116,7 @@ export function SourcesPanel({
 
   const isIndexed = (source: Source) => !!source.abstract && source.abstract.length > 20;
 
-  if (isCollapsed) {
+  if (variant === 'sidebar' && isCollapsed) {
     return (
       <div
         className={`w-[52px] border-r flex flex-col ${className}`}
@@ -135,7 +151,9 @@ export function SourcesPanel({
 
   return (
     <div
-      className={`w-[340px] border-r flex flex-col h-full ${className}`}
+      className={variant === 'overlay'
+        ? `w-full border-r-0 flex flex-col self-stretch min-h-0 h-full ${className}`
+        : `w-[296px] xl:w-[320px] border-r flex flex-col self-stretch min-h-0 ${className}`}
       style={{
         background: 'var(--color-bg-secondary)',
         borderColor: 'var(--color-border-primary)',
@@ -143,7 +161,7 @@ export function SourcesPanel({
     >
       {/* Header */}
       <div
-        className="flex items-center justify-between px-4 py-3 border-b"
+        className="flex items-center justify-between px-3 py-3 border-b"
         style={{ borderColor: 'var(--color-border-primary)' }}
       >
         <div className="flex items-center gap-2">
@@ -168,6 +186,7 @@ export function SourcesPanel({
         <button
           onClick={onToggleCollapse}
           className="p-1.5 rounded transition-colors"
+          aria-label={variant === 'overlay' ? 'Close sources panel' : 'Collapse sources panel'}
           style={{ color: 'var(--color-text-tertiary)' }}
           onMouseEnter={(e) => {
             e.currentTarget.style.background = 'var(--color-bg-tertiary)';
@@ -183,7 +202,7 @@ export function SourcesPanel({
       </div>
 
       {/* Search Bar */}
-      <div className="px-3 pt-3">
+      <div className="px-3 pt-2.5">
         <div
           className="flex items-center gap-2 px-3 py-2 rounded-lg transition-all"
           style={{
@@ -212,11 +231,11 @@ export function SourcesPanel({
         </div>
       </div>
 
-      {/* Add Sources + Deep Research */}
-      <div className="px-3 pt-3 flex gap-2">
+      {/* Add Sources + Agent Selector */}
+      <div className="px-3 pt-2.5 flex flex-col gap-2">
         <button
           onClick={onAddSource}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[13px] border transition-all"
+          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[13px] border transition-all w-full"
           style={{
             borderColor: 'var(--color-border-secondary)',
             color: 'var(--color-text-primary)',
@@ -231,37 +250,85 @@ export function SourcesPanel({
           }}
         >
           <Plus size={16} />
-          <span>Add</span>
+          <span>Add Source</span>
         </button>
-        <button
-          onClick={onDeepResearch}
-          disabled={isDeepResearching}
-          className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[13px] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
-          style={{
-            background: 'rgba(13, 115, 119, 0.15)',
-            border: '1px solid rgba(13, 115, 119, 0.3)',
-            color: 'var(--color-brand-secondary)',
-          }}
-          onMouseEnter={(e) => {
-            if (!isDeepResearching) {
-              e.currentTarget.style.background = 'rgba(13, 115, 119, 0.25)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'rgba(13, 115, 119, 0.15)';
-          }}
-        >
-          {isDeepResearching ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <Sparkles size={16} />
+
+        {/* Agent Selector Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => setAgentDropdownOpen(!agentDropdownOpen)}
+            className="flex items-center justify-between gap-2 w-full px-3 py-2 rounded-lg text-[13px] transition-all"
+            style={{
+              background: 'rgba(13, 115, 119, 0.15)',
+              border: '1px solid rgba(13, 115, 119, 0.3)',
+              color: 'var(--color-brand-secondary)',
+            }}
+          >
+            <div className="flex items-center gap-1.5">
+              <Bot size={16} />
+              <span>{AGENT_OPTIONS.find(a => a.value === selectedAgent)?.label || 'Auto'}</span>
+            </div>
+            <ChevronDown
+              size={14}
+              style={{
+                transform: agentDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                transition: 'transform 0.2s ease',
+              }}
+            />
+          </button>
+
+          {agentDropdownOpen && (
+            <div
+              className="absolute left-0 right-0 top-full mt-1 rounded-xl shadow-xl py-1 z-50 max-h-[280px] overflow-y-auto research-panel-scroll"
+              style={{
+                background: 'var(--color-bg-secondary)',
+                border: '1px solid var(--color-border-primary)',
+              }}
+            >
+              {AGENT_OPTIONS.map((agent) => (
+                <button
+                  key={agent.value}
+                  onClick={() => {
+                    onAgentChange(agent.value);
+                    setAgentDropdownOpen(false);
+                  }}
+                  className="w-full text-left px-3 py-2 transition-colors flex flex-col"
+                  style={{
+                    background: selectedAgent === agent.value ? 'rgba(13, 115, 119, 0.1)' : 'transparent',
+                    borderLeft: selectedAgent === agent.value ? '2px solid var(--color-brand-secondary)' : '2px solid transparent',
+                  }}
+                  onMouseEnter={(e) => {
+                    if (selectedAgent !== agent.value) {
+                      e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = selectedAgent === agent.value ? 'rgba(13, 115, 119, 0.1)' : 'transparent';
+                  }}
+                >
+                  <span
+                    className="text-[13px] font-medium"
+                    style={{
+                      color: selectedAgent === agent.value ? 'var(--color-brand-secondary)' : 'var(--color-text-primary)',
+                    }}
+                  >
+                    {agent.label}
+                  </span>
+                  <span
+                    className="text-[11px]"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    {agent.description}
+                  </span>
+                </button>
+              ))}
+            </div>
           )}
-          <span>{isDeepResearching ? 'Running…' : 'Deep Research'}</span>
-        </button>
+        </div>
       </div>
 
       {/* Select All */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-1">
+      <div className="flex items-center justify-between px-3 pt-3 pb-1">
         <button
           onClick={() => onToggleAll(!allSelected)}
           className="flex items-center gap-2 text-[12px] transition-colors"
@@ -279,7 +346,7 @@ export function SourcesPanel({
       </div>
 
       {/* Sources List */}
-      <div className="flex-1 overflow-y-auto research-panel-scroll px-3 pb-3">
+      <div className="flex-1 overflow-y-auto research-panel-scroll px-2.5 pb-2.5">
         {filteredSources.length === 0 ? (
           <div className="px-2 py-12 text-center">
             <div
@@ -300,7 +367,7 @@ export function SourcesPanel({
             </p>
           </div>
         ) : (
-          <div className="space-y-2 pt-2">
+          <div className="space-y-2 pt-1.5">
             {filteredSources.map((source) => {
               const isExpanded = expandedId === source.id;
               const authors = formatAuthors(source.authors);
@@ -314,7 +381,7 @@ export function SourcesPanel({
                 >
                   {/* Card Header */}
                   <div
-                    className="flex items-start gap-3 p-3 cursor-pointer"
+                    className="flex items-start gap-2.5 p-2.5 cursor-pointer"
                     onClick={() => setExpandedId(isExpanded ? null : source.id)}
                   >
                     {/* Icon + Health */}
@@ -329,7 +396,7 @@ export function SourcesPanel({
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <p
-                        className="text-[13px] font-medium leading-snug line-clamp-2"
+                        className="text-[12.5px] font-medium leading-snug line-clamp-2"
                         style={{ color: 'var(--color-text-primary)' }}
                       >
                         {source.title}
@@ -348,7 +415,7 @@ export function SourcesPanel({
                       {/* Abstract Preview (collapsed) */}
                       {!isExpanded && source.abstract && (
                         <p
-                          className="text-[11px] mt-1.5 line-clamp-2 leading-relaxed"
+                          className="text-[11px] mt-1 line-clamp-2 leading-relaxed"
                           style={{ color: 'var(--color-text-muted)' }}
                         >
                           {source.abstract}
@@ -370,6 +437,26 @@ export function SourcesPanel({
 
                     {/* Right side: checkbox + expand */}
                     <div className="flex flex-col items-center gap-2 shrink-0">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDeleteSource(source.id);
+                        }}
+                        className="w-5 h-5 rounded flex items-center justify-center transition-all"
+                        title="Remove source"
+                        style={{ color: 'var(--color-text-tertiary)' }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+                          e.currentTarget.style.color = 'var(--color-error)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.background = 'transparent';
+                          e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                        }}
+                      >
+                        <Trash2 size={12} />
+                      </button>
+
                       {/* Selection Checkbox */}
                       <button
                         onClick={(e) => {

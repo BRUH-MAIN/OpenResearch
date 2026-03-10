@@ -1,17 +1,20 @@
 import { Router } from 'express';
 import { db, groups, groupMembers, users, groupInvitations, friends } from '../db/index.js';
-import { eq, and, count, desc } from 'drizzle-orm';
+import { eq, and, count, desc, lt } from 'drizzle-orm';
 import { authenticate } from '../middleware/auth.js';
 import { createError } from '../middleware/error.js';
 import { isSoftDbErrorForUi } from '../utils/dbErrors.js';
+import { parseLimit, decodeCursor, buildPaginatedResponse } from '../utils/pagination.js';
 const router = Router();
 // All routes require authentication
 router.use(authenticate);
-// Get user's groups
+// Get user's groups (with optional cursor-based pagination)
 router.get('/', async (req, res, next) => {
     try {
         const userId = req.user.id;
-        const userGroups = await db
+        const limit = parseLimit(req.query.limit);
+        const cursorId = decodeCursor(req.query.cursor);
+        let query = db
             .select({
             group: groups,
             role: groupMembers.role,
@@ -19,15 +22,19 @@ router.get('/', async (req, res, next) => {
         })
             .from(groupMembers)
             .innerJoin(groups, eq(groups.id, groupMembers.groupId))
-            .where(eq(groupMembers.userId, userId))
+            .where(cursorId
+            ? and(eq(groupMembers.userId, userId), lt(groups.createdAt, db.select({ createdAt: groups.createdAt }).from(groups).where(eq(groups.id, cursorId)).limit(1)))
+            : eq(groupMembers.userId, userId))
             .groupBy(groups.id, groupMembers.role)
-            .orderBy(desc(groups.createdAt));
+            .orderBy(desc(groups.createdAt))
+            .limit(limit + 1); // fetch one extra to detect hasMore
+        const userGroups = await query;
         const formattedGroups = userGroups.map(({ group, role, memberCount }) => ({
             ...group,
             role,
             memberCount,
         }));
-        res.json(formattedGroups);
+        res.json(buildPaginatedResponse(formattedGroups, limit));
     }
     catch (error) {
         next(error);

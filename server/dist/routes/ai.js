@@ -11,6 +11,7 @@ import { db, sessions, groupMembers, messages } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { createError } from '../middleware/error.js';
 import { agenticLimiter } from '../middleware/rateLimiter.js';
+import { io } from '../index.js';
 const router = Router();
 const AGENTIC_TASK_LABELS = {
     paper_retrieval: 'Paper Retrieval',
@@ -20,53 +21,48 @@ const AGENTIC_TASK_LABELS = {
     novelty_assessment: 'Novelty Assessment',
     research_mentor: 'Research Mentor',
     paper_writing: 'Paper Writing',
-    research_planning: 'Research Planning',
     deep_research: 'Deep Research',
+    methodology_extraction: 'Methodology Extraction',
+    reviewer_anticipation: 'Reviewer Anticipation',
 };
 function formatAgenticContent(response) {
-    const label = AGENTIC_TASK_LABELS[response.task_type] || 'Agentic Task';
     const result = response.result;
-    const sections = [
-        { key: 'deep_research', title: 'Deep Research' },
-        { key: 'literature_review', title: 'Literature Review' },
-        { key: 'research_gaps', title: 'Research Gaps' },
-        { key: 'fact_check', title: 'Fact Check' },
-        { key: 'novelty', title: 'Novelty Assessment' },
-        { key: 'mentor_advice', title: 'Mentor Advice' },
-        { key: 'paper_draft', title: 'Paper Draft' },
-        { key: 'research_plan', title: 'Research Plan' },
-        { key: 'papers', title: 'Papers' },
-        { key: 'result', title: 'Result' },
+    // Known result keys in priority order
+    const resultKeys = [
+        'deep_research', 'literature_review', 'research_gaps', 'fact_check',
+        'novelty', 'mentor_advice', 'paper_draft', 'research_plan',
+        'methodology_matrix', 'reviewer_critiques', 'papers', 'result',
     ];
-    const parts = [];
+    // Extract the first non-null string value from the result object.
+    // The LLM output already contains its own headings — do NOT wrap with extra ## / ###.
+    let body = '';
     if (result && typeof result === 'object') {
-        sections.forEach(({ key, title }) => {
+        for (const key of resultKeys) {
             if (!(key in result))
-                return;
+                continue;
             const value = result[key];
             if (value == null)
-                return;
-            let sectionBody = '';
-            if (Array.isArray(value)) {
-                sectionBody = value
+                continue;
+            if (typeof value === 'string') {
+                body = value;
+                break;
+            }
+            else if (Array.isArray(value)) {
+                body = value
                     .map((item) => (typeof item === 'string' ? `- ${item}` : `- ${JSON.stringify(item)}`))
                     .join('\n');
+                break;
             }
-            else if (typeof value === 'string') {
-                sectionBody = value;
-            }
-            else {
-                sectionBody = JSON.stringify(value, null, 2);
-            }
-            parts.push(`### ${title}\n\n${sectionBody}`);
-        });
+        }
+        if (!body) {
+            body = JSON.stringify(result, null, 2);
+        }
     }
-    const body = parts.length > 0 ? parts.join('\n\n') : JSON.stringify(result || {}, null, 2);
-    const artifacts = response.artifacts?.length
-        ? `\n\n**Artifacts**\n${response.artifacts.map((artifactId) => `- ${artifactId}`).join('\n')}`
-        : '';
-    const latency = response.latency_ms ? `\n\n_Completed in ${response.latency_ms}ms_` : '';
-    return `## ${label}\n\n${body}${artifacts}${latency}`;
+    else {
+        body = JSON.stringify(result || {}, null, 2);
+    }
+    // Artifacts and latency are stored in message metadata — not rendered as markdown.
+    return body;
 }
 // Helper to check session access
 async function checkSessionAccess(sessionId, userId) {
@@ -100,10 +96,9 @@ router.get('/health', async (req, res, next) => {
 });
 // All other routes require authentication
 router.use(authenticate);
-// Agentic task runner
 router.post('/agentic/run', agenticLimiter, async (req, res, next) => {
     try {
-        const { taskType, prompt, groupId, sessionId, paperIds, options } = req.body;
+        const { taskType, prompt, groupId, sessionId, paperIds, options, agenticRunId } = req.body;
         const userId = req.user.id;
         if (!taskType || typeof taskType !== 'string') {
             throw createError('taskType is required', 400);
@@ -122,7 +117,7 @@ router.post('/agentic/run', agenticLimiter, async (req, res, next) => {
             }
             resolvedGroupId = session.groupId;
         }
-        const response = await aiClient.runAgenticTask({
+        const response = await aiClient.runAgenticTaskStream({
             task_type: taskType,
             prompt,
             group_id: resolvedGroupId,
@@ -130,6 +125,13 @@ router.post('/agentic/run', agenticLimiter, async (req, res, next) => {
             session_id: sessionId,
             paper_ids: paperIds,
             options,
+        }, (message) => {
+            if (sessionId && agenticRunId) {
+                io.to(`session:${sessionId}`).emit('agentic:progress', {
+                    messageId: agenticRunId,
+                    content: message,
+                });
+            }
         });
         if (sessionId) {
             await db.insert(messages).values({
@@ -146,12 +148,349 @@ router.post('/agentic/run', agenticLimiter, async (req, res, next) => {
                 type: 'ai',
                 metadata: {
                     task_type: response.task_type,
-                    artifacts: response.artifacts,
-                    latency_ms: response.latency_ms,
+                    artifacts: response.artifacts || [],
+                    latency_ms: response.latency_ms || 0,
                 },
             });
         }
         res.json(response);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+router.post('/citation-graph/build', async (req, res, next) => {
+    try {
+        const { query, groupId } = req.body;
+        if (!query || typeof query !== 'string') {
+            throw createError('query is required', 400);
+        }
+        const result = await aiClient.buildCitationGraph({ query, group_id: groupId });
+        res.json(result);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+function buildWorkflowMarkdown(t) {
+    const lines = [`**🔬 ${t.title}**`, ''];
+    for (let i = 0; i < t.totalSteps; i++) {
+        const name = t.stepNames.get(i) || `Step ${i + 1}`;
+        const info = t.stepStatuses.get(i);
+        if (!info) {
+            lines.push(`⬚ ${name}`);
+            continue;
+        }
+        const icon = {
+            running: '⏳', completed: '✅', failed: '❌', awaiting_approval: '⏸️',
+        };
+        let line = `${icon[info.status] || '⬚'} **${name}**`;
+        if (info.status === 'running')
+            line += ' — Running…';
+        else if (info.status === 'completed')
+            line += ' — Done';
+        else if (info.status === 'failed')
+            line += ' — Failed';
+        else if (info.status === 'awaiting_approval')
+            line += ' — Awaiting approval';
+        lines.push(line);
+    }
+    return lines.join('\n');
+}
+function applyWorkflowEvent(t, ev) {
+    const type = ev.type;
+    if (type === 'workflow:planned') {
+        const plan = ev.plan;
+        if (plan) {
+            t.title = plan.title || t.title;
+            const steps = plan.steps;
+            if (Array.isArray(steps)) {
+                t.totalSteps = steps.length;
+                steps.forEach((s) => {
+                    const idx = s.step_index ?? 0;
+                    t.stepNames.set(idx, s.name || `Step ${idx + 1}`);
+                });
+            }
+        }
+    }
+    if (type === 'workflow:step:started') {
+        const idx = ev.step_index;
+        t.totalSteps = Math.max(t.totalSteps, ev.total_steps || t.totalSteps);
+        t.stepNames.set(idx, ev.name || t.stepNames.get(idx) || `Step ${idx + 1}`);
+        t.stepStatuses.set(idx, { status: 'running' });
+    }
+    if (type === 'workflow:step:completed') {
+        const idx = ev.step_index;
+        t.stepStatuses.set(idx, {
+            status: 'completed',
+            preview: (ev.output_preview || '').slice(0, 120),
+        });
+    }
+    if (type === 'workflow:step:checkpoint') {
+        const idx = ev.step_index;
+        t.stepStatuses.set(idx, { status: 'awaiting_approval' });
+    }
+    if (type === 'workflow:failed') {
+        const idx = ev.step_index;
+        if (idx !== undefined)
+            t.stepStatuses.set(idx, { status: 'failed' });
+    }
+    return buildWorkflowMarkdown(t);
+}
+/** Create a placeholder AI message and return a tracker for live chat updates. */
+async function createWorkflowChatPlaceholder(sessionId, workflowId) {
+    const [placeholder] = await db.insert(messages).values({
+        sessionId,
+        userId: null,
+        content: '**🔬 Starting workflow…**',
+        type: 'ai',
+        metadata: { streaming: true, task_type: 'workflow', workflow_id: workflowId },
+    }).returning();
+    io.to(`session:${sessionId}`).emit('message:new', {
+        ...placeholder,
+        userName: 'AI Assistant',
+        userAvatar: null,
+    });
+    const tracker = {
+        messageId: placeholder.id,
+        totalSteps: 0,
+        title: 'Research Workflow',
+        stepNames: new Map(),
+        stepStatuses: new Map(),
+    };
+    return tracker;
+}
+/** Handle a single workflow NDJSON event: update the chat message via socket and emit workflow:event. */
+function relayWorkflowEvent(sessionId, workflowId, tracker, event) {
+    // Always emit workflow:event for the WorkflowPanel sidebar
+    io.to(`session:${sessionId}`).emit('workflow:event', { workflowId, ...event });
+    const type = event.type;
+    const progressContent = applyWorkflowEvent(tracker, event);
+    if (type === 'workflow:completed') {
+        const latencyMs = event.latency_ms;
+        const mins = latencyMs ? Math.round(latencyMs / 60000) : 0;
+        const timeStr = mins > 0 ? `${mins} min` : 'under a minute';
+        const finalContent = progressContent + `\n\n---\n\n✅ **Workflow completed in ${timeStr}.**`;
+        io.to(`session:${sessionId}`).emit('ai:token:done', {
+            messageId: tracker.messageId,
+            content: finalContent,
+            metadata: { streaming: false, task_type: 'workflow', workflow_id: workflowId },
+        });
+        db.update(messages)
+            .set({ content: finalContent, metadata: { task_type: 'workflow', workflow_id: workflowId } })
+            .where(eq(messages.id, tracker.messageId))
+            .execute()
+            .catch(() => { });
+    }
+    else if (type === 'workflow:failed') {
+        const errContent = progressContent + `\n\n---\n\n❌ **Workflow failed:** ${event.error || 'Unknown error'}`;
+        io.to(`session:${sessionId}`).emit('ai:token:done', {
+            messageId: tracker.messageId,
+            content: errContent,
+            metadata: { streaming: false, task_type: 'workflow', workflow_id: workflowId, error: true },
+        });
+        db.update(messages)
+            .set({ content: errContent, metadata: { task_type: 'workflow', workflow_id: workflowId, error: true } })
+            .where(eq(messages.id, tracker.messageId))
+            .execute()
+            .catch(() => { });
+    }
+    else if (type === 'workflow:step:checkpoint') {
+        const stepOutput = event.output || '';
+        const stepIndex = event.step_index ?? -1;
+        const stepName = event.step_name || undefined;
+        const outputPreview = stepOutput.length > 3000 ? stepOutput.slice(0, 3000) + '\n\n... (truncated)' : stepOutput;
+        const pauseContent = progressContent
+            + (outputPreview ? `\n\n<details><summary>Step output (click to expand)</summary>\n\n${outputPreview}\n\n</details>` : '')
+            + `\n\n---\n\n⏸️ **Paused** — Review the output and approve to continue.`;
+        io.to(`session:${sessionId}`).emit('ai:token:done', {
+            messageId: tracker.messageId,
+            content: pauseContent,
+            metadata: {
+                streaming: false,
+                task_type: 'workflow',
+                workflow_id: workflowId,
+                paused: true,
+                step_index: stepIndex,
+                checkpoint_step_name: stepName,
+            },
+        });
+        db.update(messages)
+            .set({
+            content: pauseContent,
+            metadata: {
+                task_type: 'workflow',
+                workflow_id: workflowId,
+                paused: true,
+                step_index: stepIndex,
+                checkpoint_step_name: stepName,
+            },
+        })
+            .where(eq(messages.id, tracker.messageId))
+            .execute()
+            .catch(() => { });
+    }
+    else {
+        // In-flight progress update
+        io.to(`session:${sessionId}`).emit('agentic:progress', {
+            messageId: tracker.messageId,
+            content: progressContent,
+        });
+    }
+}
+router.get('/workflows/templates', async (req, res, next) => {
+    try {
+        const templates = await aiClient.listWorkflowTemplates();
+        res.json(templates);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+router.post('/workflows/plan', async (req, res, next) => {
+    try {
+        const { goal, groupId, sessionId, preferredTemplate } = req.body;
+        const userId = req.user.id;
+        if (!goal || typeof goal !== 'string' || goal.length < 10) {
+            throw createError('goal must be at least 10 characters', 400);
+        }
+        const plan = await aiClient.planWorkflow({
+            goal,
+            group_id: groupId || undefined,
+            user_id: userId,
+            session_id: sessionId,
+            preferred_template: preferredTemplate,
+        });
+        res.json(plan);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+router.post('/workflows/start', async (req, res, next) => {
+    try {
+        const { workflowId, userFeedback, sessionId } = req.body;
+        if (!workflowId) {
+            throw createError('workflowId is required', 400);
+        }
+        // Create a live chat message for workflow progress (if in a session)
+        let tracker = null;
+        if (sessionId) {
+            tracker = await createWorkflowChatPlaceholder(sessionId, workflowId);
+        }
+        await aiClient.startWorkflowStream({ workflow_id: workflowId, user_feedback: userFeedback }, (event) => {
+            if (sessionId && tracker) {
+                relayWorkflowEvent(sessionId, workflowId, tracker, event);
+            }
+            else if (sessionId) {
+                // Fallback: emit workflow:event only
+                io.to(`session:${sessionId}`).emit('workflow:event', { workflowId, ...event });
+            }
+        });
+        res.json({ status: 'completed', workflowId });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+router.post('/workflows/approve-step', async (req, res, next) => {
+    try {
+        const { workflowId, stepIndex, approved, feedback, sessionId } = req.body;
+        if (!workflowId) {
+            throw createError('workflowId is required', 400);
+        }
+        if (stepIndex === undefined || stepIndex === null) {
+            throw createError('stepIndex is required', 400);
+        }
+        // On approval, create a new chat message for the continuation phase
+        let tracker = null;
+        if (sessionId && approved) {
+            tracker = await createWorkflowChatPlaceholder(sessionId, workflowId);
+            // Pre-populate tracker with already-completed steps from prior phases
+            try {
+                const status = await aiClient.getWorkflowStatus(workflowId);
+                const statusObj = status;
+                const existingSteps = statusObj?.steps;
+                if (Array.isArray(existingSteps)) {
+                    tracker.totalSteps = existingSteps.length;
+                    for (const s of existingSteps) {
+                        const step = s;
+                        const idx = step.step_index;
+                        tracker.stepNames.set(idx, step.name || `Step ${idx + 1}`);
+                        const st = step.status;
+                        if (st === 'completed' || st === 'approved') {
+                            tracker.stepStatuses.set(idx, { status: 'completed' });
+                        }
+                    }
+                }
+            }
+            catch {
+                // Non-fatal — tracker will fill in from events
+            }
+        }
+        // On rejection, post a short note in chat
+        if (sessionId && !approved) {
+            const [rejMsg] = await db.insert(messages).values({
+                sessionId,
+                userId: null,
+                content: `⏸️ **Workflow step ${stepIndex + 1} rejected.** Workflow remains paused.${feedback ? `\n\n> Feedback: ${feedback}` : ''}`,
+                type: 'ai',
+                metadata: { task_type: 'workflow', workflow_id: workflowId },
+            }).returning();
+            io.to(`session:${sessionId}`).emit('message:new', {
+                ...rejMsg,
+                userName: 'AI Assistant',
+                userAvatar: null,
+            });
+        }
+        await aiClient.approveWorkflowStepStream({
+            workflow_id: workflowId,
+            step_index: stepIndex,
+            approved: !!approved,
+            feedback,
+        }, (event) => {
+            if (sessionId && tracker && approved) {
+                relayWorkflowEvent(sessionId, workflowId, tracker, event);
+            }
+            else if (sessionId) {
+                io.to(`session:${sessionId}`).emit('workflow:event', { workflowId, ...event });
+            }
+        });
+        res.json({ status: approved ? 'resumed' : 'rejected', workflowId });
+    }
+    catch (error) {
+        next(error);
+    }
+});
+router.post('/workflows/cancel', async (req, res, next) => {
+    try {
+        const { workflowId } = req.body;
+        if (!workflowId) {
+            throw createError('workflowId is required', 400);
+        }
+        const result = await aiClient.cancelWorkflow(workflowId);
+        res.json(result);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+router.get('/workflows/:workflowId/status', async (req, res, next) => {
+    try {
+        const { workflowId } = req.params;
+        const status = await aiClient.getWorkflowStatus(workflowId);
+        res.json(status);
+    }
+    catch (error) {
+        next(error);
+    }
+});
+router.get('/workflows/group/:groupId', async (req, res, next) => {
+    try {
+        const { groupId } = req.params;
+        const limit = parseInt(req.query.limit) || 20;
+        const result = await aiClient.listGroupWorkflows(groupId, limit);
+        res.json(result);
     }
     catch (error) {
         next(error);

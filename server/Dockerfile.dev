@@ -1,0 +1,19 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Keep wget available for inherited healthcheck from compose.
+RUN apk add --no-cache wget
+
+# Install dependencies at build time (including devDependencies).
+COPY package.json package-lock.json* ./
+RUN npm ci --no-audit
+
+# Copy source so the image can run before bind mount overlay.
+COPY . .
+
+ENV NODE_ENV=development
+
+EXPOSE 3001
+
+CMD ["npm", "run", "dev"]

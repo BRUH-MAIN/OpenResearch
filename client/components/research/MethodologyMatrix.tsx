@@ -26,7 +26,7 @@ const RISK_COLORS: Record<string, string> = {
 };
 
 /**
- * Renders a methodology comparison matrix as a horizontally scrollable table.
+ * Renders a structured comparison matrix as a horizontally scrollable table.
  */
 export function MethodologyMatrix({ rows, className = '' }: MethodologyMatrixProps) {
   const data = useMemo(() => rows || [], [rows]);
@@ -34,7 +34,7 @@ export function MethodologyMatrix({ rows, className = '' }: MethodologyMatrixPro
   if (!data.length) {
     return (
       <div className={`rounded-lg border border-dashed border-muted p-4 text-center text-sm text-muted-foreground ${className}`}>
-        No methodology data available.
+        No structured comparison data available.
       </div>
     );
   }

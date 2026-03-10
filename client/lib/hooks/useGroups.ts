@@ -37,14 +37,3 @@ export function useCreateGroup() {
     });
 }
 
-/** Delete a group with automatic cache invalidation */
-export function useDeleteGroup() {
-    const token = useAuthStore((s) => s.accessToken);
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: (groupId: string) => api.deleteGroup(token!, groupId),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: GROUPS_KEY });
-        },
-    });
-}
