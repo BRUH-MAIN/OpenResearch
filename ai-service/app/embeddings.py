@@ -6,6 +6,7 @@ No API key required - runs locally.
 
 import asyncio
 import logging
+import threading
 import time
 from typing import Optional
 import numpy as np
@@ -14,32 +15,62 @@ from .config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# Lazy load to avoid import overhead
+# Lazy load to avoid import overhead — protected by a lock so parallel
+# asyncio.to_thread calls don't each trigger their own model load.
 _model = None
 _tokenizer = None
+_model_lock = threading.Lock()
+
+
+def _load_specter2_base():
+    """Load allenai/specter2_base with explicit sentence-transformers config.
+
+    specter2_base is a plain BERT model without sentence-transformers
+    metadata (modules.json / config_sentence_transformers.json), so
+    SentenceTransformer() prints a noisy warning. We build the pipeline
+    manually to avoid that.
+    """
+    from sentence_transformers import SentenceTransformer, models
+
+    word_model = models.Transformer("allenai/specter2_base", max_seq_length=512)
+    pooling_model = models.Pooling(
+        word_model.get_word_embedding_dimension(),
+        pooling_mode_mean_tokens=True,
+    )
+    return SentenceTransformer(modules=[word_model, pooling_model])
 
 
 def _get_model():
     """Lazy load the sentence-transformer model with robust fallback chain."""
     global _model, _tokenizer
-    if _model is None:
+    # Fast path — no lock needed once the model is loaded
+    if _model is not None:
+        return _model
+
+    with _model_lock:
+        # Double-check after acquiring lock
+        if _model is not None:
+            return _model
+
         from sentence_transformers import SentenceTransformer
 
-        # Fallback chain: specter2 → specter2_base (no peft) → all-MiniLM-L6-v2
-        MODELS = [
-            ("allenai/specter2", "SPECTER2"),
-            ("allenai/specter2_base", "SPECTER2-base (no adapter)"),
-            ("sentence-transformers/all-MiniLM-L6-v2", "all-MiniLM-L6-v2 (general-purpose fallback)"),
-        ]
+        # Primary: specter2_base (built manually to avoid missing-config warning)
+        # Fallback: all-MiniLM-L6-v2 (has native ST config)
+        try:
+            logger.info("Loading embedding model: SPECTER2-base …")
+            _model = _load_specter2_base()
+            logger.info("✅ Embedding model loaded: SPECTER2-base")
+            return _model
+        except Exception as exc:
+            logger.warning("Failed to load SPECTER2-base: %s", exc)
 
-        for model_id, label in MODELS:
-            try:
-                logger.info("Loading embedding model: %s …", label)
-                _model = SentenceTransformer(model_id)
-                logger.info("✅ Embedding model loaded: %s", label)
-                return _model
-            except Exception as exc:
-                logger.warning("Failed to load %s: %s", label, exc)
+        try:
+            logger.info("Loading embedding model: all-MiniLM-L6-v2 …")
+            _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+            logger.info("✅ Embedding model loaded: all-MiniLM-L6-v2")
+            return _model
+        except Exception as exc:
+            logger.warning("Failed to load all-MiniLM-L6-v2: %s", exc)
 
         logger.error("❌ All embedding model fallbacks failed")
     return _model

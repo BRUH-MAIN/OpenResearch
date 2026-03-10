@@ -19,7 +19,6 @@ langchain-core>=0.2.0
 torch>=2.0.0
 sentence-transformers>=2.2.0
 transformers>=4.36.0
-peft>=0.10.0
 
 # Database (for reading context)
 asyncpg>=0.29.0

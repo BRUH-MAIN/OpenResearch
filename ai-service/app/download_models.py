@@ -25,13 +25,7 @@ logger = logging.getLogger(__name__)
 # "optional" means the build continues (it has working fallbacks).
 MODELS = [
     {
-        "name": "SPECTER2 Embeddings",
-        "id": "allenai/specter2",
-        "loader": "SentenceTransformer",
-        "required": False,  # Has specter2_base and MiniLM fallbacks
-    },
-    {
-        "name": "SPECTER2-base (fallback, no adapter)",
+        "name": "SPECTER2-base Embeddings",
         "id": "allenai/specter2_base",
         "loader": "SentenceTransformer",
         "required": True,
