@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout';
-import { Button, Card, CardBody, CardHeader, Badge, Input } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, Badge } from '@/components/ui';
 import {
   Search,
   Loader2,
@@ -10,7 +10,6 @@ import {
   ExternalLink,
   Plus,
   Users,
-  Filter,
   Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
@@ -47,8 +46,7 @@ export default function DiscoverPage() {
       if (groupsData.length > 0 && !selectedGroupId) {
         setSelectedGroupId(groupsData[0].id);
       }
-    } catch (err) {
-      console.error('Failed to load groups:', err);
+    } catch {
     }
   };
 
@@ -124,12 +122,15 @@ export default function DiscoverPage() {
         </div>
 
         {/* Group Selector */}
-        <div className="mb-6 flex gap-4 items-center">
-          <Users className="w-5 h-5 text-[#14FFEC]" />
+        <div className="mb-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <Users className="w-5 h-5 text-[#14FFEC]" />
+            <span className="text-sm font-medium text-[var(--color-text-secondary)]">Recommendation context</span>
+          </div>
           <select
             value={selectedGroupId}
             onChange={(e) => setSelectedGroupId(e.target.value)}
-            className="bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
+            className="w-full sm:w-auto sm:min-w-[18rem] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
           >
             {groups.map((g) => (
               <option key={g.id} value={g.id}>
@@ -141,7 +142,7 @@ export default function DiscoverPage() {
 
         {/* Search */}
         <div className="mb-6">
-          <div className="relative max-w-md">
+          <div className="relative max-w-md w-full">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
             <input
               type="text"
@@ -200,7 +201,7 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
   const [showGroupMenu, setShowGroupMenu] = useState(false);
 
   return (
-    <Card hover>
+    <Card hover className="h-full">
       <CardHeader>
         <div className="flex justify-between items-start gap-2">
           <h3 className="font-semibold text-[var(--color-text-primary)] line-clamp-2">{paper.title}</h3>
@@ -212,7 +213,7 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
         </div>
         <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{paper.authors.slice(0, 3).join(', ')}</p>
       </CardHeader>
-      <CardBody className="pt-0">
+      <CardBody className="pt-0 flex h-full flex-col">
         <p className="text-sm text-[var(--color-text-secondary)] line-clamp-3 mb-3">{paper.abstract}</p>
 
         {/* Tags */}
@@ -235,22 +236,23 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
         )}
 
         {/* Actions */}
-        <div className="flex gap-2 mt-auto">
+        <div className="mt-auto flex flex-col gap-2 sm:flex-row sm:items-center">
           {paper.url && (
-            <a href={paper.url} target="_blank" rel="noopener noreferrer">
-              <Button size="sm" variant="outline">
+            <a href={paper.url} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+              <Button size="sm" variant="outline" className="w-full justify-center">
                 <ExternalLink className="w-3 h-3 mr-1" />
                 View
               </Button>
             </a>
           )}
 
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Button
               size="sm"
               variant="secondary"
               onClick={() => setShowGroupMenu(!showGroupMenu)}
               disabled={isAdding || groups.length === 0}
+              className="w-full justify-center"
             >
               {isAdding ? (
                 <Loader2 className="w-3 h-3 animate-spin mr-1" />
@@ -261,7 +263,7 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
             </Button>
 
             {showGroupMenu && (
-              <div className="absolute bottom-full left-0 mb-2 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-xl shadow-xl py-2 min-w-[150px] z-10">
+              <div className="absolute bottom-full left-0 right-0 mb-2 sm:right-auto bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-xl shadow-xl py-2 min-w-[150px] z-10">
                 {groups.map((group) => (
                   <button
                     key={group.id}

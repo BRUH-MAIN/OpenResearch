@@ -194,24 +194,24 @@ function GroupPageContent() {
                 <span>Created {new Date(group.createdAt).toLocaleDateString()}</span>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
               <Link href={`/group-papers?groupId=${groupId}`}>
-                <Button variant="outline">
+                <Button variant="outline" className="w-full justify-center">
                   <BookOpen size={18} className="mr-2" />
                   Papers
                 </Button>
               </Link>
               <Link href={`/reports?groupId=${groupId}`}>
-                <Button variant="outline">
+                <Button variant="outline" className="w-full justify-center">
                   <FileText size={18} className="mr-2" />
                   Reports
                 </Button>
               </Link>
-              <Button variant="outline" onClick={() => setShowInviteModal(true)}>
+              <Button variant="outline" onClick={() => setShowInviteModal(true)} className="w-full justify-center">
                 <UserPlus size={18} className="mr-2" />
                 Invite
               </Button>
-              <Button onClick={() => setShowCreateModal(true)}>
+              <Button onClick={() => setShowCreateModal(true)} className="w-full justify-center">
                 <Plus size={20} className="mr-2" />
                 New Session
               </Button>

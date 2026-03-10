@@ -56,10 +56,11 @@ export function useSocket(sessionId: string | null) {
     const socket = io(SOCKET_URL, {
       auth: { token: accessToken },
       autoConnect: true,
+      transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
+      reconnectionDelayMax: 10000,
+      reconnectionAttempts: Infinity,
     });
 
     socket.on('connect', () => {
@@ -68,8 +69,8 @@ export function useSocket(sessionId: string | null) {
       setAIError(null); // Clear any previous AI errors on reconnect
     });
 
-    socket.on('disconnect', () => {
-      console.log('Socket disconnected');
+    socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected, reason:', reason);
       setIsConnected(false);
     });
 

@@ -34,12 +34,33 @@ interface PaperSummarizePayload {
 }
 
 export function initializeSocket(httpServer: HttpServer) {
+  const allowedOrigins = [
+    'http://localhost:3000',
+    'http://localhost:3002',
+    'http://localhost:3003',
+    process.env.CLIENT_URL || 'http://localhost:3000',
+  ].filter(Boolean);
+
   const io = new SocketServer(httpServer, {
     cors: {
-      origin: process.env.CLIENT_URL || 'http://localhost:3000',
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, etc.)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.includes(origin)) return callback(null, true);
+        // Allow any origin on the same CLIENT_URL host (different ports)
+        try {
+          const clientHost = new URL(process.env.CLIENT_URL || 'http://localhost:3000').hostname;
+          const reqHost = new URL(origin).hostname;
+          if (reqHost === clientHost) return callback(null, true);
+        } catch { /* invalid URL, fall through */ }
+        callback(new Error(`CORS origin not allowed: ${origin}`));
+      },
       methods: ['GET', 'POST'],
       credentials: true,
     },
+    pingInterval: 25000,
+    pingTimeout: 30000,
+    transports: ['websocket', 'polling'],
   });
 
   // Authentication middleware
@@ -732,8 +753,8 @@ export function initializeSocket(httpServer: HttpServer) {
 
 
     // Disconnect
-    socket.on('disconnect', () => {
-      socketLogger.info({ userId: socket.userId }, 'User disconnected');
+    socket.on('disconnect', (reason) => {
+      socketLogger.info({ userId: socket.userId, reason }, 'User disconnected');
     });
   });
 

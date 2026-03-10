@@ -164,16 +164,18 @@ export default function PaperPage() {
             <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">Explore Papers</h1>
             <p className="text-[var(--color-text-secondary)] mt-1">Discover and save research papers</p>
           </div>
-          <div className="flex gap-2">
+          <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto">
             <Button
               variant={showSaved ? 'ghost' : 'primary'}
               onClick={() => setShowSaved(false)}
+              className="w-full justify-center sm:w-auto"
             >
               All Papers
             </Button>
             <Button
               variant={showSaved ? 'primary' : 'ghost'}
               onClick={() => setShowSaved(true)}
+              className="w-full justify-center sm:w-auto"
             >
               <BookMarked size={18} className="mr-2" />
               Saved ({savedPapers.length})
@@ -183,7 +185,7 @@ export default function PaperPage() {
 
         {/* Search Bar */}
         <div className="mb-4">
-          <div className="flex gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <div className="flex-1 relative">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)]" size={20} />
               <input
@@ -196,7 +198,7 @@ export default function PaperPage() {
               />
             </div>
             {searchSource !== 'local' && (
-              <Button onClick={handleExternalSearch} disabled={isSearching || !searchQuery.trim()}>
+              <Button onClick={handleExternalSearch} disabled={isSearching || !searchQuery.trim()} className="w-full justify-center sm:w-auto">
                 {isSearching ? <Loader2 size={18} className="animate-spin" /> : <Globe size={18} />}
                 <span className="ml-2">Search</span>
               </Button>
@@ -206,11 +208,12 @@ export default function PaperPage() {
 
         {/* Search Source Selector */}
         <div className="mb-6 flex flex-wrap gap-2 items-center">
-          <span className="text-sm text-[var(--color-text-secondary)] mr-2">Search in:</span>
+          <span className="w-full text-sm text-[var(--color-text-secondary)] sm:mr-2 sm:w-auto">Search in:</span>
           <Button
             size="sm"
             variant={searchSource === 'local' ? 'primary' : 'ghost'}
             onClick={() => { setSearchSource('local'); setExternalResults([]); }}
+            className="flex-1 justify-center sm:flex-none"
           >
             Library
           </Button>
@@ -218,6 +221,7 @@ export default function PaperPage() {
             size="sm"
             variant={searchSource === 'arxiv' ? 'primary' : 'ghost'}
             onClick={() => setSearchSource('arxiv')}
+            className="flex-1 justify-center sm:flex-none"
           >
             arXiv
           </Button>
@@ -270,8 +274,8 @@ export default function PaperPage() {
                   {externalResults.map((paper) => (
                     <Card key={paper.id} className="border-[#14FFEC]/30">
                       <CardHeader>
-                        <div className="flex justify-between items-start">
-                          <div className="flex-1 pr-4">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+                          <div className="min-w-0 flex-1 sm:pr-4">
                             <div className="flex items-center gap-2 mb-2">
                               <Badge variant="warning">
                                 arXiv
@@ -298,11 +302,12 @@ export default function PaperPage() {
                               )}
                             </div>
                           </div>
-                          <div className="flex flex-col gap-2">
+                          <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-col sm:items-stretch">
                             <Button
                               size="sm"
                               variant="outline"
                               onClick={() => window.open(paper.url, '_blank')}
+                              className="w-full justify-center"
                             >
                               <ExternalLink size={14} className="mr-1" />
                               View
@@ -313,6 +318,7 @@ export default function PaperPage() {
                               onClick={() => handleImportPaper(paper)}
                               disabled={importingPaperId === paper.id}
                               isLoading={importingPaperId === paper.id}
+                              className="w-full justify-center"
                             >
                               {importingPaperId !== paper.id && <Download size={14} className="mr-1" />}
                               Import
@@ -345,8 +351,8 @@ export default function PaperPage() {
                     {filteredPapers.map((paper) => (
                       <Card key={paper.id}>
                         <CardHeader>
-                          <div className="flex justify-between items-start">
-                            <div className="flex-1 pr-4">
+                          <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
+                            <div className="min-w-0 flex-1 sm:pr-4">
                               <h3 className="text-xl font-bold text-[var(--color-text-primary)] mb-2">
                                 {paper.title}
                               </h3>
@@ -368,11 +374,12 @@ export default function PaperPage() {
                                 )}
                               </div>
                             </div>
-                            <div className="flex flex-col gap-2">
+                            <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-col sm:items-stretch">
                               <Button
                                 size="sm"
                                 variant="outline"
                                 onClick={() => window.open(paper.url, '_blank')}
+                                className="w-full justify-center"
                               >
                                 <ExternalLink size={16} className="mr-2" />
                                 View
@@ -383,6 +390,7 @@ export default function PaperPage() {
                                 onClick={() => handleSavePaper(paper.id)}
                                 disabled={savingPaperId === paper.id}
                                 isLoading={savingPaperId === paper.id}
+                                className="w-full justify-center"
                               >
                                 {savingPaperId !== paper.id && (
                                   savedPaperIds.has(paper.id) ? (

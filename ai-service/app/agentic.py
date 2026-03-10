@@ -413,22 +413,23 @@ class AgenticService:
                 logger.warning("Arxiv search failed for query %r: %s", query, exc)
                 continue
 
-        # Vector store search
+        # Vector store search (parallel)
         if vector_store.is_connected and group_id:
-            for query in queries[:5]:
-                try:
-                    results = await vector_store.search_group_vectors(
-                        group_id=group_id,
-                        query=query,
-                        limit=max_results,
-                        content_types=None,
-                        paper_id=None,
-                    )
-                    for item in results:
-                        _add_source(item, "vector_store")
-                except Exception as exc:
-                    logger.warning("Vector store search failed for query %r: %s", query, exc)
+            async def _vs_query(q):
+                return await vector_store.search_group_vectors(
+                    group_id=group_id, query=q, limit=max_results,
+                    content_types=None, paper_id=None,
+                )
+            batch = await asyncio.gather(
+                *[_vs_query(q) for q in queries[:5]],
+                return_exceptions=True,
+            )
+            for results in batch:
+                if isinstance(results, Exception):
+                    logger.warning("Vector store search failed: %s", results)
                     continue
+                for item in results:
+                    _add_source(item, "vector_store")
 
         # Fallback to group papers if no sources found
         if not sources:
@@ -662,13 +663,13 @@ class AgenticService:
         async def _vector_search():
             results_list = []
             if vector_store.is_connected and group_id:
-                for sq in sub_queries[:5]:
+                async def _single_vector_query(sq):
+                    hits = []
                     try:
                         results = await vector_store.hybrid_search_group_vectors(
                             group_id=group_id, query=str(sq), limit=5
                         )
                         for res in results:
-                            # Title resolution: JOIN title > metadata title > first line of content > paper_id
                             title = res.get("title") or ""
                             if not title:
                                 meta = res.get("metadata") or {}
@@ -684,16 +685,14 @@ class AgenticService:
                             if not url:
                                 meta = res.get("metadata") or {}
                                 url = meta.get("url", "")
-                            # Construct arXiv URL from paper_id if no URL present
                             if not url:
                                 paper_id = res.get("paper_id", "")
                                 if paper_id and paper_id not in ("system", "untitled"):
                                     url = f"https://arxiv.org/abs/{paper_id}"
-                            # Extract author / year metadata when available
                             meta = res.get("metadata") or {}
                             authors = meta.get("authors", "")
                             year = meta.get("year", "")
-                            results_list.append({
+                            hits.append({
                                 "title": title,
                                 "url": url,
                                 "snippet": res.get("content", ""),
@@ -703,6 +702,13 @@ class AgenticService:
                             })
                     except Exception as exc:
                         logger.warning("Hybrid search failed for %r: %s", sq, exc)
+                    return hits
+                # Run all sub-query vector searches in parallel
+                batch_results = await asyncio.gather(
+                    *[_single_vector_query(sq) for sq in sub_queries[:5]]
+                )
+                for hits in batch_results:
+                    results_list.extend(hits)
             return results_list
 
         async def _web_search():
@@ -1014,12 +1020,20 @@ class AgenticService:
 
             settings = get_settings()
             if vector_store.is_connected:
-                for sq in sub_queries:
-                    results = await vector_store.search_group_vectors(
+                async def _survey_vector_query(sq):
+                    return await vector_store.search_group_vectors(
                         group_id=group_id,
                         query=str(sq),
                         limit=settings.rag_chunks_per_query,
                     )
+                batch = await asyncio.gather(
+                    *[_survey_vector_query(sq) for sq in sub_queries],
+                    return_exceptions=True,
+                )
+                for results in batch:
+                    if isinstance(results, Exception):
+                        logger.warning("Vector search failed during survey: %s", results)
+                        continue
                     for res in results:
                         if res["id"] not in seen_chunk_ids:
                             # Skip chunks with very low vector similarity
@@ -1383,6 +1397,25 @@ class AgenticService:
         except Exception as exc:
             logger.error("_tool_provide_mentoring failed: %s", exc, exc_info=True)
             return f"Error providing mentoring: {exc}"
+
+    async def _tool_plan_research(self, request: str, config: RunnableConfig) -> str:
+        """Create a structured research plan with milestones and methodology recommendations."""
+        try:
+            system_prompt = (
+                "You are a Research Planning Agent. Create a detailed, actionable research plan.\n\n"
+                "Include:\n"
+                "1. Research objectives and questions\n"
+                "2. Suggested methodology and approach\n"
+                "3. Key milestones and timeline\n"
+                "4. Required resources and datasets\n"
+                "5. Potential challenges and mitigation strategies\n"
+                "6. Expected outcomes and deliverables"
+            )
+            user_prompt = f"Research request: {request}"
+            return await self._call_llm(system_prompt, user_prompt)
+        except Exception as exc:
+            logger.error("_tool_plan_research failed: %s", exc, exc_info=True)
+            return f"Error planning research: {exc}"
 
     async def _tool_write_paper_draft(self, paper_request: str, config: RunnableConfig, pre_context: Optional[tuple[str, list[dict]]] = None) -> str:
         """Draft a structured paper outline and key sections."""

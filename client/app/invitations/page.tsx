@@ -87,7 +87,7 @@ export default function InvitationsPage() {
 
       <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
+        <div className="flex items-start gap-4 mb-8 sm:items-center">
           <Link
             href="/home"
             className="p-2 rounded-xl text-[var(--color-text-tertiary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
@@ -138,7 +138,7 @@ export default function InvitationsPage() {
             {invitations.map((invitation) => (
               <Card key={invitation.id} className="hover:border-[#3f3f46] transition-colors">
                 <CardBody className="p-6">
-                  <div className="flex items-start gap-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
                     {/* Group Avatar */}
                     <Avatar
                       src={invitation.groupAvatar}
@@ -156,7 +156,7 @@ export default function InvitationsPage() {
                           {invitation.groupDescription}
                         </p>
                       )}
-                      <div className="flex items-center gap-4 mt-3 text-sm text-[var(--color-text-tertiary)]">
+                      <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[var(--color-text-tertiary)]">
                         <span className="flex items-center gap-1">
                           Invited by{' '}
                           <span className="text-[var(--color-text-secondary)]">
@@ -176,12 +176,13 @@ export default function InvitationsPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="flex gap-2 flex-shrink-0">
+                    <div className="grid w-full grid-cols-1 gap-2 sm:flex sm:w-auto sm:shrink-0">
                       <Button
                         size="sm"
                         onClick={() => handleAccept(invitation.id)}
                         disabled={processingId === invitation.id}
                         isLoading={processingId === invitation.id}
+                        className="w-full justify-center sm:w-auto"
                       >
                         <Check size={16} className="mr-1" />
                         Accept
@@ -191,7 +192,7 @@ export default function InvitationsPage() {
                         variant="ghost"
                         onClick={() => handleDecline(invitation.id)}
                         disabled={processingId === invitation.id}
-                        className="hover:bg-[#ef4444]/10 hover:text-[#ef4444]"
+                        className="w-full justify-center hover:bg-[#ef4444]/10 hover:text-[#ef4444] sm:w-auto"
                       >
                         <X size={16} className="mr-1" />
                         Decline

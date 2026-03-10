@@ -291,15 +291,16 @@ class TestAgentNodes:
         }
         initialized_service._get_agent_for_task = MagicMock(return_value=mock_agent)
 
-        result = await initialized_service.run_task("fact_check", {
-            "prompt": "@ai verify this claim",
+        # Use paper_retrieval (not short-circuited) to test agent routing
+        result = await initialized_service.run_task("paper_retrieval", {
+            "prompt": "@ai find papers about NLP",
             "group_id": "g1",
             "user_id": "u1",
         })
 
-        assert result["task_type"] == "fact_check"
+        assert result["task_type"] == "paper_retrieval"
         assert "result" in result
-        assert result["result"]["fact_check"] == "mock generated response"
+        assert result["result"]["result"] == "mock generated response"
         assert "latency_ms" in result
 
 
@@ -488,13 +489,13 @@ class TestSummarizeSources:
 class TestAutoIntentClassification:
 
     @pytest.mark.asyncio
-    @patch("app.agentic.classify_intent")
+    @patch("app.agentic.classify_intent_detailed")
     @patch("app.agentic.database")
     @patch("app.agentic.vector_store")
     async def test_auto_classify_when_task_empty(
-        self, mock_vs, mock_db, mock_classify, initialized_service
+        self, mock_vs, mock_db, mock_classify_detailed, initialized_service
     ):
-        mock_classify.return_value = ("fact_check", 0.92, "verify the claim")
+        mock_classify_detailed.return_value = {"intent": "fact_check", "score": 0.92, "phrase": "verify the claim"}
         mock_vs.is_connected = False
         mock_db.is_connected = True
         mock_db.store_ai_artifact = AsyncMock(return_value=None)
@@ -510,17 +511,17 @@ class TestAutoIntentClassification:
             "group_id": "g1",
             "user_id": "u1",
         })
-        mock_classify.assert_called_once()
+        mock_classify_detailed.assert_called_once()
         assert result["task_type"] == "fact_check"
 
     @pytest.mark.asyncio
-    @patch("app.agentic.classify_intent")
+    @patch("app.agentic.classify_intent_detailed")
     @patch("app.agentic.database")
     @patch("app.agentic.vector_store")
     async def test_auto_classify_when_task_is_auto(
-        self, mock_vs, mock_db, mock_classify, initialized_service
+        self, mock_vs, mock_db, mock_classify_detailed, initialized_service
     ):
-        mock_classify.return_value = ("literature_survey", 0.88, "survey the field")
+        mock_classify_detailed.return_value = {"intent": "literature_survey", "score": 0.88, "phrase": "survey the field"}
         mock_vs.is_connected = False
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])
@@ -537,17 +538,17 @@ class TestAutoIntentClassification:
             "group_id": "g1",
             "user_id": "u1",
         })
-        mock_classify.assert_called_once()
+        mock_classify_detailed.assert_called_once()
         assert result["task_type"] == "literature_survey"
 
     @pytest.mark.asyncio
-    @patch("app.agentic.classify_intent")
+    @patch("app.agentic.classify_intent_detailed")
     @patch("app.agentic.database")
     @patch("app.agentic.vector_store")
     async def test_auto_classify_below_threshold_defaults(
-        self, mock_vs, mock_db, mock_classify, initialized_service
+        self, mock_vs, mock_db, mock_classify_detailed, initialized_service
     ):
-        mock_classify.return_value = (None, 0.45, None)
+        mock_classify_detailed.return_value = {"intent": None, "score": 0.45, "phrase": None}
         mock_vs.is_connected = False
         mock_db.is_connected = True
         mock_db.get_group_papers = AsyncMock(return_value=[])

@@ -84,7 +84,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
         target="_blank"
         rel="noreferrer"
         onContextMenu={handleContextMenu}
-        className="underline decoration-1 underline-offset-2 transition-colors hover:opacity-80"
+        className="underline decoration-1 underline-offset-2 transition-colors hover:opacity-80 break-all"
         style={{ color: 'var(--color-brand-secondary)' }}
         {...props}
       >

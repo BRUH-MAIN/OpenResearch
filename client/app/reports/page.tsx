@@ -164,14 +164,14 @@ function ReportsPageContent() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
             <Link href={`/group?id=${groupId}`}>
-              <Button variant="ghost" size="sm">
+              <Button variant="ghost" size="sm" className="w-full justify-center sm:w-auto">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Group
               </Button>
             </Link>
-            <div className="h-6 w-px bg-[var(--color-border-primary)]" />
+            <div className="hidden h-6 w-px bg-[var(--color-border-primary)] sm:block" />
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 <FileText className="w-6 h-6 text-[#14FFEC]" />
@@ -180,7 +180,7 @@ function ReportsPageContent() {
               <p className="text-sm text-[var(--color-text-tertiary)]">Generate and download PDF research reports</p>
             </div>
           </div>
-          <Button onClick={() => setShowCreateModal(true)}>
+          <Button onClick={() => setShowCreateModal(true)} className="w-full justify-center sm:w-auto">
             <Plus className="w-4 h-4 mr-2" />
             Generate Report
           </Button>
@@ -207,12 +207,12 @@ function ReportsPageContent() {
           <div className="grid gap-4">
             {reports.map((report) => (
               <Card key={report.id}>
-                <CardBody className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
+                <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-4">
                     <div className="w-12 h-12 rounded-xl bg-[#0D7377]/20 flex items-center justify-center">
                       <FileText className="w-6 h-6 text-[#14FFEC]" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <h3 className="font-semibold text-[var(--color-text-primary)]">{report.title}</h3>
                       <div className="flex items-center gap-3 text-sm text-[var(--color-text-tertiary)]">
                         <span className="flex items-center gap-1">
@@ -241,12 +241,13 @@ function ReportsPageContent() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end">
                     {report.status === 'completed' && report.downloadUrl && (
                       <Button
                         variant="secondary"
                         size="sm"
                         onClick={() => handleDownload(report)}
+                        className="w-full justify-center sm:w-auto"
                       >
                         <Download className="w-4 h-4 mr-1" />
                         Download PDF
@@ -257,7 +258,7 @@ function ReportsPageContent() {
                       size="sm"
                       onClick={() => handleDeleteReport(report.id)}
                       disabled={deletingReport === report.id}
-                      className="text-[#ef4444] hover:text-[#f87171] hover:bg-[#ef4444]/10"
+                      className="w-full justify-center text-[#ef4444] hover:text-[#f87171] hover:bg-[#ef4444]/10 sm:w-auto"
                     >
                       {deletingReport === report.id ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

@@ -1003,7 +1003,7 @@ function ResearchChatContent() {
       <Navbar />
 
       {/* Main Three-Column Layout */}
-      <div className={useOverlayPanels ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : 'flex-1 min-h-0 flex items-stretch gap-3 overflow-hidden p-3'}>
+      <div className={useOverlayPanels ? 'flex-1 min-h-0 flex flex-col overflow-hidden' : 'flex-1 min-h-0 flex items-stretch gap-3 overflow-hidden px-3 pt-2 pb-3'}>
         {/* Left Sidebar - Sources Panel */}
         {!useOverlayPanels && (
           <SourcesPanel
@@ -1023,14 +1023,14 @@ function ResearchChatContent() {
         <div className={`flex-1 min-h-0 flex flex-col min-w-0 self-stretch overflow-hidden research-chat-shell ${useOverlayPanels ? 'rounded-none border-x-0 border-b-0 shadow-none' : ''}`}>
           {/* Chat Header — Source-Aware */}
           <div
-            className="sticky top-0 z-20 px-6 py-4 border-b research-chat-header"
+            className="sticky top-0 z-20 px-6 py-3 border-b research-chat-header"
             style={{
               borderColor: 'var(--color-border-primary)',
               background: 'var(--glass-bg-strong)',
               backdropFilter: 'blur(14px)',
             }}
           >
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
               <div className="min-w-0">
                 <p
                   className="text-[11px] uppercase tracking-[0.24em] mb-1"
@@ -1056,7 +1056,7 @@ function ResearchChatContent() {
                     {sourceContextLabel}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
                   <span className="research-header-meta-pill">
                     {enabledSources.length} active source{enabledSources.length !== 1 ? 's' : ''}
                   </span>
@@ -1118,7 +1118,7 @@ function ResearchChatContent() {
           {/* Main Content Area */}
           <div className="flex-1 overflow-y-auto research-panel-scroll research-chat-scroll-area">
             <div className="research-chat-stage">
-              <div className="mx-auto px-4 py-6 md:px-5 md:py-8" style={{ maxWidth: RESEARCH_CHAT_CONTENT_MAX_WIDTH }}>
+              <div className="mx-auto px-4 py-4 md:px-5 md:py-5" style={{ maxWidth: RESEARCH_CHAT_CONTENT_MAX_WIDTH }}>
               {/* Empty State with dynamic suggestions */}
               {showEmptyState && (
                 <div className="research-empty-state">
@@ -1227,7 +1227,7 @@ function ResearchChatContent() {
 
           {/* Input Area */}
           <div
-            className="sticky bottom-0 z-20 px-4 py-4 md:px-5 border-t research-composer-wrap"
+            className="sticky bottom-0 z-20 px-4 py-2.5 md:px-5 md:py-3 border-t research-composer-wrap"
             style={{
               borderColor: 'var(--color-border-primary)',
               background: 'var(--glass-bg-strong)',
@@ -1312,37 +1312,41 @@ function ResearchChatContent() {
                 </div>
               </div>
 
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                {quickCommandChips.map((chip) => (
-                  <button
-                    key={chip.label}
-                    type="button"
-                    onClick={() => {
-                      setInputMessage(chip.value);
-                      setCommandQuery(chip.value.trim());
-                      setCommandActiveIndex(0);
-                      setShowCommandPalette(true);
-                      textareaRef.current?.focus();
-                    }}
-                    className="research-command-chip"
-                  >
-                    {chip.label}
-                  </button>
-                ))}
-              </div>
+              {showEmptyState && (
+                <>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    {quickCommandChips.map((chip) => (
+                      <button
+                        key={chip.label}
+                        type="button"
+                        onClick={() => {
+                          setInputMessage(chip.value);
+                          setCommandQuery(chip.value.trim());
+                          setCommandActiveIndex(0);
+                          setShowCommandPalette(true);
+                          textareaRef.current?.focus();
+                        }}
+                        className="research-command-chip"
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
 
-              <p
-                className="text-[11px] mt-3"
-                style={{ color: 'var(--color-text-muted)' }}
-              >
-                <span>Press </span>
-                <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + /</kbd>
-                <span> for commands, </span>
-                <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + Shift + L</kbd>
-                <span> and </span>
-                <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + Shift + R</kbd>
-                <span> for panels. OpenResearch can be inaccurate; please double-check its responses.</span>
-              </p>
+                  <p
+                    className="text-[11px] mt-3"
+                    style={{ color: 'var(--color-text-muted)' }}
+                  >
+                    <span>Press </span>
+                    <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + /</kbd>
+                    <span> for commands, </span>
+                    <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + Shift + L</kbd>
+                    <span> and </span>
+                    <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + Shift + R</kbd>
+                    <span> for panels. OpenResearch can be inaccurate; please double-check its responses.</span>
+                  </p>
+                </>
+              )}
             </div>
           </div>
         </div>
