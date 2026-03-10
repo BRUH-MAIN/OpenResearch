@@ -821,9 +821,9 @@ class Database:
             await session.execute(text("""
                 CREATE TABLE IF NOT EXISTS workflow_runs (
                     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                    group_id UUID REFERENCES groups(id) ON DELETE CASCADE,
-                    session_id UUID REFERENCES sessions(id) ON DELETE SET NULL,
-                    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                    group_id UUID,
+                    session_id UUID,
+                    user_id UUID NOT NULL,
                     template_id VARCHAR(100),
                     goal TEXT NOT NULL,
                     plan JSONB NOT NULL,
@@ -834,10 +834,6 @@ class Database:
                     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
                     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
                 )
-            """))
-            # Migration: make group_id nullable if it was created as NOT NULL
-            await session.execute(text("""
-                ALTER TABLE workflow_runs ALTER COLUMN group_id DROP NOT NULL
             """))
             await session.execute(text("""
                 CREATE TABLE IF NOT EXISTS workflow_steps (
