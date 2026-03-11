@@ -1,13 +1,4 @@
 # AI Service Dockerfile
-
-# Stage 1: Cache placeholder.
-# Keep the Hugging Face cache path available so later COPY steps succeed even
-# when there is no previously-built local image to reuse as a cache source.
-FROM python:3.12-slim AS model-cache
-
-RUN mkdir -p /root/.cache/huggingface
-
-# Stage 2: Build the application
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -33,16 +24,20 @@ COPY requirements.txt .
 # Install Python dependencies with UV
 RUN uv pip install --system --no-cache --index-strategy unsafe-best-match -r requirements.txt
 
-# Copy pre-downloaded ML models from the existing image (avoids re-download)
-COPY --from=model-cache /root/.cache/huggingface /root/.cache/huggingface
-
 # Copy application code
 COPY app/ ./app/
+
+# Download ML models during build so the image ships with them baked in.
+# Uses DNS available at build time; at runtime no network access is needed.
+RUN python -m app.download_models
 
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
+# Force offline mode at runtime — models are already cached from the build step.
+ENV HF_HUB_OFFLINE=1
+ENV TRANSFORMERS_OFFLINE=1
 
 # Expose port
 EXPOSE 8000

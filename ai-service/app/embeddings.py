@@ -32,7 +32,12 @@ def _load_specter2_base():
     """
     from sentence_transformers import SentenceTransformer, models
 
-    word_model = models.Transformer("allenai/specter2_base", max_seq_length=512)
+    word_model = models.Transformer(
+        "allenai/specter2_base",
+        max_seq_length=512,
+        model_args={"local_files_only": True},
+        tokenizer_args={"local_files_only": True},
+    )
     pooling_model = models.Pooling(
         word_model.get_word_embedding_dimension(),
         pooling_mode_mean_tokens=True,
@@ -66,11 +71,23 @@ def _get_model():
 
         try:
             logger.info("Loading embedding model: all-MiniLM-L6-v2 …")
-            _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+            _model = SentenceTransformer(
+                "sentence-transformers/all-MiniLM-L6-v2",
+                local_files_only=True,
+            )
             logger.info("✅ Embedding model loaded: all-MiniLM-L6-v2")
             return _model
         except Exception as exc:
-            logger.warning("Failed to load all-MiniLM-L6-v2: %s", exc)
+            logger.warning("Failed to load all-MiniLM-L6-v2 (local): %s", exc)
+
+        # Last resort: try downloading if not cached
+        try:
+            logger.info("Downloading all-MiniLM-L6-v2 …")
+            _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+            logger.info("✅ Embedding model downloaded: all-MiniLM-L6-v2")
+            return _model
+        except Exception as exc:
+            logger.warning("Failed to download all-MiniLM-L6-v2: %s", exc)
 
         logger.error("❌ All embedding model fallbacks failed")
     return _model
@@ -94,6 +111,10 @@ class EmbeddingService:
         """Initialize the embedding model. Returns True if successful."""
         try:
             self._model = _get_model()
+            if self._model is None:
+                logger.error("Embedding model is None — all fallbacks failed")
+                self._initialized = False
+                return False
             self._initialized = True
             logger.info("Embedding service initialized (SPECTER2 - local)")
             return True
