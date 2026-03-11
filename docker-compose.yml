@@ -77,6 +77,7 @@ services:
       DEBUG: "false"
       HF_TOKEN: ${HF_TOKEN:-}
       TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      ALLOWED_ORIGINS: http://${PUBLIC_HOST:-localhost}:3000,http://${PUBLIC_HOST:-localhost}:3001,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003
     ports:
       - "8000:8000"
     healthcheck:
