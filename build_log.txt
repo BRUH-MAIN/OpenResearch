@@ -1,0 +1,177 @@
+﻿docker :  Image openresearch-ai-service Building 
+At line:1 char:1
++ docker compose build ai-service 2>&1 | Out-File -FilePath c:\Openrese 
+...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ( Image openresearch-ai-servi 
+   ce Building :String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+#1 [internal] load local bake definitions
+#1 reading from stdin 620B done
+#1 DONE 0.0s
+
+#2 [internal] load build definition from Dockerfile
+#2 transferring dockerfile: 1.36kB 0.0s done
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/python:3.12-slim
+#3 DONE 3.0s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 359B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 DONE 0.0s
+
+#6 [1/8] FROM docker.io/library/python:3.12-slim@sha256:ccc7089399c8bb65dd1fb3ed6d55efa538a3f5e7fca3f5988ac3b5b87e593bf0
+#6 resolve docker.io/library/python:3.12-slim@sha256:ccc7089399c8bb65dd1fb3ed6d55efa538a3f5e7fca3f5988ac3b5b87e593bf0 0.1s done
+#6 DONE 0.1s
+
+#5 [internal] load build context
+#5 transferring context: 3.50kB 0.0s done
+#5 DONE 0.0s
+
+#7 [2/8] WORKDIR /app
+#7 CACHED
+
+#8 [3/8] RUN apt-get update && apt-get install -y --no-install-recommends     gcc     curl     texlive-base     texlive-latex-recommended     texlive-latex-extra     texlive-fonts-recommended     && curl -LsSf https://astral.sh/uv/install.sh | sh     && rm -rf /var/lib/apt/lists/*
+#8 CACHED
+
+#9 [4/8] COPY pyproject.toml .
+#9 CACHED
+
+#10 [5/8] COPY requirements.txt .
+#10 CACHED
+
+#11 [6/8] RUN uv pip install --system --no-cache --index-strategy unsafe-best-match -r requirements.txt
+#11 CACHED
+
+#12 [7/8] COPY app/ ./app/
+#12 CACHED
+
+#13 [8/8] RUN python -m app.download_models
+#13 0.878 
+#13 0.878 ============================================================
+#13 0.878   ≡ƒôª  OpenResearch ΓÇö Downloading ML Models
+#13 0.878 ============================================================
+#13 0.878 
+#13 0.878 ΓÅ│  [1/3]  SPECTER2-base Embeddings  (allenai/specter2_base)
+#13 0.878     ΓåÆ Downloading and caching weights ΓÇª
+#13 25.37 03:46:22 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+#13 25.40 03:46:22 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/config.json "HTTP/1.1 200 OK"
+#13 25.45 03:46:22 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/config.json "HTTP/1.1 200 OK"
+#13 25.72 03:46:22 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+#13 25.75 03:46:22 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/tokenizer_config.json "HTTP/1.1 200 OK"
+#13 25.78 03:46:22 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/tokenizer_config.json "HTTP/1.1 200 OK"
+#13 26.12 03:46:23 [INFO] HTTP Request: GET https://huggingface.co/api/models/allenai/specter2_base/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+#13 26.38 03:46:23 [INFO] HTTP Request: GET https://huggingface.co/api/models/allenai/specter2_base/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+#13 26.65 03:46:23 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/vocab.txt "HTTP/1.1 307 Temporary Redirect"
+#13 26.68 03:46:23 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/vocab.txt "HTTP/1.1 200 OK"
+#13 26.74 03:46:23 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/vocab.txt "HTTP/1.1 200 OK"
+#13 27.06 03:46:24 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/tokenizer.json "HTTP/1.1 307 Temporary Redirect"
+#13 27.06 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+#13 27.06 03:46:24 [WARNING] Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+#13 27.09 03:46:24 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/tokenizer.json "HTTP/1.1 200 OK"
+#13 27.12 03:46:24 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/tokenizer.json "HTTP/1.1 200 OK"
+#13 27.48 03:46:24 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/added_tokens.json "HTTP/1.1 404 Not Found"
+#13 27.81 03:46:25 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/special_tokens_map.json "HTTP/1.1 307 Temporary Redirect"
+#13 27.84 03:46:25 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/special_tokens_map.json "HTTP/1.1 200 OK"
+#13 27.87 03:46:25 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/special_tokens_map.json "HTTP/1.1 200 OK"
+#13 28.16 03:46:25 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/chat_template.jinja "HTTP/1.1 404 Not Found"
+#13 28.55 03:46:25 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+#13 28.58 03:46:25 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/allenai/specter2_base/3447645e1def9117997203454fa4495937bfbd83/config.json "HTTP/1.1 200 OK"
+#13 29.29 03:46:26 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+#13 29.55 03:46:26 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/model.safetensors.index.json "HTTP/1.1 404 Not Found"
+#13 29.80 03:46:27 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/pytorch_model.bin "HTTP/1.1 302 Found"
+#13 30.08 03:46:27 [INFO] HTTP Request: GET https://huggingface.co/api/models/allenai/specter2_base/xet-read-token/3447645e1def9117997203454fa4495937bfbd83 "HTTP/1.1 200 OK"
+#13 405.6 03:52:42 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/main/model.safetensors "HTTP/1.1 404 Not Found"
+#13 405.7 
+Loading weights:   0%|          | 0/199 [00:00<?, ?it/s]
+Loading weights: 100%|ΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûê| 199/199 [00:00<00:00, 11664.68it/s]
+#13 405.7 [1mBertModel LOAD REPORT[0m from: allenai/specter2_base
+#13 405.7 Key                     | Status     |  | 
+#13 405.7 ------------------------+------------+--+-
+#13 405.7 embeddings.position_ids | UNEXPECTED |  | 
+#13 405.7 
+#13 405.7 [3mNotes:
+#13 405.7 - UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+#13 405.7     Γ£à  Done in 404.9s  (440.7 MB)
+#13 405.7 
+#13 405.7 ΓÅ│  [2/3]  all-MiniLM-L6-v2 (lightweight fallback)  (sentence-transformers/all-MiniLM-L6-v2)
+#13 405.7     ΓåÆ Downloading and caching weights ΓÇª
+#13 405.9 03:52:43 [INFO] HTTP Request: GET https://huggingface.co/api/models/allenai/specter2_base "HTTP/1.1 200 OK"
+#13 406.4 03:52:43 [INFO] HTTP Request: GET https://huggingface.co/api/models/allenai/specter2_base/commits/main "HTTP/1.1 200 OK"
+#13 406.5 03:52:43 [INFO] Use pytorch device_name: cpu
+#13 406.5 03:52:43 [INFO] Load pretrained SentenceTransformer: sentence-transformers/all-MiniLM-L6-v2
+#13 406.7 03:52:43 [INFO] HTTP Request: GET https://huggingface.co/api/models/allenai/specter2_base/discussions?p=0 "HTTP/1.1 200 OK"
+#13 407.2 03:52:44 [INFO] HTTP Request: GET https://huggingface.co/api/models/allenai/specter2_base/commits/refs%2Fpr%2F10 "HTTP/1.1 200 OK"
+#13 407.5 03:52:44 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/refs%2Fpr%2F10/model.safetensors.index.json "HTTP/1.1 404 Not Found"
+#13 407.8 03:52:44 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+#13 407.9 03:52:45 [INFO] HTTP Request: HEAD https://huggingface.co/allenai/specter2_base/resolve/refs%2Fpr%2F10/model.safetensors "HTTP/1.1 302 Found"
+#13 408.0 03:52:45 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+#13 408.3 03:52:45 [INFO] HTTP Request: GET https://huggingface.co/api/models/allenai/specter2_base/xet-read-token/0044d7162a08098bd26f70a976469ae30ae99256 "HTTP/1.1 200 OK"
+#13 408.3 03:52:45 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+#13 408.6 03:52:45 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+#13 408.9 03:52:46 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+#13 409.1 03:52:46 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+#13 409.4 03:52:46 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config_sentence_transformers.json "HTTP/1.1 307 Temporary Redirect"
+#13 409.7 03:52:46 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config_sentence_transformers.json "HTTP/1.1 200 OK"
+#13 410.0 03:52:47 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/README.md "HTTP/1.1 307 Temporary Redirect"
+#13 410.2 03:52:47 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+#13 410.5 03:52:47 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/README.md "HTTP/1.1 200 OK"
+#13 410.8 03:52:48 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/modules.json "HTTP/1.1 307 Temporary Redirect"
+#13 411.1 03:52:48 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/modules.json "HTTP/1.1 200 OK"
+#13 411.4 03:52:48 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/sentence_bert_config.json "HTTP/1.1 307 Temporary Redirect"
+#13 411.6 03:52:48 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+#13 411.9 03:52:49 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/sentence_bert_config.json "HTTP/1.1 200 OK"
+#13 412.2 03:52:49 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/adapter_config.json "HTTP/1.1 404 Not Found"
+#13 412.6 03:52:49 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+#13 412.8 03:52:49 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+#13 413.1 03:52:50 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+#13 413.5 03:52:50 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/model.safetensors "HTTP/1.1 302 Found"
+#13 413.8 03:52:51 [INFO] HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/xet-read-token/c9745ed1d9f207416be6d2e6f8de32d1f16199bf "HTTP/1.1 200 OK"
+#13 573.7 
+Loading weights:   0%|          | 0/103 [00:00<?, ?it/s]
+Loading weights: 100%|ΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûêΓûê| 103/103 [00:00<00:00, 1414.64it/s]
+#13 573.7 [1mBertModel LOAD REPORT[0m from: sentence-transformers/all-MiniLM-L6-v2
+#13 573.7 Key                     | Status     |  | 
+#13 573.7 ------------------------+------------+--+-
+#13 573.7 embeddings.position_ids | UNEXPECTED |  | 
+#13 573.7 
+#13 573.7 [3mNotes:
+#13 573.7 - UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+#13 574.1 03:55:31 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+#13 574.2 03:55:31 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/config.json "HTTP/1.1 200 OK"
+#13 574.5 03:55:31 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer_config.json "HTTP/1.1 307 Temporary Redirect"
+#13 574.6 03:55:31 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+#13 574.7 03:55:31 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer_config.json "HTTP/1.1 200 OK"
+#13 574.9 03:55:32 [INFO] HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main/additional_chat_templates?recursive=false&expand=false "HTTP/1.1 404 Not Found"
+#13 575.3 03:55:32 [INFO] HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2/tree/main?recursive=true&expand=false "HTTP/1.1 200 OK"
+#13 575.7 03:55:32 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/vocab.txt "HTTP/1.1 307 Temporary Redirect"
+#13 575.8 03:55:32 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/vocab.txt "HTTP/1.1 200 OK"
+#13 575.9 03:55:33 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/vocab.txt "HTTP/1.1 200 OK"
+#13 576.5 03:55:33 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/tokenizer.json "HTTP/1.1 307 Temporary Redirect"
+#13 576.6 03:55:33 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer.json "HTTP/1.1 200 OK"
+#13 576.7 03:55:33 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/tokenizer.json "HTTP/1.1 200 OK"
+#13 577.3 03:55:34 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/added_tokens.json "HTTP/1.1 404 Not Found"
+#13 577.6 03:55:34 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/special_tokens_map.json "HTTP/1.1 307 Temporary Redirect"
+#13 577.7 03:55:34 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/special_tokens_map.json "HTTP/1.1 200 OK"
+#13 577.8 03:55:34 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/special_tokens_map.json "HTTP/1.1 200 OK"
+#13 578.1 03:55:35 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/chat_template.jinja "HTTP/1.1 404 Not Found"
+#13 578.5 03:55:35 [INFO] HTTP Request: HEAD https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main/1_Pooling/config.json "HTTP/1.1 307 Temporary Redirect"
+#13 578.5 03:55:35 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+#13 578.5 03:55:35 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/sentence-transformers/all-MiniLM-L6-v2/c9745ed1d9f207416be6d2e6f8de32d1f16199bf/1_Pooling%2Fconfig.json "HTTP/1.1 200 OK"
+#13 578.9 03:55:36 [INFO] HTTP Request: GET https://huggingface.co/api/models/sentence-transformers/all-MiniLM-L6-v2 "HTTP/1.1 200 OK"
+#13 578.9     Γ£à  Done in 173.2s  (91.6 MB)
+#13 578.9 
+#13 578.9 ΓÅ│  [3/3]  Cross-Encoder Reranker  (cross-encoder/ms-marco-MiniLM-L-6-v2)
+#13 578.9     ΓåÆ Downloading and caching weights ΓÇª
+#13 579.2 03:55:36 [INFO] HTTP Request: HEAD https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+#13 579.6 03:55:36 [INFO] HTTP Request: HEAD https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2/resolve/main/config.json "HTTP/1.1 307 Temporary Redirect"
+#13 579.6 03:55:36 [INFO] HTTP Request: HEAD https://huggingface.co/api/resolve-cache/models/cross-encoder/ms-marco-MiniLM-L6-v2/c5ee24cb16019beea0893ab7796b1df96625c6b8/config.json "HTTP/1.1 200 OK"
+#13 579.8 03:55:36 [INFO] HTTP Request: GET https://huggingface.co/api/resolve-cache/models/cross-encoder/ms-marco-MiniLM-L6-v2/c5ee24cb16019beea0893ab7796b1df96625c6b8/config.json "HTTP/1.1 200 OK"
+#13 580.0 03:55:37 [INFO] HTTP Request: HEAD https://huggingface.co/cross-encoder/ms-marco-MiniLM-L-6-v2/resolve/main/model.safetensors "HTTP/1.1 307 Temporary Redirect"
+#13 580.4 03:55:37 [INFO] HTTP Request: HEAD https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2/resolve/main/model.safetensors "HTTP/1.1 302 Found"
+#13 580.7 03:55:37 [INFO] HTTP Request: GET https://huggingface.co/api/models/cross-encoder/ms-marco-MiniLM-L6-v2/xet-read-token/c5ee24cb16019beea0893ab7796b1df96625c6b8 "HTTP/1.1 200 OK"

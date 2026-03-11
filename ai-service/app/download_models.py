@@ -27,7 +27,7 @@ MODELS = [
     {
         "name": "SPECTER2-base Embeddings",
         "id": "allenai/specter2_base",
-        "loader": "SentenceTransformer",
+        "loader": "AutoModel",
         "required": True,
     },
     {
@@ -46,6 +46,13 @@ MODELS = [
 
 # ── Helpers ─────────────────────────────────────────────────────────
 
+def _download_auto_model(model_id: str) -> None:
+    """Download model + tokenizer weights using AutoModel (no ST config needed)."""
+    from transformers import AutoModel, AutoTokenizer
+    AutoTokenizer.from_pretrained(model_id)
+    AutoModel.from_pretrained(model_id)
+
+
 def _download_sentence_transformer(model_id: str) -> None:
     from sentence_transformers import SentenceTransformer
     SentenceTransformer(model_id)
@@ -57,6 +64,7 @@ def _download_cross_encoder(model_id: str) -> None:
 
 
 LOADERS = {
+    "AutoModel": _download_auto_model,
     "SentenceTransformer": _download_sentence_transformer,
     "CrossEncoder": _download_cross_encoder,
 }
