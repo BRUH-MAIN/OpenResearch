@@ -1,208 +1,162 @@
 """
-Tests for Report Generator
+Tests for the ReportGenerator.
 """
 
-import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 import os
 import tempfile
+import pytest
+
+from app.report_generator import ReportGenerator
 
 
-class TestReportGenerator:
-    """Tests for the PDF report generator"""
+@pytest.fixture
+def rg():
+    """Create a ReportGenerator writing to a temp dir."""
+    tmpdir = tempfile.mkdtemp()
+    return ReportGenerator(output_dir=tmpdir)
 
-    def test_report_creates_pdf(self):
-        """Test report generation creates a PDF file"""
-        # Mock report generation
-        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as f:
-            pdf_path = f.name
-            f.write(b'%PDF-1.4 mock pdf content')
-        
-        try:
-            assert os.path.exists(pdf_path)
-            assert pdf_path.endswith('.pdf')
-        finally:
-            os.unlink(pdf_path)
 
-    def test_report_includes_title(self):
-        """Test report includes custom title"""
-        report_config = {
-            "title": "My Custom Report",
-            "group_id": "group-1",
-        }
-        assert report_config["title"] == "My Custom Report"
+class TestReportGeneratorInit:
 
-    def test_report_includes_sections(self):
-        """Test report includes requested sections"""
-        sections = ["overview", "papers", "discussions", "insights"]
-        report_config = {
-            "sections": sections,
-        }
-        assert "overview" in report_config["sections"]
-        assert "papers" in report_config["sections"]
+    def test_default_init(self):
+        rg = ReportGenerator()
+        assert os.path.isdir(rg.output_dir)
+        assert 'ReportTitle' in rg.styles
 
-    def test_report_types_supported(self):
-        """Test all report types are supported"""
-        supported_types = ["weekly", "monthly", "custom"]
-        for report_type in supported_types:
-            assert report_type in supported_types
+    def test_custom_output_dir(self, rg):
+        assert os.path.isdir(rg.output_dir)
 
-    def test_report_includes_date_range(self):
-        """Test report can include date range"""
-        report_config = {
-            "date_range": {
-                "start": "2024-01-01",
-                "end": "2024-01-07",
-            }
-        }
-        assert "date_range" in report_config
-        assert "start" in report_config["date_range"]
+    def test_custom_styles_created(self, rg):
+        for name in ('ReportTitle', 'SectionTitle', 'SubSection', 'Quote', 'Footer'):
+            assert name in rg.styles
 
-    def test_report_filename_format(self):
-        """Test report filename is properly formatted"""
-        group_name = "Research Group"
-        report_type = "weekly"
-        # Expected format: <group_name>_<report_type>_<timestamp>.pdf
-        filename = f"{group_name.replace(' ', '_')}_{report_type}.pdf"
-        assert " " not in filename
+
+class TestGenerateGroupReport:
+
+    def _minimal_report(self, rg, **kwargs):
+        defaults = dict(
+            group_id="11111111-1111-1111-1111-111111111111",
+            group_name="Test Group",
+            group_description="A test group description.",
+            sessions=[],
+            papers=[],
+            summaries=[],
+            qa_artifacts=[],
+            memory_notes=[],
+            generated_by="TestUser",
+        )
+        defaults.update(kwargs)
+        return rg.generate_group_report(**defaults)
+
+    def test_minimal_report(self, rg):
+        filepath, filename, size = self._minimal_report(rg)
+        assert os.path.exists(filepath)
         assert filename.endswith(".pdf")
+        assert size > 0
 
-
-class TestReportContent:
-    """Tests for report content generation"""
-
-    def test_overview_section(self):
-        """Test overview section content"""
-        overview = {
-            "title": "Overview",
-            "content": "This report summarizes...",
-        }
-        assert overview["title"] == "Overview"
-
-    def test_papers_section(self):
-        """Test papers section lists papers"""
+    def test_report_with_papers(self, rg):
         papers = [
-            {"title": "Paper 1", "authors": ["Author A"]},
-            {"title": "Paper 2", "authors": ["Author B"]},
+            {
+                "title": "Paper A",
+                "authors": ["Alice", "Bob", "Carol", "Dave"],
+                "published_date": "2026-01-01",
+                "tags": ["ML", "AI"],
+                "abstract": "x" * 600,  # test truncation
+            },
+            {
+                "title": "Paper B",
+                "authors": [],
+                "abstract": "Short abstract",
+            },
         ]
-        assert len(papers) == 2
-        assert all("title" in p for p in papers)
+        filepath, _, size = self._minimal_report(rg, papers=papers)
+        assert os.path.exists(filepath)
+        assert size > 0
 
-    def test_discussions_section(self):
-        """Test discussions section includes messages"""
-        discussions = {
-            "message_count": 42,
-            "highlights": ["Important discussion 1"],
-        }
-        assert discussions["message_count"] > 0
-
-    def test_insights_section(self):
-        """Test insights section includes AI analysis"""
-        insights = {
-            "key_themes": ["machine learning", "neural networks"],
-            "recommendations": ["Explore paper X"],
-        }
-        assert len(insights["key_themes"]) > 0
-
-
-class TestReportFormatting:
-    """Tests for report formatting"""
-
-    def test_pdf_has_header(self):
-        """Test PDF includes header"""
-        header = {
-            "title": "Report Title",
-            "date": "2024-01-15",
-            "group_name": "Research Group",
-        }
-        assert "title" in header
-
-    def test_pdf_has_footer(self):
-        """Test PDF includes footer with page numbers"""
-        footer = {
-            "page_number": True,
-            "generated_by": "OpenResearch",
-        }
-        assert footer["page_number"]
-
-    def test_pdf_styling(self):
-        """Test PDF has proper styling"""
-        styles = {
-            "heading_font": "Helvetica-Bold",
-            "body_font": "Helvetica",
-            "font_size": 12,
-        }
-        assert styles["font_size"] > 0
-
-    def test_tables_formatted(self):
-        """Test tables are properly formatted"""
-        table_data = [
-            ["Paper Title", "Authors", "Date"],
-            ["Paper 1", "Author A", "2024-01-01"],
+    def test_report_with_sessions(self, rg):
+        sessions = [
+            {
+                "title": "Session 1",
+                "status": "active",
+                "created_at": "2026-01-01T10:00:00Z",
+                "messages": [
+                    {"user_name": "Alice", "content": "Hello " * 100},
+                    {"user_name": "Bob", "content": "Hi"},
+                    {"user_name": "Carol", "content": "Test"},
+                    {"user_name": "Dave", "content": "Msg 4"},
+                    {"user_name": "Eve", "content": "Msg 5"},
+                    {"user_name": "Frank", "content": "Msg 6"},
+                ],
+            }
         ]
-        assert len(table_data) > 1
-        assert len(table_data[0]) == 3
+        filepath, _, size = self._minimal_report(rg, sessions=sessions)
+        assert os.path.exists(filepath)
+
+    def test_report_with_summaries(self, rg):
+        summaries = [
+            {
+                "artifact_type": "summary",
+                "created_at": "2026-01-01T10:00:00Z",
+                "content": "Summary content " * 100,
+            }
+        ]
+        filepath, _, _ = self._minimal_report(rg, summaries=summaries)
+        assert os.path.exists(filepath)
+
+    def test_report_with_qa_artifacts(self, rg):
+        qa_artifacts = [
+            {
+                "prompt": "@ai What is this?",
+                "content": "This is an answer " * 100,
+            }
+        ]
+        filepath, _, _ = self._minimal_report(rg, qa_artifacts=qa_artifacts)
+        assert os.path.exists(filepath)
+
+    def test_report_with_memory_notes(self, rg):
+        notes = [
+            {"note_type": "decision", "content": "Focus on NLP."},
+            {"note_type": "guideline", "content": "Review weekly."},
+        ]
+        filepath, _, _ = self._minimal_report(rg, memory_notes=notes)
+        assert os.path.exists(filepath)
+
+    def test_report_with_custom_prompt(self, rg):
+        filepath, _, _ = self._minimal_report(rg, custom_prompt="@ai Include insights")
+        assert os.path.exists(filepath)
+
+    def test_report_excludes_optional_sections(self, rg):
+        filepath, _, _ = self._minimal_report(
+            rg,
+            include_sessions=False,
+            include_papers=False,
+            include_summaries=False,
+        )
+        assert os.path.exists(filepath)
+
+    def test_report_all_sections(self, rg):
+        """Full report with all sections populated."""
+        filepath, _, size = self._minimal_report(
+            rg,
+            papers=[{"title": "P1", "authors": ["A"], "abstract": "abs"}],
+            sessions=[{
+                "title": "S1",
+                "status": "active",
+                "created_at": "2026-01-01T00:00:00Z",
+                "messages": [{"user_name": "Bot", "content": "Hi"}],
+            }],
+            summaries=[{"artifact_type": "summary", "created_at": "2026-01-01", "content": "Sum"}],
+            qa_artifacts=[{"prompt": "Q?", "content": "A."}],
+            memory_notes=[{"note_type": "insight", "content": "Note"}],
+            custom_prompt="@ai focus area",
+        )
+        assert size > 0
 
 
-class TestReportStorage:
-    """Tests for report storage and retrieval"""
+class TestGenerateSampleReport:
 
-    def test_report_stored_with_metadata(self):
-        """Test report is stored with metadata"""
-        report_record = {
-            "id": "report-123",
-            "group_id": "group-1",
-            "file_path": "/reports/report-123.pdf",
-            "created_at": "2024-01-15T10:00:00Z",
-            "created_by": "user-1",
-            "status": "completed",
-        }
-        assert "file_path" in report_record
-        assert "status" in report_record
-
-    def test_report_path_format(self):
-        """Test report path is properly formatted"""
-        report_id = "abc123"
-        path = f"/reports/{report_id}.pdf"
-        assert path.startswith("/reports/")
-        assert path.endswith(".pdf")
-
-    def test_report_can_be_retrieved(self):
-        """Test report can be retrieved by ID"""
-        reports = {
-            "report-1": {"id": "report-1", "path": "/reports/r1.pdf"},
-            "report-2": {"id": "report-2", "path": "/reports/r2.pdf"},
-        }
-        retrieved = reports.get("report-1")
-        assert retrieved is not None
-        assert retrieved["id"] == "report-1"
-
-
-class TestReportErrors:
-    """Tests for error handling in report generation"""
-
-    def test_empty_group_handled(self):
-        """Test empty group (no papers) is handled"""
-        group_data = {
-            "papers": [],
-            "sessions": [],
-        }
-        # Should still generate a report, possibly with a note
-        assert isinstance(group_data["papers"], list)
-
-    def test_invalid_date_range_handled(self):
-        """Test invalid date range is handled"""
-        date_range = {
-            "start": "2024-12-31",
-            "end": "2024-01-01",  # End before start
-        }
-        # Validation should catch this
-        assert date_range["start"] > date_range["end"]
-
-    def test_missing_sections_handled(self):
-        """Test missing sections still generate report"""
-        sections = []
-        # Should use default sections
-        default_sections = ["overview", "summary"]
-        used_sections = sections if sections else default_sections
-        assert len(used_sections) > 0
+    def test_sample_report(self, rg):
+        filepath, filename, size = rg.generate_sample_report()
+        assert os.path.exists(filepath)
+        assert filename.endswith(".pdf")
+        assert size > 0

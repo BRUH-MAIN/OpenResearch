@@ -5,27 +5,91 @@ No API key required - runs locally.
 """
 
 import asyncio
+import logging
+import threading
 import time
 from typing import Optional
 import numpy as np
 
 from .config import get_settings
 
-# Lazy load to avoid import overhead
+logger = logging.getLogger(__name__)
+
+# Lazy load to avoid import overhead — protected by a lock so parallel
+# asyncio.to_thread calls don't each trigger their own model load.
 _model = None
 _tokenizer = None
+_model_lock = threading.Lock()
+
+
+def _load_specter2_base():
+    """Load allenai/specter2_base with explicit sentence-transformers config.
+
+    specter2_base is a plain BERT model without sentence-transformers
+    metadata (modules.json / config_sentence_transformers.json), so
+    SentenceTransformer() prints a noisy warning. We build the pipeline
+    manually to avoid that.
+    """
+    from sentence_transformers import SentenceTransformer, models
+
+    word_model = models.Transformer(
+        "allenai/specter2_base",
+        max_seq_length=512,
+        model_args={"local_files_only": True},
+        tokenizer_args={"local_files_only": True},
+    )
+    pooling_model = models.Pooling(
+        word_model.get_word_embedding_dimension(),
+        pooling_mode_mean_tokens=True,
+    )
+    return SentenceTransformer(modules=[word_model, pooling_model])
 
 
 def _get_model():
-    """Lazy load the sentence-transformer model."""
+    """Lazy load the sentence-transformer model with robust fallback chain."""
     global _model, _tokenizer
-    if _model is None:
+    # Fast path — no lock needed once the model is loaded
+    if _model is not None:
+        return _model
+
+    with _model_lock:
+        # Double-check after acquiring lock
+        if _model is not None:
+            return _model
+
         from sentence_transformers import SentenceTransformer
-        # SPECTER2 is optimized for scientific papers (768 dimensions)
-        # Alternative: 'allenai/specter' or 'sentence-transformers/all-mpnet-base-v2'
-        print("🔄 Loading SPECTER2 embedding model (first time may take a moment)...")
-        _model = SentenceTransformer('allenai/specter2')
-        print("✅ SPECTER2 model loaded successfully")
+
+        # Primary: specter2_base (built manually to avoid missing-config warning)
+        # Fallback: all-MiniLM-L6-v2 (has native ST config)
+        try:
+            logger.info("Loading embedding model: SPECTER2-base …")
+            _model = _load_specter2_base()
+            logger.info("✅ Embedding model loaded: SPECTER2-base")
+            return _model
+        except Exception as exc:
+            logger.warning("Failed to load SPECTER2-base: %s", exc)
+
+        try:
+            logger.info("Loading embedding model: all-MiniLM-L6-v2 …")
+            _model = SentenceTransformer(
+                "sentence-transformers/all-MiniLM-L6-v2",
+                local_files_only=True,
+            )
+            logger.info("✅ Embedding model loaded: all-MiniLM-L6-v2")
+            return _model
+        except Exception as exc:
+            logger.warning("Failed to load all-MiniLM-L6-v2 (local): %s", exc)
+
+        # Last resort: try downloading if not cached
+        try:
+            logger.info("Downloading all-MiniLM-L6-v2 …")
+            _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+            logger.info("✅ Embedding model downloaded: all-MiniLM-L6-v2")
+            return _model
+        except Exception as exc:
+            logger.warning("Failed to download all-MiniLM-L6-v2: %s", exc)
+
+        logger.error("❌ All embedding model fallbacks failed")
     return _model
 
 
@@ -47,11 +111,15 @@ class EmbeddingService:
         """Initialize the embedding model. Returns True if successful."""
         try:
             self._model = _get_model()
+            if self._model is None:
+                logger.error("Embedding model is None — all fallbacks failed")
+                self._initialized = False
+                return False
             self._initialized = True
-            print("✅ Embedding service initialized (SPECTER2 - local)")
+            logger.info("Embedding service initialized (SPECTER2 - local)")
             return True
         except Exception as e:
-            print(f"❌ Failed to initialize embedding service: {e}")
+            logger.error("Failed to initialize embedding service: %s", e)
             return False
     
     @property
@@ -120,7 +188,7 @@ class EmbeddingService:
                 
         except Exception as e:
             # Fallback to mock embedding for development/when model fails
-            print(f"⚠️  Embedding generation failed: {e}, using mock embedding")
+            logger.warning("Embedding generation failed: %s, using mock embedding", e)
             latency_ms = int((time.time() - start_time) * 1000)
             return self._generate_mock_embedding(text), latency_ms
     

@@ -8,29 +8,44 @@ interface CardProps {
   onClick?: () => void;
 }
 
-export function Card({ 
-  children, 
-  className = '', 
+export function Card({
+  children,
+  className = '',
   variant = 'default',
-  hover = false, 
-  onClick 
+  hover = false,
+  onClick
 }: CardProps) {
-  const baseStyles = 'rounded-xl transition-all duration-200';
-  
-  const variants = {
-    default: 'bg-[#1a1a1a] border border-[#2a2a2a]',
-    elevated: 'bg-[#242424] border border-[#3a3a3a] shadow-lg shadow-black/20',
-    outlined: 'bg-transparent border-2 border-[#0D7377]/50',
-    glass: 'bg-[#1a1a1a]/80 backdrop-blur-xl border border-[#2a2a2a]/50',
+  const baseStyles: React.CSSProperties = {
+    borderRadius: 'var(--radius-xl)',
+    transition: 'all var(--transition-base)',
   };
-  
-  const hoverStyles = hover 
-    ? 'cursor-pointer hover:border-[#0D7377]/60 hover:shadow-xl hover:shadow-[#0D7377]/10 hover:-translate-y-1 active:translate-y-0 active:shadow-md' 
-    : '';
-  
+
+  const variantStyles: Record<string, React.CSSProperties> = {
+    default: {
+      background: 'var(--color-bg-secondary)',
+      border: '1px solid var(--color-border-primary)',
+    },
+    elevated: {
+      background: 'var(--color-bg-tertiary)',
+      border: '1px solid var(--color-border-secondary)',
+      boxShadow: 'var(--shadow-lg)',
+    },
+    outlined: {
+      background: 'transparent',
+      border: '2px solid var(--color-border-accent)',
+    },
+    glass: {
+      background: 'var(--glass-bg)',
+      backdropFilter: 'blur(20px)',
+      WebkitBackdropFilter: 'blur(20px)',
+      border: '1px solid var(--color-border-primary)',
+    },
+  };
+
   return (
     <div
-      className={`${baseStyles} ${variants[variant]} ${hoverStyles} ${className}`}
+      className={`${hover ? 'cursor-pointer card-interactive' : ''} ${className}`}
+      style={{ ...baseStyles, ...variantStyles[variant] }}
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
@@ -48,7 +63,10 @@ interface CardHeaderProps {
 
 export function CardHeader({ children, className = '', action }: CardHeaderProps) {
   return (
-    <div className={`px-5 py-4 border-b border-[#2a2a2a]/60 ${action ? 'flex items-center justify-between' : ''} ${className}`}>
+    <div
+      className={`px-5 py-4 border-b ${action ? 'flex items-center justify-between' : ''} ${className}`}
+      style={{ borderColor: 'var(--color-border-primary)' }}
+    >
       <div className="flex-1">{children}</div>
       {action && <div className="ml-4">{action}</div>}
     </div>
@@ -75,7 +93,15 @@ interface CardFooterProps {
 
 export function CardFooter({ children, className = '' }: CardFooterProps) {
   return (
-    <div className={`px-5 py-4 border-t border-[#2a2a2a]/60 bg-[#151515]/50 rounded-b-xl ${className}`}>
+    <div
+      className={`px-5 py-4 border-t ${className}`}
+      style={{
+        borderColor: 'var(--color-border-primary)',
+        background: 'var(--color-bg-tertiary)',
+        borderBottomLeftRadius: 'var(--radius-xl)',
+        borderBottomRightRadius: 'var(--radius-xl)',
+      }}
+    >
       {children}
     </div>
   );
@@ -88,7 +114,10 @@ interface CardTitleProps {
 
 export function CardTitle({ children, className = '' }: CardTitleProps) {
   return (
-    <h3 className={`text-lg font-semibold text-white ${className}`}>
+    <h3
+      className={`text-lg font-semibold ${className}`}
+      style={{ color: 'var(--color-text-primary)' }}
+    >
       {children}
     </h3>
   );
@@ -101,7 +130,10 @@ interface CardDescriptionProps {
 
 export function CardDescription({ children, className = '' }: CardDescriptionProps) {
   return (
-    <p className={`text-sm text-[#a1a1aa] mt-1 ${className}`}>
+    <p
+      className={`text-sm mt-1 ${className}`}
+      style={{ color: 'var(--color-text-secondary)' }}
+    >
       {children}
     </p>
   );

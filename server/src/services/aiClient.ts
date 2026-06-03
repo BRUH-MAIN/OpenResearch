@@ -8,42 +8,13 @@
  */
 
 import logger from '../utils/logger.js';
+import { createError } from '../middleware/error.js';
+import { setTimeout, clearTimeout } from 'timers';
+import { TextDecoder } from 'util';
 
 // Get AI service URL from environment (with fallback)
 function getAiServiceUrl(): string {
   return process.env.AI_SERVICE_URL || 'http://localhost:8000';
-}
-
-// Types matching FastAPI models
-export interface ChatRequest {
-  question: string;
-  session_id?: string;
-  user_id?: string;
-  include_papers?: boolean;
-  max_context_messages?: number;
-}
-
-export interface ChatResponse {
-  answer: string;
-  sources: string[];
-  model: string;
-  latency_ms: number;
-  context_messages_used: number;
-  papers_used: number;
-}
-
-export interface SummarizeRequest {
-  session_id: string;
-  max_messages?: number;
-}
-
-export interface SummaryResponse {
-  summary: string;
-  key_points: string[];
-  participant_count: number;
-  message_count: number;
-  model: string;
-  latency_ms: number;
 }
 
 export interface GroupAIChatRequest {
@@ -142,24 +113,6 @@ export interface ReportResponse {
   created_at?: string;
 }
 
-export interface RecommendationsRequest {
-  group_id: string;
-  limit?: number;
-  exclude_paper_ids?: string[];
-}
-
-export interface RecommendationsResponse {
-  recommendations: Array<{
-    id: string;
-    title: string;
-    abstract?: string;
-    score: number;
-    reason: string;
-  }>;
-  total: number;
-  source: string;
-}
-
 export interface VectorSearchRequest {
   group_id: string;
   query: string;
@@ -182,6 +135,64 @@ export interface VectorSearchResponse {
   latency_ms: number;
 }
 
+export type AgenticTaskType =
+  | 'paper_retrieval'
+  | 'literature_survey'
+  | 'gap_analysis'
+  | 'fact_check'
+  | 'novelty_assessment'
+  | 'research_mentor'
+  | 'paper_writing'
+  | 'deep_research'
+  | 'methodology_extraction';
+
+export interface AgenticRunRequest {
+  task_type: AgenticTaskType;
+  prompt: string;
+  group_id?: string;
+  user_id?: string;
+  session_id?: string;
+  paper_ids?: string[];
+  options?: Record<string, unknown>;
+}
+
+export interface AgenticRunResponse {
+  task_type: AgenticTaskType;
+  result: Record<string, unknown>;
+  artifacts: string[];
+  metadata: Record<string, unknown>;
+  latency_ms: number;
+}
+
+export interface IntentClassifyRequest {
+  prompt: string;
+}
+
+export interface IntentClassifyResponse {
+  task_type?: AgenticTaskType | null;
+  similarity: number;
+  threshold: number;
+  matched_phrase?: string | null;
+}
+
+export interface IntentClassifyDetailedResponse {
+  task_type?: string | null;
+  similarity: number;
+  threshold: number;
+  matched_phrase?: string | null;
+  ambiguous: boolean;
+  fallback: boolean;
+  alternatives: Array<{ intent: string; score: number }>;
+}
+
+export interface AgenticChatResponse {
+  id: string;
+  text: string;
+  metadata: Record<string, unknown>;
+  sources: Array<{ id: string; type: string; similarity?: number }>;
+  latency_ms: number;
+}
+
 export interface HealthResponse {
   status: string;
   groq_configured: boolean;
@@ -192,6 +203,71 @@ export interface HealthResponse {
 
 export interface AIServiceError {
   detail: string;
+}
+
+// ============ Workflow Types ============
+
+export interface WorkflowTemplateInfo {
+  template_id: string;
+  title: string;
+  description: string;
+  research_type: string;
+  estimated_minutes: number;
+  step_count: number;
+  steps: Array<Record<string, unknown>>;
+}
+
+export interface WorkflowPlanRequest {
+  goal: string;
+  group_id?: string;
+  user_id: string;
+  session_id?: string;
+  preferred_template?: string;
+}
+
+export interface WorkflowPlanResponse {
+  workflow_id: string;
+  template_id?: string;
+  title: string;
+  description: string;
+  research_type: string;
+  estimated_minutes: number;
+  steps: Array<Record<string, unknown>>;
+  status: string;
+}
+
+export interface WorkflowStartRequest {
+  workflow_id: string;
+  user_feedback?: string;
+}
+
+export interface WorkflowStepApprovalRequest {
+  workflow_id: string;
+  step_index: number;
+  approved: boolean;
+  feedback?: string;
+}
+
+export interface WorkflowStatusResponse {
+  workflow_id: string;
+  status: string;
+  current_step_index: number;
+  total_steps: number;
+  steps: Array<Record<string, unknown>>;
+  final_output?: Record<string, unknown>;
+}
+
+export interface WorkflowEvent {
+  type: string;
+  workflow_id?: string;
+  step_index?: number;
+  step_name?: string;
+  agent_type?: string;
+  content?: string;
+  message?: string;
+  error?: string;
+  result?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 /**
@@ -210,7 +286,7 @@ export function validateAiTrigger(content: string, fieldName: string = 'prompt')
 class AIClient {
   private timeout: number;
 
-  constructor(timeout: number = 30000) {
+  constructor(timeout: number = 300000) {
     this.timeout = timeout;
   }
 
@@ -234,7 +310,7 @@ class AIClient {
         signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
-          ...options.headers,
+          ...(options.headers || {}),
         },
       });
 
@@ -248,11 +324,11 @@ class AIClient {
       return response.json() as Promise<T>;
     } catch (error: unknown) {
       clearTimeout(timeoutId);
-      
+
       if (error instanceof Error && error.name === 'AbortError') {
         throw new Error('AI service request timed out');
       }
-      
+
       throw error;
     }
   }
@@ -279,46 +355,14 @@ class AIClient {
   }
 
   /**
-   * Legacy chat Q&A with session context
-   */
-  async chat(request: ChatRequest): Promise<ChatResponse> {
-    logger.info(`AI chat request for session: ${request.session_id || 'none'}`);
-    
-    const response = await this.request<ChatResponse>('/chat', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-
-    logger.info(`AI chat response in ${response.latency_ms}ms, ${response.context_messages_used} messages used`);
-    
-    return response;
-  }
-
-  /**
-   * Legacy summarize a session
-   */
-  async summarize(request: SummarizeRequest): Promise<SummaryResponse> {
-    logger.info(`AI summarize request for session: ${request.session_id}`);
-    
-    const response = await this.request<SummaryResponse>('/summarize', {
-      method: 'POST',
-      body: JSON.stringify(request),
-    });
-
-    logger.info(`AI summary generated in ${response.latency_ms}ms`);
-    
-    return response;
-  }
-
-  /**
    * Group AI Chat with @ai trigger (uses group-isolated RAG)
    */
   async groupAIChat(request: GroupAIChatRequest): Promise<GroupAIChatResponse> {
     // Validate @ai trigger
     validateAiTrigger(request.prompt);
-    
+
     logger.info(`Group AI chat for group: ${request.group_id}, session: ${request.session_id || 'none'}`);
-    
+
     const response = await this.request<GroupAIChatResponse>(
       `/groups/${request.group_id}/ai-chat`,
       {
@@ -328,8 +372,78 @@ class AIClient {
     );
 
     logger.info(`Group AI response in ${response.latency_ms}ms, ${response.sources.length} sources`);
-    
+
     return response;
+  }
+
+  /**
+   * Stream Group AI Chat tokens via NDJSON
+   * Yields objects: { token: string } or { done: true, latency_ms, sources, ... }
+   */
+  async *groupAIChatStream(
+    request: GroupAIChatRequest
+  ): AsyncGenerator<{ token?: string; done?: boolean; latency_ms?: number; sources?: Array<{ id: string; type: string; similarity?: number }>; model?: string; error?: string }> {
+    // Note: @ai trigger validation removed — explicit agent selection bypasses @ai requirement
+
+    logger.info(`Group AI chat stream for group: ${request.group_id}, session: ${request.session_id || 'none'}`);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/groups/${request.group_id}/ai-chat/stream`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(request),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Request failed' })) as { detail?: string };
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            yield data;
+          } catch {
+            // Ignore malformed chunks
+          }
+        }
+      }
+
+      // Process remaining buffer
+      if (buffer.trim()) {
+        try {
+          yield JSON.parse(buffer);
+        } catch {
+          // Ignore
+        }
+      }
+
+      clearTimeout(timeoutId);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
   }
 
   /**
@@ -338,16 +452,16 @@ class AIClient {
   async paperQuestion(request: PaperQuestionRequest): Promise<PaperAnswerResponse> {
     // Validate @ai trigger
     validateAiTrigger(request.question, 'question');
-    
+
     logger.info(`Paper Q&A for paper: ${request.paper_id}, group: ${request.group_id}`);
-    
+
     const response = await this.request<PaperAnswerResponse>('/papers/question', {
       method: 'POST',
       body: JSON.stringify(request),
     });
 
     logger.info(`Paper answer generated in ${response.latency_ms}ms`);
-    
+
     return response;
   }
 
@@ -358,16 +472,16 @@ class AIClient {
     // Ensure trigger is set
     const trigger = request.trigger || '@ai summarize';
     validateAiTrigger(trigger, 'trigger');
-    
+
     logger.info(`Paper summarize for paper: ${request.paper_id}, group: ${request.group_id}`);
-    
+
     const response = await this.request<PaperSummaryResponse>('/papers/summarize', {
       method: 'POST',
       body: JSON.stringify({ ...request, trigger }),
     });
 
     logger.info(`Paper summary generated in ${response.latency_ms}ms`);
-    
+
     return response;
   }
 
@@ -376,7 +490,7 @@ class AIClient {
    */
   async addPaperToGroup(request: AddPaperToGroupRequest): Promise<AddPaperResponse> {
     logger.info(`Adding paper ${request.paper_id} to group ${request.group_id}`);
-    
+
     const response = await this.request<AddPaperResponse>(
       `/groups/${request.group_id}/papers`,
       {
@@ -386,7 +500,7 @@ class AIClient {
     );
 
     logger.info(`Paper added with ${response.vectors_created} vectors`);
-    
+
     return response;
   }
 
@@ -395,26 +509,144 @@ class AIClient {
    */
   async searchVectors(request: VectorSearchRequest): Promise<VectorSearchResponse> {
     logger.info(`Vector search in group: ${request.group_id}`);
-    
+
     const response = await this.request<VectorSearchResponse>('/vectors/search', {
       method: 'POST',
       body: JSON.stringify(request),
     });
 
     logger.info(`Vector search returned ${response.total} results in ${response.latency_ms}ms`);
-    
+
     return response;
   }
 
   /**
-   * Get AI-powered recommendations for a group
-   * Note: This endpoint may not be implemented in AI service - fallback logic handles this
+   * Run an agentic research task (LangGraph orchestration)
    */
-  async getRecommendations(request: RecommendationsRequest): Promise<RecommendationsResponse> {
-    logger.info(`Getting recommendations for group: ${request.group_id}`);
-    
-    // AI service doesn't have this endpoint yet - throw to trigger fallback
-    throw new Error('AI recommendations endpoint not implemented');
+  async runAgenticTask(request: AgenticRunRequest): Promise<AgenticRunResponse> {
+    logger.info(`Agentic task: ${request.task_type}`);
+
+    const response = await this.request<AgenticRunResponse>('/agentic/run', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+
+    logger.info(`Agentic task completed in ${response.latency_ms}ms`);
+
+    return response;
+  }
+
+  /**
+   * Run an agentic research task and stream progress
+   */
+  async runAgenticTaskStream(
+    request: AgenticRunRequest,
+    onProgress: (message: string) => void,
+    onToken?: (token: string) => void
+  ): Promise<AgenticRunResponse> {
+    logger.info(`Agentic task stream: ${request.task_type}`);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/agentic/stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(request),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Request failed' })) as { detail?: string };
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let finalResult: AgenticRunResponse | null = null;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const data = JSON.parse(line);
+            if (data.type === 'progress') {
+              onProgress(data.message);
+            } else if (data.type === 'token') {
+              if (onToken && data.content) {
+                onToken(data.content);
+              }
+            } else if (data.type === 'complete') {
+              finalResult = data as unknown as AgenticRunResponse;
+            } else if (data.type === 'error') {
+              throw new Error(data.error || 'AI service returned an error');
+            }
+          } catch (e) {
+            // Re-throw intentional errors (from error events), only ignore JSON parse errors
+            if (e instanceof SyntaxError) {
+              // Ignore parse errors for incomplete chunks
+              continue;
+            }
+            throw e;
+          }
+        }
+      }
+
+      clearTimeout(timeoutId);
+
+      if (!finalResult) {
+        throw new Error('Stream ended without complete event');
+      }
+
+      logger.info(`Agentic task stream completed in ${finalResult.latency_ms}ms`);
+      return finalResult;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
+  }
+
+  /**
+   * Classify an @ai prompt into an agentic task using embeddings
+   */
+  async classifyAgenticIntent(request: IntentClassifyRequest): Promise<IntentClassifyResponse> {
+    validateAiTrigger(request.prompt, 'prompt');
+
+    const response = await this.request<IntentClassifyResponse>('/agentic/classify-intent', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+
+    return response;
+  }
+
+  /**
+   * Classify intent with ambiguity detection and alternatives
+   */
+  async classifyAgenticIntentDetailed(request: IntentClassifyRequest): Promise<IntentClassifyDetailedResponse> {
+    // Note: @ai trigger validation removed — explicit agent selection bypasses @ai requirement
+
+    const response = await this.request<IntentClassifyDetailedResponse>('/agentic/classify-intent-detailed', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+
+    return response;
   }
 
   /**
@@ -424,9 +656,9 @@ class AIClient {
     if (request.prompt) {
       validateAiTrigger(request.prompt);
     }
-    
+
     logger.info(`Generating report for group: ${request.group_id}`);
-    
+
     const response = await this.request<ReportResponse>(
       `/reports/group/${request.group_id}/generate`,
       {
@@ -436,8 +668,171 @@ class AIClient {
     );
 
     logger.info(`Report generated: ${response.filename} (${response.file_size} bytes)`);
-    
+
     return response;
+  }
+
+  /**
+   * Build a citation relationship graph
+   */
+  async buildCitationGraph(request: { query: string; group_id?: string }): Promise<{
+    graph: { nodes: any[]; edges: any[] };
+    source_count: number;
+  }> {
+    logger.info('Building citation graph');
+    const response = await this.request<{ graph: { nodes: any[]; edges: any[] }; source_count: number }>(
+      '/citation-graph/build',
+      {
+        method: 'POST',
+        body: JSON.stringify(request),
+      }
+    );
+    return response;
+  }
+
+  // ============ Workflow Methods ============
+
+  /**
+   * List available workflow templates
+   */
+  async listWorkflowTemplates(): Promise<WorkflowTemplateInfo[]> {
+    return this.request<WorkflowTemplateInfo[]>('/workflows/templates');
+  }
+
+  /**
+   * Plan a research workflow from a goal
+   */
+  async planWorkflow(request: WorkflowPlanRequest): Promise<WorkflowPlanResponse> {
+    logger.info(`Planning workflow for group: ${request.group_id}, goal: ${request.goal.slice(0, 80)}...`);
+    return this.request<WorkflowPlanResponse>('/workflows/plan', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  }
+
+  /**
+   * Start an approved workflow — returns NDJSON stream.
+   * Calls onEvent for each workflow event.
+   */
+  async startWorkflowStream(
+    request: WorkflowStartRequest,
+    onEvent: (event: WorkflowEvent) => void,
+  ): Promise<void> {
+    logger.info(`Starting workflow stream: ${request.workflow_id}`);
+    await this._streamWorkflowRequest('/workflows/start', request, onEvent);
+  }
+
+  /**
+   * Approve a workflow checkpoint step and resume — returns NDJSON stream.
+   */
+  async approveWorkflowStepStream(
+    request: WorkflowStepApprovalRequest,
+    onEvent: (event: WorkflowEvent) => void,
+  ): Promise<void> {
+    if (!request.approved) {
+      // Non-streaming rejection
+      const result = await this.request<{ status: string; message: string }>('/workflows/approve-step', {
+        method: 'POST',
+        body: JSON.stringify(request),
+      });
+      onEvent({ type: 'workflow:step:rejected', workflow_id: request.workflow_id, ...result });
+      return;
+    }
+    logger.info(`Approving step ${request.step_index} for workflow: ${request.workflow_id}`);
+    await this._streamWorkflowRequest('/workflows/approve-step', request, onEvent);
+  }
+
+  /**
+   * Cancel a workflow
+   */
+  async cancelWorkflow(workflowId: string): Promise<{ status: string; workflow_id: string }> {
+    return this.request<{ status: string; workflow_id: string }>('/workflows/cancel', {
+      method: 'POST',
+      body: JSON.stringify({ workflow_id: workflowId }),
+    });
+  }
+
+  /**
+   * Get workflow status and steps
+   */
+  async getWorkflowStatus(workflowId: string): Promise<WorkflowStatusResponse> {
+    return this.request<WorkflowStatusResponse>(`/workflows/${workflowId}/status`);
+  }
+
+  /**
+   * List workflows for a group
+   */
+  async listGroupWorkflows(groupId: string, limit = 20): Promise<{ workflows: any[]; total: number }> {
+    return this.request<{ workflows: any[]; total: number }>(
+      `/workflows/group/${groupId}?limit=${limit}`
+    );
+  }
+
+  /**
+   * Internal helper: stream a workflow NDJSON endpoint and dispatch events.
+   */
+  private async _streamWorkflowRequest(
+    endpoint: string,
+    body: WorkflowStartRequest | WorkflowStepApprovalRequest,
+    onEvent: (event: WorkflowEvent) => void,
+  ): Promise<void> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Request failed' })) as { detail?: string };
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
+      }
+
+      if (!response.body) {
+        throw new Error('No response body for workflow stream');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (!line.trim()) continue;
+          try {
+            const event = JSON.parse(line) as WorkflowEvent;
+            onEvent(event);
+          } catch {
+            // Ignore malformed lines
+          }
+        }
+      }
+
+      // Remaining buffer
+      if (buffer.trim()) {
+        try {
+          onEvent(JSON.parse(buffer) as WorkflowEvent);
+        } catch {
+          // Ignore
+        }
+      }
+
+      clearTimeout(timeoutId);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw error;
+    }
   }
 
   /**
@@ -448,36 +843,22 @@ class AIClient {
     sessionId: string,
     userId: string,
     groupId?: string
-  ): Promise<GroupAIChatResponse | ChatResponse | null> {
+  ): Promise<GroupAIChatResponse | null> {
     // Check if message contains @ai
     const trimmed = content.trim();
     if (!trimmed.toLowerCase().includes('@ai')) {
       return null;
     }
 
-    // If groupId is provided, use group AI chat (with RAG)
-    if (groupId) {
-      return this.groupAIChat({
-        prompt: content,
-        group_id: groupId,
-        session_id: sessionId,
-        user_id: userId,
-      });
+    if (!groupId) {
+      throw new Error('AI chat is only supported within research groups');
     }
 
-    // Fallback to legacy chat
-    const question = trimmed.replace(/@ai/gi, '').trim();
-    
-    if (!question) {
-      throw new Error('Please provide a question after @ai');
-    }
-
-    return this.chat({
-      question,
+    return this.groupAIChat({
+      prompt: content,
+      group_id: groupId,
       session_id: sessionId,
       user_id: userId,
-      include_papers: true,
-      max_context_messages: 30,
     });
   }
 }

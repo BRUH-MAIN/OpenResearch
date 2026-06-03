@@ -1,0 +1,27 @@
+{
+  "name": "openresearch",
+  "private": true,
+  "description": "AI-powered collaborative research platform",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && npm run dev",
+    "dev:client": "cd client && npm run dev",
+    "test": "npm run test:server && npm run test:client && npm run test:ai",
+    "test:server": "cd server && npm test",
+    "test:client": "cd client && npm test",
+    "test:ai": "cd ai-service && python -m pytest",
+    "lint": "npm run lint:client",
+    "lint:client": "cd client && npm run lint",
+    "docker:up": "docker compose up -d --build",
+    "docker:dev:up": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d --build",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f",
+    "deploy:test": "powershell -ExecutionPolicy Bypass -File ./scripts/start-multiuser-chat.ps1 -Seed"
+  },
+  "dependencies": {
+    "playwright": "^1.58.2"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  }
+}

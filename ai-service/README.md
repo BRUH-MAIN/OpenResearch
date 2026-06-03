@@ -1,13 +1,13 @@
 # OpenResearch AI Service
 
-FastAPI service providing AI-powered features for OpenResearch using Groq (Llama 3.3 70B) for chat and OpenAI for embeddings. Implements group-isolated RAG (Retrieval-Augmented Generation) with pgvector for semantic search.
+FastAPI service providing AI-powered features for OpenResearch using Groq (Llama 3.3 70B) for chat and SPECTER2 for local embeddings. Implements group-isolated RAG (Retrieval-Augmented Generation) with pgvector for semantic search.
 
 ## 🎯 Features
 
 - **Group AI Chat** - Answer questions with group-isolated RAG context (all group papers + discussions)
 - **Paper Q&A** - Answer specific questions about papers in a group's collection
 - **Paper Summarization** - Generate summaries with key points extraction
-- **Semantic Search** - pgvector-powered semantic similarity search across group papers (1536-dim embeddings)
+- **Semantic Search** - pgvector-powered semantic similarity search across group papers (768-dim embeddings)
 - **Group-Isolated Context** - Each group has completely isolated vector space and context (no data leakage)
 - **PDF Report Generation** - Generate research activity reports with ReportLab
 - **Health Checks** - Monitor service and dependency status
@@ -55,7 +55,7 @@ FastAPI service providing AI-powered features for OpenResearch using Groq (Llama
 **Key Technologies:**
 - **FastAPI** - Modern async web framework with automatic OpenAPI docs
 - **Groq** - Fast LLM inference (Llama 3.3 70B)
-- **OpenAI** - Embeddings service (1536-dimensional vectors)
+- **SPECTER2** - Local embedding model (768-dimensional vectors)
 - **PostgreSQL 16** - Database with pgvector extension
 - **SQLAlchemy** - Async ORM for database operations
 - **ReportLab** - PDF generation
@@ -88,22 +88,18 @@ nano .env  # Edit required variables
 **Required variables:**
 - `GROQ_API_KEY` - Get from [Groq Console](https://console.groq.com/keys)
 - `DATABASE_URL` - PostgreSQL connection string (same as server)
-- `OPENAI_API_KEY` - Get from [OpenAI API Keys](https://platform.openai.com/api-keys)
 
 **Optional variables:**
 - `GROQ_MODEL` - Default: `llama-3.3-70b-versatile`
-- `EMBEDDING_MODEL` - Default: `text-embedding-3-small`
-- `EMBEDDING_DIMENSIONS` - Default: `1536`
 - `DEBUG` - Default: `false`
+
+> **Note:** Embeddings use the local SPECTER2 model (768-dim) — no OpenAI API key is needed.
 
 **Example `.env`:**
 ```env
 GROQ_API_KEY=gsk_your_key_here
-OPENAI_API_KEY=sk-your_key_here
 DATABASE_URL=postgresql://postgres:password@localhost:5432/openresearch
 GROQ_MODEL=llama-3.3-70b-versatile
-EMBEDDING_MODEL=text-embedding-3-small
-EMBEDDING_DIMENSIONS=1536
 DEBUG=false
 MAX_CONTEXT_MESSAGES=50
 MAX_CONTEXT_TOKENS=8000
@@ -308,7 +304,7 @@ ai-service/
 │   ├── config.py           # Settings & environment variables
 │   ├── database.py         # Async SQLAlchemy connection (PostgreSQL + pgvector)
 │   ├── groq_client.py      # Groq SDK wrapper for LLM calls
-│   ├── embeddings.py       # OpenAI embeddings service (1536-dim)
+│   ├── embeddings.py       # SPECTER2 embeddings service (768-dim, local)
 │   ├── vector_store.py     # pgvector operations (search, insert, update)
 │   ├── report_generator.py # PDF generation with ReportLab
 │   └── models.py           # Pydantic request/response models
@@ -333,7 +329,10 @@ tests/
 - `fastapi` 0.104+ - Modern async web framework
 - `uvicorn[standard]` 0.24+ - ASGI application server
 - `groq` - Groq SDK for LLM inference (Llama 3.3)
-- `openai` 1.0+ - OpenAI SDK for embeddings
+- `sentence-transformers` - Local embeddings (SPECTER2/SPECTER)
+- `torch` - Model runtime (CPU wheels supported)
+- `transformers` - Model loading utilities
+- `peft` - Required for SPECTER2 adapters
 - `sqlalchemy[asyncio]` 2.0+ - Async ORM for database
 - `asyncpg` 0.29+ - PostgreSQL async driver
 - `psycopg2-binary` - PostgreSQL interface
@@ -354,11 +353,8 @@ tests/
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
 | `GROQ_API_KEY` | **Yes** | - | Groq API key from console |
-| `OPENAI_API_KEY` | **Yes** | - | OpenAI API key for embeddings |
 | `DATABASE_URL` | **Yes** | - | PostgreSQL connection string (same as server) |
 | `GROQ_MODEL` | No | `llama-3.3-70b-versatile` | Groq model ID to use |
-| `EMBEDDING_MODEL` | No | `text-embedding-3-small` | OpenAI embedding model |
-| `EMBEDDING_DIMENSIONS` | No | `1536` | Embedding vector dimensions |
 | `DEBUG` | No | `false` | Enable debug logging |
 | `MAX_CONTEXT_MESSAGES` | No | `50` | Max messages to include in context |
 | `MAX_CONTEXT_TOKENS` | No | `8000` | Max tokens for context window |
@@ -376,7 +372,6 @@ docker build -t openresearch-ai:latest .
 # Run container
 docker run -p 8000:8000 \
   -e GROQ_API_KEY="your-key" \
-  -e OPENAI_API_KEY="your-key" \
   -e DATABASE_URL="postgresql://..." \
   openresearch-ai:latest
 ```
@@ -400,11 +395,8 @@ Ensure all required environment variables are set:
 
 ```bash
 export GROQ_API_KEY=your-production-key
-export OPENAI_API_KEY=your-production-key
 export DATABASE_URL=postgresql://user:pass@host:5432/openresearch
 export GROQ_MODEL=llama-3.3-70b-versatile
-export EMBEDDING_MODEL=text-embedding-3-small
-export EMBEDDING_DIMENSIONS=1536
 export DEBUG=false
 ```
 
@@ -493,7 +485,7 @@ pytest -s
 ### Test Files
 
 - `test_main.py` - API endpoint tests (health, chat, summarize, etc.)
-- `test_embeddings.py` - Embedding generation and OpenAI API tests
+- `test_embeddings.py` - Embedding generation and SPECTER2 tests
 - `test_vector_store.py` - pgvector operations (search, insert, update)
 - `test_report_generator.py` - PDF report generation tests
 

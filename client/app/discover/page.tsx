@@ -2,17 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/layout';
-import { Button, Card, CardBody, CardHeader, Badge, Input } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, Badge } from '@/components/ui';
 import {
   Search,
   Loader2,
-  TrendingUp,
-  Sparkles,
   BookOpen,
   ExternalLink,
   Plus,
   Users,
-  Filter,
+  Sparkles,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { api, Paper, PaperRecommendation, Group } from '@/lib/api';
@@ -21,9 +19,6 @@ import Link from 'next/link';
 
 export default function DiscoverPage() {
   const { accessToken } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<'trending' | 'forYou' | 'forGroup'>('trending');
-  const [trendingPapers, setTrendingPapers] = useState<Array<Paper & { trendScore: number; groupCount?: number; reason: string }>>([]);
-  const [personalRecommendations, setPersonalRecommendations] = useState<PaperRecommendation[]>([]);
   const [groupRecommendations, setGroupRecommendations] = useState<PaperRecommendation[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string>('');
@@ -33,35 +28,15 @@ export default function DiscoverPage() {
 
   useEffect(() => {
     if (accessToken) {
-      loadTrending();
       loadGroups();
     }
   }, [accessToken]);
 
   useEffect(() => {
-    if (activeTab === 'forYou' && personalRecommendations.length === 0) {
-      loadPersonalRecommendations();
-    }
-  }, [activeTab]);
-
-  useEffect(() => {
-    if (activeTab === 'forGroup' && selectedGroupId) {
+    if (selectedGroupId) {
       loadGroupRecommendations(selectedGroupId);
     }
-  }, [activeTab, selectedGroupId]);
-
-  const loadTrending = async () => {
-    if (!accessToken) return;
-    try {
-      setIsLoading(true);
-      const response = await api.getTrendingPapers(accessToken);
-      setTrendingPapers(response.trending);
-    } catch (err) {
-      toast.error('Failed to load trending papers');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [selectedGroupId]);
 
   const loadGroups = async () => {
     if (!accessToken) return;
@@ -71,21 +46,7 @@ export default function DiscoverPage() {
       if (groupsData.length > 0 && !selectedGroupId) {
         setSelectedGroupId(groupsData[0].id);
       }
-    } catch (err) {
-      console.error('Failed to load groups:', err);
-    }
-  };
-
-  const loadPersonalRecommendations = async () => {
-    if (!accessToken) return;
-    try {
-      setIsLoading(true);
-      const response = await api.getRecommendationsForUser(accessToken, 20);
-      setPersonalRecommendations(response.recommendations);
-    } catch (err) {
-      toast.error('Failed to load recommendations');
-    } finally {
-      setIsLoading(false);
+    } catch {
     }
   };
 
@@ -127,16 +88,11 @@ export default function DiscoverPage() {
     );
   };
 
-  const currentPapers =
-    activeTab === 'trending'
-      ? filteredPapers(trendingPapers)
-      : activeTab === 'forYou'
-      ? filteredPapers(personalRecommendations)
-      : filteredPapers(groupRecommendations);
+  const currentPapers = filteredPapers(groupRecommendations);
 
   if (!accessToken) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-white">
+      <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
           <h1 className="text-2xl font-bold mb-4">Sign in to discover papers</h1>
@@ -149,7 +105,7 @@ export default function DiscoverPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white">
+    <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
       <Navbar />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
@@ -160,76 +116,40 @@ export default function DiscoverPage() {
             </div>
             Discover Papers
           </h1>
-          <p className="text-[#71717a]">
+          <p className="text-[var(--color-text-secondary)]">
             Find relevant research papers recommended by AI based on your interests and group context
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6">
-          <button
-            onClick={() => setActiveTab('trending')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
-              activeTab === 'trending'
-                ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                : 'bg-[#1a1a1a] text-[#a1a1aa] hover:bg-[#242424] hover:text-white border border-[#2a2a2a]'
-            }`}
-          >
-            <TrendingUp className="w-4 h-4" />
-            Trending
-          </button>
-          <button
-            onClick={() => setActiveTab('forYou')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
-              activeTab === 'forYou'
-                ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                : 'bg-[#1a1a1a] text-[#a1a1aa] hover:bg-[#242424] hover:text-white border border-[#2a2a2a]'
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            For You
-          </button>
-          <button
-            onClick={() => setActiveTab('forGroup')}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
-              activeTab === 'forGroup'
-                ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
-                : 'bg-[#1a1a1a] text-[#a1a1aa] hover:bg-[#242424] hover:text-white border border-[#2a2a2a]'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            For Group
-          </button>
-        </div>
-
-        {/* Group Selector (for group tab) */}
-        {activeTab === 'forGroup' && (
-          <div className="mb-6 flex gap-4 items-center">
-            <Filter className="w-5 h-5 text-[#71717a]" />
-            <select
-              value={selectedGroupId}
-              onChange={(e) => setSelectedGroupId(e.target.value)}
-              className="bg-[#1a1a1a] text-white border border-[#2a2a2a] rounded-xl px-4 py-2.5 focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[#3a3a3a]"
-            >
-              {groups.map((g) => (
-                <option key={g.id} value={g.id}>
-                  {g.name}
-                </option>
-              ))}
-            </select>
+        {/* Group Selector */}
+        <div className="mb-6 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center">
+          <div className="flex items-center gap-3">
+            <Users className="w-5 h-5 text-[#14FFEC]" />
+            <span className="text-sm font-medium text-[var(--color-text-secondary)]">Recommendation context</span>
           </div>
-        )}
+          <select
+            value={selectedGroupId}
+            onChange={(e) => setSelectedGroupId(e.target.value)}
+            className="w-full sm:w-auto sm:min-w-[18rem] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
+          >
+            {groups.map((g) => (
+              <option key={g.id} value={g.id}>
+                {g.name}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Search */}
         <div className="mb-6">
-          <div className="relative max-w-md">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#52525b] w-5 h-5" />
+          <div className="relative max-w-md w-full">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[var(--color-text-tertiary)] w-5 h-5" />
             <input
               type="text"
               placeholder="Search papers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl text-white placeholder-[#52525b] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[#3a3a3a]"
+              className="w-full pl-12 pr-4 py-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
             />
           </div>
         </div>
@@ -238,17 +158,17 @@ export default function DiscoverPage() {
         {isLoading ? (
           <div className="flex flex-col justify-center items-center py-20">
             <Loader2 className="w-10 h-10 animate-spin text-[#14FFEC] mb-4" />
-            <p className="text-[#71717a] text-sm">Loading papers...</p>
+            <p className="text-[var(--color-text-secondary)] text-sm">Loading papers...</p>
           </div>
         ) : currentPapers.length === 0 ? (
           <div className="flex flex-col items-center py-16">
-            <div className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center mb-6">
-              <BookOpen className="w-8 h-8 text-[#52525b]" />
+            <div className="w-16 h-16 rounded-2xl bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] flex items-center justify-center mb-6">
+              <BookOpen className="w-8 h-8 text-[var(--color-text-tertiary)]" />
             </div>
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">
               {searchQuery ? 'No papers found' : 'No recommendations yet'}
             </h3>
-            <p className="text-[#71717a] text-center max-w-sm">
+            <p className="text-[var(--color-text-secondary)] text-center max-w-sm">
               {searchQuery ? 'Try adjusting your search query' : 'Check back later for personalized recommendations'}
             </p>
           </div>
@@ -281,20 +201,20 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
   const [showGroupMenu, setShowGroupMenu] = useState(false);
 
   return (
-    <Card hover>
+    <Card hover className="h-full">
       <CardHeader>
         <div className="flex justify-between items-start gap-2">
-          <h3 className="font-semibold text-white line-clamp-2">{paper.title}</h3>
+          <h3 className="font-semibold text-[var(--color-text-primary)] line-clamp-2">{paper.title}</h3>
           {(paper.score || paper.trendScore) && (
             <Badge variant="primary" className="shrink-0">
               {Math.round((paper.score || paper.trendScore || 0) * 100)}%
             </Badge>
           )}
         </div>
-        <p className="text-sm text-[#71717a] mt-1">{paper.authors.slice(0, 3).join(', ')}</p>
+        <p className="text-sm text-[var(--color-text-tertiary)] mt-1">{paper.authors.slice(0, 3).join(', ')}</p>
       </CardHeader>
-      <CardBody className="pt-0">
-        <p className="text-sm text-[#a1a1aa] line-clamp-3 mb-3">{paper.abstract}</p>
+      <CardBody className="pt-0 flex h-full flex-col">
+        <p className="text-sm text-[var(--color-text-secondary)] line-clamp-3 mb-3">{paper.abstract}</p>
 
         {/* Tags */}
         <div className="flex flex-wrap gap-1 mb-3">
@@ -316,22 +236,23 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
         )}
 
         {/* Actions */}
-        <div className="flex gap-2 mt-auto">
+        <div className="mt-auto flex flex-col gap-2 sm:flex-row sm:items-center">
           {paper.url && (
-            <a href={paper.url} target="_blank" rel="noopener noreferrer">
-              <Button size="sm" variant="outline">
+            <a href={paper.url} target="_blank" rel="noopener noreferrer" className="w-full sm:w-auto">
+              <Button size="sm" variant="outline" className="w-full justify-center">
                 <ExternalLink className="w-3 h-3 mr-1" />
                 View
               </Button>
             </a>
           )}
 
-          <div className="relative">
+          <div className="relative w-full sm:w-auto">
             <Button
               size="sm"
               variant="secondary"
               onClick={() => setShowGroupMenu(!showGroupMenu)}
               disabled={isAdding || groups.length === 0}
+              className="w-full justify-center"
             >
               {isAdding ? (
                 <Loader2 className="w-3 h-3 animate-spin mr-1" />
@@ -342,7 +263,7 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
             </Button>
 
             {showGroupMenu && (
-              <div className="absolute bottom-full left-0 mb-2 bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl shadow-xl py-2 min-w-[150px] z-10">
+              <div className="absolute bottom-full left-0 right-0 mb-2 sm:right-auto bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-xl shadow-xl py-2 min-w-[150px] z-10">
                 {groups.map((group) => (
                   <button
                     key={group.id}
@@ -350,7 +271,7 @@ function PaperCard({ paper, groups, onAddToGroup, isAdding }: PaperCardProps) {
                       onAddToGroup(paper.id, group.id);
                       setShowGroupMenu(false);
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-[#e4e4e7] hover:bg-[#242424] transition-colors"
+                    className="block w-full text-left px-4 py-2 text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] transition-colors"
                   >
                     {group.name}
                   </button>

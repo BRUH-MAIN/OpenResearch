@@ -27,7 +27,7 @@ ENV NODE_ENV=production
 EXPOSE 3001
 
 # Prepare entrypoint script
-RUN chmod +x docker-entrypoint.sh
+RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh
 
 # Run the application with migrations
 ENTRYPOINT ["./docker-entrypoint.sh"]

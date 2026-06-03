@@ -1,0 +1,50 @@
+services:
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      WATCHPACK_POLLING: "true"
+      CHOKIDAR_USEPOLLING: "true"
+      NODE_OPTIONS: "--max-old-space-size=2048"
+    command: npm run dev -- --webpack -H 0.0.0.0 -p 3000
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+    volumes:
+      - ./client:/app
+      - client_node_modules:/app/node_modules
+      - client_next_cache:/app/.next
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.dev
+    environment:
+      NODE_ENV: development
+      CHOKIDAR_USEPOLLING: "true"
+    entrypoint: []
+    command: npm run dev
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+    volumes:
+      - ./server:/app
+      - server_node_modules:/app/node_modules
+
+  ai-service:
+    environment:
+      DEBUG: "true"
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONUNBUFFERED: "1"
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload --reload-dir /app/app
+    volumes:
+      - ./ai-service:/app
+
+volumes:
+  client_node_modules:
+  client_next_cache:
+  server_node_modules:

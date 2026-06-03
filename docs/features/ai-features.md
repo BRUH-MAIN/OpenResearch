@@ -325,10 +325,8 @@ AI_SERVICE_URL=http://ai-service:8000
 ### AI Service Environment Variables
 ```env
 GROQ_API_KEY=your-groq-api-key
-OPENAI_API_KEY=your-openai-api-key-for-embeddings
 DATABASE_URL=postgresql://...
 GROQ_MODEL=llama-3.3-70b-versatile
-EMBEDDING_MODEL=text-embedding-3-small
-EMBEDDING_DIMENSIONS=1536
+# Embeddings use local SPECTER2 model (768-dim) — no API key needed
 DEBUG=false
 ```

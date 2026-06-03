@@ -13,7 +13,7 @@ services:
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,12 +40,12 @@ services:
       NODE_ENV: production
       PORT: 3001
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/openresearch
-      CLIENT_URL: http://localhost:3000
+      CLIENT_URL: http://${PUBLIC_HOST:-localhost}:3000
       AI_SERVICE_URL: http://ai-service:8000
     ports:
       - "3001:3001"
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health"]
+      test: [ "CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3001/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -62,6 +62,8 @@ services:
     build:
       context: ./ai-service
       dockerfile: Dockerfile
+      args:
+        - HF_TOKEN=${HF_TOKEN:-}
     container_name: openresearch-ai
     restart: unless-stopped
     depends_on:
@@ -73,14 +75,19 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/openresearch
       SERVER_URL: http://server:3001
       DEBUG: "false"
+      HF_TOKEN: ${HF_TOKEN:-}
+      TAVILY_API_KEY: ${TAVILY_API_KEY:-}
+      ALLOWED_ORIGINS: http://${PUBLIC_HOST:-localhost}:3000,http://${PUBLIC_HOST:-localhost}:3001,http://localhost:3000,http://localhost:3001,http://localhost:3002,http://localhost:3003
     ports:
       - "8000:8000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 30s
+      start_period: 300s
+    dns:
+      - 8.8.8.8
     networks:
       - openresearch-network
     extra_hosts:
@@ -96,9 +103,9 @@ services:
       context: ./client
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=http://localhost:3001
-        - NEXT_PUBLIC_WS_URL=ws://localhost:3001
-        - NEXT_PUBLIC_AI_URL=http://localhost:8000
+        - NEXT_PUBLIC_API_URL=http://${PUBLIC_HOST:-localhost}:3001
+        - NEXT_PUBLIC_WS_URL=ws://${PUBLIC_HOST:-localhost}:3001
+        - NEXT_PUBLIC_AI_URL=http://${PUBLIC_HOST:-localhost}:8000
     container_name: openresearch-client
     restart: unless-stopped
     depends_on:
@@ -106,13 +113,13 @@ services:
         condition: service_healthy
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_API_URL: http://localhost:3001
-      NEXT_PUBLIC_WS_URL: ws://localhost:3001
-      NEXT_PUBLIC_AI_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: http://${PUBLIC_HOST:-localhost}:3001
+      NEXT_PUBLIC_WS_URL: ws://${PUBLIC_HOST:-localhost}:3001
+      NEXT_PUBLIC_AI_URL: http://${PUBLIC_HOST:-localhost}:8000
     ports:
       - "3000:3000"
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: [ "CMD", "curl", "-f", "http://localhost:3000" ]
       interval: 30s
       timeout: 10s
       retries: 3

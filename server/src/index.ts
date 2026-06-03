@@ -27,7 +27,12 @@ import recommendationsRoutes from './routes/recommendations.js';
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { apiLimiter } from './middleware/rateLimiter.js';
+import { correlationId } from './middleware/correlationId.js';
 import { initializeSocket } from './socket/index.js';
+
+// Swagger / OpenAPI
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger.js';
 
 // Utils
 import logger from './utils/logger.js';
@@ -53,13 +58,24 @@ app.use(helmet({
 }));
 
 // CORS configuration
+const allowedHttpOrigins = [
+  'http://localhost:3000',
+  'http://localhost:3002',
+  'http://localhost:3003',
+  process.env.CLIENT_URL || 'http://localhost:3000',
+].filter(Boolean);
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:3002',
-    'http://localhost:3003',
-    process.env.CLIENT_URL || 'http://localhost:3000',
-  ].filter(Boolean),
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedHttpOrigins.includes(origin)) return callback(null, true);
+    try {
+      const clientHost = new URL(process.env.CLIENT_URL || 'http://localhost:3000').hostname;
+      const reqHost = new URL(origin).hostname;
+      if (reqHost === clientHost) return callback(null, true);
+    } catch { /* invalid URL, fall through */ }
+    callback(new Error(`CORS origin not allowed: ${origin}`));
+  },
   credentials: true,
 }));
 
@@ -75,11 +91,20 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(cookieParser());
 
+// Correlation ID for cross-service tracing
+app.use(correlationId);
+
 // Apply rate limiting to API routes
 app.use('/api', apiLimiter);
 
 // Health check routes (no rate limiting)
 app.use('/health', healthRoutes);
+
+// Swagger UI (no rate limiting)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'OpenResearch API Docs',
+}));
 
 // API Routes
 app.use('/api/auth', authRoutes);

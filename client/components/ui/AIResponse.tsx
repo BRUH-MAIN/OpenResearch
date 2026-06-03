@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { Sparkles, AlertCircle } from 'lucide-react';
 import { LoadingSpinner } from './LoadingState';
 
 interface AIResponseProps {
@@ -21,26 +21,6 @@ interface AIResponseProps {
   className?: string;
 }
 
-/**
- * AIResponse - Consistent AI-generated content display
- * 
- * Design system:
- * - Container: #1a1a1a with teal left border
- * - AI badge: #14FFEC sparkle icon
- * - Loading: Teal spinner with pulsing animation
- * - Error: Red accent
- * 
- * Usage:
- * ```tsx
- * <AIResponse state="loading" loadingMessage="Analyzing paper..." />
- * 
- * <AIResponse state="success" title="AI Summary">
- *   <p>This paper discusses...</p>
- * </AIResponse>
- * 
- * <AIResponse state="error" errorMessage="Failed to generate response" />
- * ```
- */
 export function AIResponse({
   children,
   state = 'success',
@@ -54,15 +34,15 @@ export function AIResponse({
   if (state === 'loading') {
     return (
       <div
-        className={`
-          bg-[#1a1a1a] border-l-4 border-[#14FFEC] rounded-r-lg p-4
-          animate-pulse
-          ${className}
-        `}
+        className={`border-l-4 rounded-r-lg p-4 animate-pulse ${className}`}
+        style={{
+          background: 'var(--color-bg-secondary)',
+          borderColor: 'var(--color-brand-secondary)',
+        }}
       >
         <div className="flex items-center gap-3">
           <LoadingSpinner size="sm" />
-          <span className="text-[#a0a0a0]">{loadingMessage}</span>
+          <span style={{ color: 'var(--color-text-secondary)' }}>{loadingMessage}</span>
         </div>
       </div>
     );
@@ -72,14 +52,15 @@ export function AIResponse({
   if (state === 'error') {
     return (
       <div
-        className={`
-          bg-[#1a1a1a] border-l-4 border-red-500 rounded-r-lg p-4
-          ${className}
-        `}
+        className={`border-l-4 rounded-r-lg p-4 ${className}`}
+        style={{
+          background: 'var(--color-bg-secondary)',
+          borderColor: 'var(--color-error)',
+        }}
       >
         <div className="flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0" />
-          <span className="text-red-400">{errorMessage}</span>
+          <AlertCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--color-error)' }} />
+          <span style={{ color: 'var(--color-error)' }}>{errorMessage}</span>
         </div>
       </div>
     );
@@ -88,46 +69,49 @@ export function AIResponse({
   // Success state
   return (
     <div
-      className={`
-        bg-[#1a1a1a] border-l-4 border-[#14FFEC] rounded-r-lg p-4
-        ${className}
-      `}
+      className={`border-l-4 rounded-r-lg p-4 ${className}`}
+      style={{
+        background: 'var(--color-bg-secondary)',
+        borderColor: 'var(--color-brand-secondary)',
+      }}
     >
       {/* Header with AI badge */}
       {(showBadge || title) && (
         <div className="flex items-center gap-2 mb-3">
           {showBadge && (
-            <div className="flex items-center gap-1.5 px-2 py-1 bg-[#14FFEC]/10 rounded-full">
-              <Sparkles className="w-3.5 h-3.5 text-[#14FFEC]" />
-              <span className="text-xs font-medium text-[#14FFEC]">AI</span>
+            <div
+              className="flex items-center gap-1.5 px-2 py-1 rounded-full"
+              style={{ background: 'rgba(20, 255, 236, 0.1)' }}
+            >
+              <Sparkles className="w-3.5 h-3.5" style={{ color: 'var(--color-brand-secondary)' }} />
+              <span className="text-xs font-medium" style={{ color: 'var(--color-brand-secondary)' }}>AI</span>
             </div>
           )}
           {title && (
-            <span className="text-sm font-medium text-white">{title}</span>
+            <span className="text-sm font-medium" style={{ color: 'var(--color-text-primary)' }}>{title}</span>
           )}
         </div>
       )}
 
       {/* Content */}
-      <div className="text-[#e0e0e0] text-sm leading-relaxed prose prose-invert prose-sm max-w-none">
+      <div
+        className="text-sm leading-relaxed prose prose-sm max-w-none"
+        style={{ color: 'var(--color-text-primary)' }}
+      >
         {children}
       </div>
     </div>
   );
 }
 
-/**
- * AIBadge - Small inline AI indicator
- * For use in cards, list items, etc.
- */
 export function AIBadge({ className = '' }: { className?: string }) {
   return (
     <span
-      className={`
-        inline-flex items-center gap-1 px-1.5 py-0.5 
-        bg-[#14FFEC]/10 rounded text-[#14FFEC]
-        ${className}
-      `}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded ${className}`}
+      style={{
+        background: 'rgba(20, 255, 236, 0.1)',
+        color: 'var(--color-brand-secondary)',
+      }}
     >
       <Sparkles className="w-3 h-3" />
       <span className="text-xs font-medium">AI</span>
@@ -135,16 +119,21 @@ export function AIBadge({ className = '' }: { className?: string }) {
   );
 }
 
-/**
- * AITypingIndicator - Animated typing dots
- * Shows AI is actively generating content
- */
 export function AITypingIndicator({ className = '' }: { className?: string }) {
   return (
     <div className={`flex items-center gap-1 ${className}`}>
-      <span className="w-2 h-2 bg-[#14FFEC] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-      <span className="w-2 h-2 bg-[#14FFEC] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-      <span className="w-2 h-2 bg-[#14FFEC] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+      <span
+        className="w-2 h-2 rounded-full animate-bounce"
+        style={{ background: 'var(--color-brand-secondary)', animationDelay: '0ms' }}
+      />
+      <span
+        className="w-2 h-2 rounded-full animate-bounce"
+        style={{ background: 'var(--color-brand-secondary)', animationDelay: '150ms' }}
+      />
+      <span
+        className="w-2 h-2 rounded-full animate-bounce"
+        style={{ background: 'var(--color-brand-secondary)', animationDelay: '300ms' }}
+      />
     </div>
   );
 }

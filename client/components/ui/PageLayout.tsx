@@ -16,26 +16,6 @@ interface PageLayoutProps {
   narrow?: boolean;
 }
 
-/**
- * PageLayout - Standardized page container component
- * 
- * Provides consistent:
- * - Max-width container (7xl default, 3xl for narrow)
- * - Responsive horizontal padding
- * - Vertical padding
- * - Optional page header with title, subtitle, and actions
- * 
- * Usage:
- * ```tsx
- * <PageLayout 
- *   title="My Page" 
- *   subtitle="Description here"
- *   headerActions={<Button>Action</Button>}
- * >
- *   {content}
- * </PageLayout>
- * ```
- */
 export function PageLayout({
   children,
   title,
@@ -55,12 +35,15 @@ export function PageLayout({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               {title && (
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                <h1
+                  className="text-2xl sm:text-3xl font-bold"
+                  style={{ color: 'var(--color-text-primary)' }}
+                >
                   {title}
                 </h1>
               )}
               {subtitle && (
-                <p className="mt-2 text-[#a0a0a0]">{subtitle}</p>
+                <p className="mt-2" style={{ color: 'var(--color-text-secondary)' }}>{subtitle}</p>
               )}
             </div>
             {headerActions && (

@@ -141,6 +141,30 @@ export const useAuthStore = create<AuthState>()(
   )
 );
 
+// Promise-based helper that resolves when Zustand persist hydration is complete.
+// Uses the official persist.hasHydrated() API which is reliable in Zustand v5
+// (the onFinishHydration callback can miss if hydration completes before registration).
+export function waitForHydration(): Promise<void> {
+  // On the server, resolve immediately (no localStorage to rehydrate from)
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+  return new Promise((resolve) => {
+    // Check the official Zustand persist API for hydration status
+    if (useAuthStore.persist.hasHydrated()) {
+      resolve();
+      return;
+    }
+    // If not yet hydrated, wait for the event
+    const unsub = useAuthStore.persist.onFinishHydration(() => {
+      unsub();
+      resolve();
+    });
+  });
+}
+
+export const hasHydrated = () => useAuthStore.persist.hasHydrated();
+
 // Helper hook to get token with auto-refresh
 export function useToken() {
   const { accessToken, refreshAuth } = useAuthStore();

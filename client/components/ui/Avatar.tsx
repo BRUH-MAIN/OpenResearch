@@ -11,12 +11,12 @@ interface AvatarProps {
   className?: string;
 }
 
-export function Avatar({ 
-  src, 
-  alt, 
-  size = 'md', 
+export function Avatar({
+  src,
+  alt,
+  size = 'md',
   status,
-  className = '' 
+  className = ''
 }: AvatarProps) {
   const [imageError, setImageError] = useState(false);
 
@@ -56,16 +56,7 @@ export function Avatar({
     '2xl': 'w-5 h-5 border-2',
   };
 
-  const statusColors = {
-    online: 'bg-[#22c55e]',
-    offline: 'bg-[#71717a]',
-    busy: 'bg-[#ef4444]',
-    away: 'bg-[#f59e0b]',
-  };
-  
-  const fallbackInitial = alt.charAt(0).toUpperCase();
-
-  // Generate a consistent color based on the name
+  // These gradient colors are decorative and stay consistent across themes
   const getAvatarColor = (name: string) => {
     const colors = [
       'from-[#0D7377] to-[#14FFEC]',
@@ -78,19 +69,30 @@ export function Avatar({
     const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
     return colors[index];
   };
-  
+
+  const statusColors: Record<string, string> = {
+    online: 'var(--color-success)',
+    offline: 'var(--color-text-tertiary)',
+    busy: 'var(--color-error)',
+    away: 'var(--color-warning)',
+  };
+
+  const fallbackInitial = alt.charAt(0).toUpperCase();
+
   return (
     <div className={`relative inline-flex ${className}`}>
-      <div 
+      <div
         className={`
           ${sizes[size]} 
           rounded-full overflow-hidden 
           bg-gradient-to-br ${getAvatarColor(alt)}
           flex items-center justify-center 
           text-white font-semibold
-          ring-2 ring-[#2a2a2a] ring-offset-2 ring-offset-[#0f0f0f]
           transition-all duration-200
         `}
+        style={{
+          boxShadow: `0 0 0 2px var(--color-border-primary), 0 0 0 4px var(--color-bg-primary)`,
+        }}
       >
         {src && !imageError ? (
           <Image
@@ -109,14 +111,12 @@ export function Avatar({
         )}
       </div>
       {status && (
-        <span 
-          className={`
-            absolute bottom-0 right-0 
-            ${statusSizes[size]} 
-            ${statusColors[status]}
-            rounded-full 
-            border-[#0f0f0f]
-          `}
+        <span
+          className={`absolute bottom-0 right-0 ${statusSizes[size]} rounded-full`}
+          style={{
+            background: statusColors[status],
+            borderColor: 'var(--color-bg-primary)',
+          }}
         />
       )}
     </div>
@@ -130,11 +130,11 @@ interface AvatarGroupProps {
   className?: string;
 }
 
-export function AvatarGroup({ 
-  avatars, 
-  max = 4, 
+export function AvatarGroup({
+  avatars,
+  max = 4,
   size = 'md',
-  className = '' 
+  className = ''
 }: AvatarGroupProps) {
   const displayAvatars = avatars.slice(0, max);
   const remaining = avatars.length - max;
@@ -148,8 +148,8 @@ export function AvatarGroup({
   return (
     <div className={`flex items-center ${className}`}>
       {displayAvatars.map((avatar, index) => (
-        <div 
-          key={index} 
+        <div
+          key={index}
           className={`${index > 0 ? overlapSizes[size] : ''} relative`}
           style={{ zIndex: displayAvatars.length - index }}
         >
@@ -157,14 +157,17 @@ export function AvatarGroup({
         </div>
       ))}
       {remaining > 0 && (
-        <div 
+        <div
           className={`
             ${overlapSizes[size]}
             ${size === 'sm' ? 'w-8 h-8 text-xs' : size === 'md' ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-base'}
-            rounded-full bg-[#242424] border-2 border-[#0f0f0f]
-            flex items-center justify-center
-            text-[#a1a1aa] font-medium
+            rounded-full flex items-center justify-center font-medium
           `}
+          style={{
+            background: 'var(--color-bg-tertiary)',
+            border: '2px solid var(--color-bg-primary)',
+            color: 'var(--color-text-secondary)',
+          }}
         >
           +{remaining}
         </div>

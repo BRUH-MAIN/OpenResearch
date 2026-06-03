@@ -44,7 +44,7 @@ CREATE TABLE group_paper_vectors (
     content_id TEXT,  -- Reference to source artifact
     chunk_index INTEGER DEFAULT 0,  -- For chunked content
     content TEXT,  -- Text content
-    embedding VECTOR(1536),  -- OpenAI embedding
+    embedding VECTOR(768),  -- SPECTER2 embedding
     metadata JSONB,  -- Additional metadata
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -76,7 +76,7 @@ const response = await api.addPaperToGroup(token, groupId, paperId, notes);
 
 1. Paper metadata is stored in `group_papers` table
 2. Paper abstract is sent to AI service for embedding
-3. Embedding (1536 dimensions) is stored in `group_paper_vectors`
+3. Embedding (768 dimensions) is stored in `group_paper_vectors`
 4. Index is updated for fast similarity search
 
 ### 2. Querying with RAG
@@ -248,8 +248,8 @@ await db.execute(batch_insert_query)
 GROQ_API_KEY=your-groq-api-key
 DATABASE_URL=postgresql://user:pass@host:5432/db
 
-# Embedding dimensions (OpenAI text-embedding-3-small)
-EMBEDDING_DIMENSIONS=1536
+# Embedding dimensions (SPECTER2 local model)
+EMBEDDING_DIMENSIONS=768
 
 # Search settings
 MAX_CONTEXT_RESULTS=10
@@ -260,7 +260,7 @@ SIMILARITY_THRESHOLD=0.7
 
 ```python
 # In vector_store.py
-VECTOR_DIMENSIONS = 1536
+VECTOR_DIMENSIONS = 768
 DEFAULT_LIMIT = 10
 MIN_SIMILARITY = 0.5  # Minimum similarity to include in results
 ```

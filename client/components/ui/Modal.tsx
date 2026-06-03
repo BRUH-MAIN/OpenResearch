@@ -4,24 +4,17 @@ import React, { useEffect, useCallback } from 'react';
 import { X } from 'lucide-react';
 
 interface ModalProps {
-  /** Whether the modal is open */
   isOpen: boolean;
-  /** Callback when modal should close */
   onClose: () => void;
-  /** Modal title */
   title?: string;
-  /** Modal content */
   children: React.ReactNode;
-  /** Footer content (buttons, etc.) */
   footer?: React.ReactNode;
-  /** Size of the modal */
   size?: 'sm' | 'md' | 'lg' | 'xl';
-  /** Whether clicking backdrop closes the modal */
   closeOnBackdropClick?: boolean;
-  /** Whether pressing Escape closes the modal */
   closeOnEscape?: boolean;
-  /** Additional CSS classes for the modal container */
   className?: string;
+  bodyClassName?: string;
+  footerClassName?: string;
 }
 
 const sizeClasses = {
@@ -31,32 +24,6 @@ const sizeClasses = {
   xl: 'max-w-xl',
 };
 
-/**
- * Modal - Standardized modal dialog
- * 
- * Design system:
- * - Backdrop: rgba(0, 0, 0, 0.7) with blur
- * - Modal bg: #1a1a1a
- * - Border: #2a2a2a
- * - Close button hover: #0D7377
- * 
- * Usage:
- * ```tsx
- * <Modal
- *   isOpen={isOpen}
- *   onClose={() => setIsOpen(false)}
- *   title="Confirm Action"
- *   footer={
- *     <>
- *       <Button variant="ghost" onClick={onClose}>Cancel</Button>
- *       <Button onClick={onConfirm}>Confirm</Button>
- *     </>
- *   }
- * >
- *   <p>Are you sure you want to proceed?</p>
- * </Modal>
- * ```
- */
 export function Modal({
   isOpen,
   onClose,
@@ -67,8 +34,9 @@ export function Modal({
   closeOnBackdropClick = true,
   closeOnEscape = true,
   className = '',
+  bodyClassName = '',
+  footerClassName = '',
 }: ModalProps) {
-  // Handle Escape key
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (closeOnEscape && e.key === 'Escape') {
@@ -81,7 +49,6 @@ export function Modal({
   useEffect(() => {
     if (isOpen) {
       document.addEventListener('keydown', handleKeyDown);
-      // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
     }
 
@@ -94,7 +61,10 @@ export function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div
+      className="fixed inset-0 flex items-center justify-center p-2 sm:p-4"
+      style={{ zIndex: 'var(--z-modal)' }}
+    >
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm"
@@ -107,27 +77,39 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         aria-labelledby={title ? 'modal-title' : undefined}
-        className={`
-          relative w-full ${sizeClasses[size]} mx-4
-          bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl
-          shadow-2xl
-          animate-in fade-in zoom-in-95 duration-200
-          ${className}
-        `}
+        className={`relative w-full ${sizeClasses[size]} mx-2 sm:mx-4 rounded-2xl shadow-2xl animate-scale-in overflow-hidden ${className}`}
+        style={{
+          background: 'var(--color-bg-secondary)',
+          border: '1px solid var(--color-border-primary)',
+          maxHeight: 'calc(100dvh - 1rem)',
+        }}
       >
         {/* Header */}
         {title && (
-          <div className="flex items-center justify-between px-6 py-4 border-b border-[#2a2a2a]">
+          <div
+            className="flex items-center justify-between px-4 py-4 sm:px-6 border-b"
+            style={{ borderColor: 'var(--color-border-primary)' }}
+          >
             <h2
               id="modal-title"
-              className="text-lg font-semibold text-white"
+              className="text-lg font-semibold"
+              style={{ color: 'var(--color-text-primary)' }}
             >
               {title}
             </h2>
             <button
               onClick={onClose}
-              className="p-1 text-[#a0a0a0] hover:text-white hover:bg-[#0D7377]/20 rounded-lg transition-colors"
+              className="p-1 rounded-lg transition-colors"
               aria-label="Close modal"
+              style={{ color: 'var(--color-text-tertiary)' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--color-text-primary)';
+                e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--color-text-tertiary)';
+                e.currentTarget.style.background = 'transparent';
+              }}
             >
               <X className="w-5 h-5" />
             </button>
@@ -138,19 +120,31 @@ export function Modal({
         {!title && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 p-1 text-[#a0a0a0] hover:text-white hover:bg-[#0D7377]/20 rounded-lg transition-colors"
+            className="absolute top-4 right-4 p-1 rounded-lg transition-colors z-10"
             aria-label="Close modal"
+            style={{ color: 'var(--color-text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--color-text-primary)';
+              e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--color-text-tertiary)';
+              e.currentTarget.style.background = 'transparent';
+            }}
           >
             <X className="w-5 h-5" />
           </button>
         )}
 
         {/* Content */}
-        <div className="px-6 py-4">{children}</div>
+        <div className={`px-4 py-4 sm:px-6 overflow-y-auto ${bodyClassName}`}>{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-[#2a2a2a]">
+          <div
+            className={`flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3 px-4 py-4 sm:px-6 border-t ${footerClassName}`}
+            style={{ borderColor: 'var(--color-border-primary)' }}
+          >
             {footer}
           </div>
         )}

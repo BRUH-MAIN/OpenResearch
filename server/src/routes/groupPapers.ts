@@ -10,6 +10,7 @@ import { eq, and, desc } from 'drizzle-orm';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { createError } from '../middleware/error.js';
 import { aiClient } from '../services/aiClient.js';
+import logger from '../utils/logger.js';
 
 const router = Router();
 
@@ -133,7 +134,7 @@ router.post('/:groupId/papers', async (req: AuthRequest, res: Response, next) =>
         },
       });
     } catch (aiError) {
-      console.error('Failed to generate paper embeddings:', aiError);
+      logger.warn({ err: aiError, paperId, groupId }, 'Failed to generate paper embeddings');
       // Continue - paper is still added, just not embedded
     }
 

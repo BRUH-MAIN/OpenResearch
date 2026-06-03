@@ -26,23 +26,29 @@ This guide covers deploying OpenResearch to production environments.
 
 - Docker 20.10+
 - Docker Compose 2.0+
-- 2GB RAM minimum
+- 4GB RAM minimum recommended for the AI service container
 - PostgreSQL 16+ with pgvector extension
 
 ### Quick Start with Docker Compose
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/openresearch.git
+git clone https://github.com/your-org/openresearch.git
 cd openresearch
 ```
 
 2. **Create environment files**
 
-Create `.env` in the root directory:
+For Docker Compose, create `.env.docker` in the root directory. The compose file loads `.env.docker`, not `.env`.
+
+```powershell
+Copy-Item .env.docker.example .env.docker
+```
+
+Use this shape in `.env.docker`:
 ```env
 # Database
-DATABASE_URL=postgresql://postgres:password@db:5432/openresearch
+DATABASE_URL=postgresql://postgres:password@postgres:5432/openresearch
 
 # Server
 JWT_SECRET=your-super-secret-jwt-key-minimum-32-characters-change-in-production
@@ -58,23 +64,21 @@ NEXT_PUBLIC_WS_URL=http://localhost:3001
 # AI Service
 GROQ_API_KEY=your-groq-api-key-from-console
 GROQ_MODEL=llama-3.3-70b-versatile
-OPENAI_API_KEY=your-openai-api-key-for-embeddings
-EMBEDDING_MODEL=text-embedding-3-small
-EMBEDDING_DIMENSIONS=1536
+# Embeddings use local SPECTER2 model (768-dim) — no OpenAI key needed
 ```
 
 3. **Start all services**
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
 
 4. **Initialize the database**
 ```bash
 # Run migrations
-docker-compose exec server npm run db:push
+docker compose exec server npm run db:push
 
 # Seed with sample data (optional)
-docker-compose exec server npm run db:seed
+docker compose exec server npm run db:seed:prod
 ```
 
 5. **Access the application**
@@ -91,6 +95,37 @@ The `docker-compose.yml` includes:
 - **server**: Node.js backend (Express + Socket.IO)
 - **client**: Next.js frontend
 - **ai-service**: Python FastAPI AI service
+
+### Windows Test Deployment
+
+For the fastest same-machine multi-user test setup on Windows, use the repo helper:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-multiuser-chat.ps1 -Seed
+```
+
+Use `-Dev` to layer `docker-compose.dev.yml` on top of the base stack for bind-mounted development containers.
+
+For LAN access from another machine, pass the Windows host's LAN IP so the frontend is built with browser-facing URLs instead of `localhost`:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start-multiuser-chat.ps1 -Seed -PublicHost 192.168.1.50
+```
+
+This helper:
+
+- validates that `.env.docker` exists
+- starts the full stack with `docker compose`
+- waits for the server and AI health endpoints
+- optionally seeds the shared test users and groups
+
+The AI service can take a few minutes to become healthy on first start while the embedding model fallback chain is loaded and cached.
+
+For LAN testing, also ensure Windows Defender Firewall allows inbound TCP traffic on ports `3000`, `3001`, and `8000` from your local network.
+
+The default seeded accounts for group-chat testing are created by `server/src/seed.ts`, including `alice@example.com`, `bob@example.com`, `carol@example.com`, and `david@example.com` with password `password123`.
+
+Use `npm run db:seed:prod` inside the Docker server container because the production image prunes dev dependencies and does not include the `tsx` runner used by the local-only `db:seed` script.
 
 ## Production Deployment
 
@@ -152,7 +187,7 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
 sudo apt install -y nodejs
 
 # Clone and setup
-git clone https://github.com/yourusername/openresearch.git
+git clone https://github.com/your-org/openresearch.git
 cd openresearch/server
 npm install --production
 
@@ -198,10 +233,7 @@ pm2 startup
 4. Start command: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
 5. Add environment variables:
    - `GROQ_API_KEY`
-   - `OPENAI_API_KEY`
    - `DATABASE_URL`
-   - `EMBEDDING_MODEL`
-   - `EMBEDDING_DIMENSIONS`
 
 #### Google Cloud Run
 
@@ -246,11 +278,8 @@ gcloud run deploy ai-service \
 | Variable | Required | Description | Example |
 |----------|----------|-------------|---------|
 | `GROQ_API_KEY` | Yes | Groq API key for LLM | `gsk_xxx` |
-| `OPENAI_API_KEY` | Yes | OpenAI key for embeddings | `sk-xxx` |
 | `DATABASE_URL` | Yes | PostgreSQL connection string | `postgresql://...` |
 | `GROQ_MODEL` | No | LLM model name | `llama-3.3-70b-versatile` |
-| `EMBEDDING_MODEL` | No | Embedding model | `text-embedding-3-small` |
-| `EMBEDDING_DIMENSIONS` | No | Vector dimensions | `1536` |
 | `DEBUG` | No | Enable debug logging | `false` |
 
 ## Health Checks
@@ -377,8 +406,8 @@ Neon provides automated backups. Configure retention policy in dashboard.
 
 **Vector Store Not Working**
 - Verify pgvector extension is installed: `SELECT * FROM pg_extension WHERE extname = 'vector';`
-- Check embedding dimensions match (1536)
-- Verify OPENAI_API_KEY is set
+- Check embedding dimensions match (768)
+- Embeddings use local SPECTER2 model — no API key needed
 
 **Socket.IO Connection Issues**
 - Check CORS settings in server

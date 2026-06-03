@@ -319,7 +319,7 @@ class Database:
                 text("""
                     SELECT 
                         p.id, p.title, p.authors, p.abstract, p.tags, p.url, p.published_date,
-                        gp.notes, gp.created_at as added_at
+                        gp.notes, gp.full_text, gp.created_at as added_at
                     FROM group_papers gp
                     JOIN papers p ON gp.paper_id = p.id
                     WHERE gp.group_id = :group_id
@@ -339,6 +339,7 @@ class Database:
                     "url": row.url,
                     "published_date": row.published_date,
                     "notes": row.notes,
+                    "full_text": row.full_text,
                     "added_at": row.added_at.isoformat() if row.added_at else None,
                 }
                 for row in rows
@@ -536,6 +537,327 @@ class Database:
             row = result.fetchone()
             return str(row.id) if row else None
 
+    async def save_paper(
+        self,
+        paper_id: str,
+        title: str,
+        abstract: str,
+        authors: list[str],
+        url: str,
+        published_date: Optional[str] = None
+    ) -> bool:
+        """Save a paper to the papers table."""
+        if not self.is_connected:
+            return False
+            
+        import json
+        async with self.session_factory() as session:
+            try:
+                await session.execute(
+                    text("""
+                        INSERT INTO papers (id, title, authors, abstract, url, published_date)
+                        VALUES (:id, :title, :authors, :abstract, :url, :published_date)
+                        ON CONFLICT (id) DO NOTHING
+                    """),
+                    {
+                        "id": paper_id,
+                        "title": title,
+                        "authors": json.dumps(authors),
+                        "abstract": abstract,
+                        "url": url,
+                        "published_date": published_date
+                    }
+                )
+                await session.commit()
+                return True
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(f"Failed to save paper {paper_id}: {e}")
+                return False
+
+    # ============ Workflow Methods ============
+
+    async def create_workflow_run(
+        self,
+        user_id: str,
+        goal: str,
+        plan: dict,
+        workflow_id: Optional[str] = None,
+        group_id: Optional[str] = None,
+        session_id: Optional[str] = None,
+        template_id: Optional[str] = None,
+        status: str = "planning",
+        metadata: Optional[dict] = None,
+    ) -> Optional[str]:
+        """Create a new workflow run. Returns the workflow run ID."""
+        import json
+        if not self.is_connected:
+            return None
+
+        wf_id = workflow_id or str(__import__('uuid').uuid4())
+
+        async with self.session_factory() as session:
+            result = await session.execute(
+                text("""
+                    INSERT INTO workflow_runs
+                    (id, group_id, session_id, user_id, template_id, goal, plan, status, current_step_index, metadata)
+                    VALUES (:id, :group_id, :session_id, :user_id, :template_id, :goal, :plan, :status, 0, :metadata)
+                    RETURNING id
+                """),
+                {
+                    "id": wf_id,
+                    "group_id": group_id,
+                    "session_id": session_id,
+                    "user_id": user_id,
+                    "template_id": template_id,
+                    "goal": goal,
+                    "plan": json.dumps(plan),
+                    "status": status,
+                    "metadata": json.dumps(metadata or {}),
+                },
+            )
+            await session.commit()
+            row = result.fetchone()
+            return str(row.id) if row else None
+
+    async def create_workflow_step(
+        self,
+        workflow_run_id: str,
+        step_index: int,
+        agent_type: str,
+        name: str,
+        description: Optional[str] = None,
+        is_checkpoint: bool = False,
+        input_data: Optional[dict] = None,
+    ) -> Optional[str]:
+        """Create a workflow step. Returns the step ID."""
+        import json
+        if not self.is_connected:
+            return None
+
+        async with self.session_factory() as session:
+            result = await session.execute(
+                text("""
+                    INSERT INTO workflow_steps
+                    (workflow_run_id, step_index, agent_type, name, description, status, is_checkpoint, input)
+                    VALUES (:workflow_run_id, :step_index, :agent_type, :name, :description, 'pending', :is_checkpoint, :input)
+                    RETURNING id
+                """),
+                {
+                    "workflow_run_id": workflow_run_id,
+                    "step_index": step_index,
+                    "agent_type": agent_type,
+                    "name": name,
+                    "description": description,
+                    "is_checkpoint": is_checkpoint,
+                    "input": json.dumps(input_data) if input_data else None,
+                },
+            )
+            await session.commit()
+            row = result.fetchone()
+            return str(row.id) if row else None
+
+    async def update_workflow_run_status(
+        self,
+        workflow_run_id: str,
+        status: str,
+        current_step_index: Optional[int] = None,
+        final_output: Optional[dict] = None,
+    ) -> bool:
+        """Update workflow run status and optional fields."""
+        import json
+        if not self.is_connected:
+            return False
+
+        async with self.session_factory() as session:
+            params: dict = {"id": workflow_run_id, "status": status}
+            set_parts = ["status = :status", "updated_at = NOW()"]
+            if current_step_index is not None:
+                set_parts.append("current_step_index = :step_idx")
+                params["step_idx"] = current_step_index
+            if final_output is not None:
+                set_parts.append("final_output = :final_output")
+                params["final_output"] = json.dumps(final_output)
+
+            await session.execute(
+                text(f"UPDATE workflow_runs SET {', '.join(set_parts)} WHERE id = :id"),
+                params,
+            )
+            await session.commit()
+            return True
+
+    async def update_workflow_step_status(
+        self,
+        step_id: str,
+        status: str,
+        output: Optional[dict] = None,
+        error_message: Optional[str] = None,
+        user_feedback: Optional[str] = None,
+    ) -> bool:
+        """Update a workflow step's status, output, and timing."""
+        import json
+        if not self.is_connected:
+            return False
+
+        async with self.session_factory() as session:
+            params: dict = {"id": step_id, "status": status}
+            set_parts = ["status = :status"]
+
+            if status == "running":
+                set_parts.append("started_at = NOW()")
+            if status in ("completed", "failed", "skipped", "approved", "rejected"):
+                set_parts.append("completed_at = NOW()")
+            if output is not None:
+                set_parts.append("output = :output")
+                params["output"] = json.dumps(output)
+            if error_message is not None:
+                set_parts.append("error_message = :error_message")
+                params["error_message"] = error_message
+            if user_feedback is not None:
+                set_parts.append("user_feedback = :user_feedback")
+                params["user_feedback"] = user_feedback
+
+            await session.execute(
+                text(f"UPDATE workflow_steps SET {', '.join(set_parts)} WHERE id = :id"),
+                params,
+            )
+            await session.commit()
+            return True
+
+    async def get_workflow_run(self, workflow_run_id: str) -> Optional[dict]:
+        """Get a workflow run with all its steps."""
+        if not self.is_connected:
+            return None
+
+        async with self.session_factory() as session:
+            result = await session.execute(
+                text("SELECT * FROM workflow_runs WHERE id = :id"),
+                {"id": workflow_run_id},
+            )
+            run = result.fetchone()
+            if not run:
+                return None
+
+            steps_result = await session.execute(
+                text("""
+                    SELECT * FROM workflow_steps
+                    WHERE workflow_run_id = :wf_id
+                    ORDER BY step_index ASC
+                """),
+                {"wf_id": workflow_run_id},
+            )
+            steps = steps_result.fetchall()
+
+            return {
+                "id": str(run.id),
+                "group_id": str(run.group_id) if run.group_id else None,
+                "session_id": str(run.session_id) if run.session_id else None,
+                "user_id": str(run.user_id),
+                "template_id": run.template_id,
+                "goal": run.goal,
+                "plan": run.plan,
+                "status": run.status,
+                "current_step_index": run.current_step_index,
+                "final_output": run.final_output,
+                "metadata": run.metadata,
+                "created_at": run.created_at.isoformat() if run.created_at else None,
+                "updated_at": run.updated_at.isoformat() if run.updated_at else None,
+                "steps": [
+                    {
+                        "id": str(s.id),
+                        "step_index": s.step_index,
+                        "agent_type": s.agent_type,
+                        "name": s.name,
+                        "description": s.description,
+                        "status": s.status,
+                        "is_checkpoint": s.is_checkpoint,
+                        "input": s.input,
+                        "output": s.output,
+                        "user_feedback": s.user_feedback,
+                        "error_message": s.error_message,
+                        "started_at": s.started_at.isoformat() if s.started_at else None,
+                        "completed_at": s.completed_at.isoformat() if s.completed_at else None,
+                    }
+                    for s in steps
+                ],
+            }
+
+    async def get_workflow_runs_for_group(self, group_id: str, limit: int = 20) -> list[dict]:
+        """Get recent workflow runs for a group."""
+        if not self.is_connected:
+            return []
+
+        async with self.session_factory() as session:
+            result = await session.execute(
+                text("""
+                    SELECT id, template_id, goal, status, current_step_index,
+                           created_at, updated_at
+                    FROM workflow_runs
+                    WHERE group_id = :group_id
+                    ORDER BY created_at DESC
+                    LIMIT :limit
+                """),
+                {"group_id": group_id, "limit": limit},
+            )
+            return [
+                {
+                    "id": str(row.id),
+                    "template_id": row.template_id,
+                    "goal": row.goal,
+                    "status": row.status,
+                    "current_step_index": row.current_step_index,
+                    "created_at": row.created_at.isoformat() if row.created_at else None,
+                    "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+                }
+                for row in result.fetchall()
+            ]
+
+    async def ensure_workflow_tables(self) -> bool:
+        """Create workflow tables if they don't exist, and apply migrations."""
+        if not self.is_connected:
+            return False
+
+        async with self.session_factory() as session:
+            await session.execute(text("""
+                CREATE TABLE IF NOT EXISTS workflow_runs (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    group_id UUID,
+                    session_id UUID,
+                    user_id UUID NOT NULL,
+                    template_id VARCHAR(100),
+                    goal TEXT NOT NULL,
+                    plan JSONB NOT NULL,
+                    status VARCHAR(50) NOT NULL DEFAULT 'planning',
+                    current_step_index INTEGER DEFAULT 0,
+                    final_output JSONB,
+                    metadata JSONB,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """))
+            await session.execute(text("""
+                CREATE TABLE IF NOT EXISTS workflow_steps (
+                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+                    workflow_run_id UUID NOT NULL REFERENCES workflow_runs(id) ON DELETE CASCADE,
+                    step_index INTEGER NOT NULL,
+                    agent_type VARCHAR(100) NOT NULL,
+                    name VARCHAR(255) NOT NULL,
+                    description TEXT,
+                    status VARCHAR(50) NOT NULL DEFAULT 'pending',
+                    is_checkpoint BOOLEAN DEFAULT FALSE,
+                    input JSONB,
+                    output JSONB,
+                    user_feedback TEXT,
+                    error_message TEXT,
+                    started_at TIMESTAMPTZ,
+                    completed_at TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+                )
+            """))
+            await session.commit()
+            return True
+
 
 # Singleton instance
 database = Database()
+

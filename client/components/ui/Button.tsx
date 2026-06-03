@@ -10,77 +10,70 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   children: React.ReactNode;
 }
 
-export function Button({ 
-  variant = 'primary', 
-  size = 'md', 
+export function Button({
+  variant = 'primary',
+  size = 'md',
   isLoading = false,
   leftIcon,
   rightIcon,
-  className = '', 
-  children, 
+  className = '',
+  children,
   disabled,
-  ...props 
+  ...props
 }: ButtonProps) {
-  const baseStyles = `
-    relative inline-flex items-center justify-center
-    font-semibold rounded-xl
-    transition-all duration-200 ease-out
-    focus:outline-none focus-visible:ring-2 focus-visible:ring-[#14FFEC] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0f0f]
-    disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-    active:scale-[0.98]
-  `;
-  
-  const variants = {
-    primary: `
-      bg-gradient-to-r from-[#0D7377] to-[#0a8f8f]
-      text-white
-      shadow-md shadow-[#0D7377]/25
-      hover:shadow-lg hover:shadow-[#0D7377]/40 hover:from-[#0a8f8f] hover:to-[#0D7377]
-      active:shadow-sm
-    `,
-    secondary: `
-      bg-[#242424] text-white
-      border border-[#3a3a3a]
-      hover:bg-[#2a2a2a] hover:border-[#4a4a4a]
-      active:bg-[#1a1a1a]
-    `,
-    outline: `
-      bg-transparent
-      border-2 border-[#0D7377] text-[#14FFEC]
-      hover:bg-[#0D7377]/10 hover:border-[#14FFEC]
-      active:bg-[#0D7377]/20
-    `,
-    ghost: `
-      bg-transparent text-[#a1a1aa]
-      hover:bg-[#242424] hover:text-white
-      active:bg-[#2a2a2a]
-    `,
-    danger: `
-      bg-gradient-to-r from-[#dc2626] to-[#b91c1c]
-      text-white
-      shadow-md shadow-red-500/25
-      hover:shadow-lg hover:shadow-red-500/40
-      active:shadow-sm
-    `,
-  };
-  
   const sizes = {
     sm: 'px-3 py-1.5 text-sm gap-1.5',
     md: 'px-4 py-2.5 text-sm gap-2',
     lg: 'px-6 py-3 text-base gap-2.5',
   };
-  
+
   const iconSizes = {
     sm: 14,
     md: 16,
     lg: 18,
   };
-  
+
   const isDisabled = disabled || isLoading;
-  
+
+  // Use inline styles to reference CSS vars (Tailwind can't resolve CSS vars at build time)
+  const variantStyles: Record<string, React.CSSProperties> = {
+    primary: {
+      background: 'linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary))',
+      color: '#fff',
+      boxShadow: 'var(--shadow-glow)',
+    },
+    secondary: {
+      background: 'var(--color-bg-tertiary)',
+      color: 'var(--color-text-primary)',
+      border: '1px solid var(--color-border-secondary)',
+    },
+    outline: {
+      background: 'transparent',
+      color: 'var(--color-brand-secondary)',
+      border: '2px solid var(--color-brand-primary)',
+    },
+    ghost: {
+      background: 'transparent',
+      color: 'var(--color-text-secondary)',
+    },
+    danger: {
+      background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
+      color: '#fff',
+      boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.25)',
+    },
+  };
+
   return (
     <button
-      className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
+      className={`
+        relative inline-flex items-center justify-center
+        font-semibold rounded-xl
+        transition-all duration-200 ease-out
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
+        active:scale-[0.98]
+        ${sizes[size]} ${className}
+      `}
+      style={variantStyles[variant]}
       disabled={isDisabled}
       {...props}
     >

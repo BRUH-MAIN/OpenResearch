@@ -6,11 +6,15 @@ pydantic-settings>=2.1.0
 httpx>=0.26.0
 python-dotenv>=1.0.0
 
-# Groq SDK
-groq>=0.11.0
+# LLM Providers (via LangChain)
+langchain-openai>=0.1.0
+langchain-groq>=0.1.0
+
+# Agentic frameworks
+langgraph>=0.2.0
+langchain-core>=0.2.0
 
 # Local Embeddings (sentence-transformers with SPECTER2 for scientific papers)
-# Using CPU-only torch for smaller image size and faster builds
 --extra-index-url https://download.pytorch.org/whl/cpu
 torch>=2.0.0
 sentence-transformers>=2.2.0
@@ -27,9 +31,9 @@ reportlab>=4.0.0
 # Utilities
 tenacity>=8.2.0
 numpy>=1.26.0
+feedparser>=6.0.0
 
 # Testing
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
 pytest-cov>=4.1.0
-httpx>=0.26.0

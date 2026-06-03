@@ -1,230 +1,334 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
-  Headphones,
-  Video,
-  BrainCircuit,
-  FileText,
-  Layers,
-  CheckSquare,
-  BarChart3,
-  Presentation,
-  Table2,
-  Pencil,
-  Sparkles,
   PanelRightClose,
-  Plus,
+  Pin,
+  GitBranch,
+  Loader2,
+  Workflow,
 } from 'lucide-react';
+import { WorkspacePinnedNotes, PinnedNote } from './WorkspacePinnedNotes';
+import { ClaimLineageGraph, ClaimNode, ClaimEdge } from './ClaimLineageGraph';
+import { Source } from './SourcesPanel';
 
+// Keep exporting StudioOutput for backward compatibility
 export interface StudioOutput {
   id: string;
-  type: 'audio' | 'video' | 'mindmap' | 'report' | 'flashcards' | 'quiz' | 'infographic' | 'slides' | 'table';
+  type: 'report';
   title: string;
   status: 'ready' | 'generating' | 'failed';
   createdAt: string;
   downloadUrl?: string;
 }
 
-interface StudioPanelProps {
-  outputs: StudioOutput[];
-  onGenerateAudio: () => void;
-  onGenerateVideo: () => void;
-  onGenerateMindmap: () => void;
-  onGenerateReport: () => void;
-  onGenerateFlashcards: () => void;
-  onGenerateQuiz: () => void;
-  onGenerateInfographic: () => void;
-  onGenerateSlides: () => void;
-  onGenerateTable: () => void;
-  onAddNote: () => void;
-  onDownloadOutput?: (id: string) => void;
-  isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
-  hasSourcesSelected?: boolean;
-  className?: string;
+export interface DetectedDiagram {
+  id: string;
+  code: string;
+  detectedAt: string;
 }
 
-const STUDIO_ACTIONS: Array<{
-  id: string;
-  label: string;
-  icon: React.ComponentType<{ size?: number; className?: string }>;
-  hasEdit: boolean;
-  beta?: boolean;
-}> = [
-  { id: 'audio', label: 'Audio...', icon: Headphones, hasEdit: true },
-  { id: 'video', label: 'Video...', icon: Video, hasEdit: true },
-  { id: 'mindmap', label: 'Mind Map', icon: BrainCircuit, hasEdit: false },
-  { id: 'report', label: 'Reports', icon: FileText, hasEdit: false },
-  { id: 'flashcards', label: 'Flashcards', icon: Layers, hasEdit: true },
-  { id: 'quiz', label: 'Quiz', icon: CheckSquare, hasEdit: true },
-  { id: 'infographic', label: 'Infographic', icon: BarChart3, hasEdit: true, beta: true },
-  { id: 'slides', label: 'Slide deck', icon: Presentation, hasEdit: true, beta: true },
-  { id: 'table', label: 'Data table', icon: Table2, hasEdit: true },
-];
+type WorkspaceTab = 'notes' | 'diagrams' | 'graph';
+
+interface StudioPanelProps {
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
+  className?: string;
+  width?: number;
+  onResize?: (width: number) => void;
+  variant?: 'sidebar' | 'overlay';
+  // Notes
+  pinnedNotes?: PinnedNote[];
+  onRemoveNote?: (noteId: string) => void;
+  onScrollToMessage?: (messageId: string) => void;
+  // Diagrams
+  detectedDiagrams?: DetectedDiagram[];
+  // Graph
+  graphNodes?: ClaimNode[];
+  graphEdges?: ClaimEdge[];
+  isLoadingGraph?: boolean;
+  onBuildGraph?: () => void;
+  hasSourcesSelected?: boolean;
+  // Workflow
+  groupId?: string;
+  sessionId?: string;
+  // Deprecated / backward compat
+  outputs?: StudioOutput[];
+  onGenerateReport?: () => void;
+  sources?: Source[];
+}
 
 export function StudioPanel({
-  outputs,
-  onGenerateAudio,
-  onGenerateVideo,
-  onGenerateMindmap,
-  onGenerateReport,
-  onGenerateFlashcards,
-  onGenerateQuiz,
-  onGenerateInfographic,
-  onGenerateSlides,
-  onGenerateTable,
-  onAddNote,
   isCollapsed = false,
   onToggleCollapse,
-  hasSourcesSelected = false,
   className = '',
+  width = 340,
+  onResize,
+  pinnedNotes = [],
+  onRemoveNote,
+  onScrollToMessage,
+  detectedDiagrams = [],
+  graphNodes = [],
+  graphEdges = [],
+  isLoadingGraph = false,
+  onBuildGraph,
+  hasSourcesSelected = false,
+  variant = 'sidebar',
 }: StudioPanelProps) {
-  const handleAction = (actionId: string) => {
-    switch (actionId) {
-      case 'audio':
-        onGenerateAudio();
-        break;
-      case 'video':
-        onGenerateVideo();
-        break;
-      case 'mindmap':
-        onGenerateMindmap();
-        break;
-      case 'report':
-        onGenerateReport();
-        break;
-      case 'flashcards':
-        onGenerateFlashcards();
-        break;
-      case 'quiz':
-        onGenerateQuiz();
-        break;
-      case 'infographic':
-        onGenerateInfographic();
-        break;
-      case 'slides':
-        onGenerateSlides();
-        break;
-      case 'table':
-        onGenerateTable();
-        break;
-    }
-  };
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>('notes');
+  const resizeRef = useRef<HTMLDivElement>(null);
+  const isResizingRef = useRef(false);
 
-  if (isCollapsed) {
+  // Drag-to-resize handler (drag from left edge)
+  const handleResizeStart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      isResizingRef.current = true;
+      const startX = e.clientX;
+      const startWidth = width;
+
+      const onMove = (ev: MouseEvent) => {
+        if (!isResizingRef.current) return;
+        // Dragging left = increasing width
+        const delta = startX - ev.clientX;
+        const newWidth = Math.max(300, Math.min(540, startWidth + delta));
+        onResize?.(newWidth);
+      };
+
+      const onUp = () => {
+        isResizingRef.current = false;
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      };
+
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    },
+    [width, onResize]
+  );
+
+  if (variant === 'sidebar' && isCollapsed) {
     return (
-      <div className={`w-[52px] bg-[#1e1f20] border-l border-[#3c4043] flex flex-col ${className}`}>
+      <div
+        className={`w-[52px] border-l flex flex-col ${className}`}
+        style={{
+          background: 'var(--color-bg-secondary)',
+          borderColor: 'var(--color-border-primary)',
+        }}
+      >
         <button
           onClick={onToggleCollapse}
-          className="p-4 hover:bg-[#28292a] transition-colors"
-          title="Expand studio"
+          className="p-4 transition-colors"
+          title="Expand workspace"
+          style={{ color: 'var(--color-text-tertiary)' }}
+          onMouseEnter={(e) =>
+            (e.currentTarget.style.background = 'var(--color-bg-tertiary)')
+          }
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.background = 'transparent')
+          }
         >
-          <PanelRightClose size={20} className="text-[#9aa0a6] rotate-180" />
+          <PanelRightClose size={20} className="rotate-180" />
         </button>
+        {pinnedNotes.length > 0 && (
+          <div className="flex flex-col items-center px-1 pt-2">
+            <div
+              className="w-6 h-6 rounded-full flex items-center justify-center"
+              style={{
+                background: 'var(--color-brand-primary)',
+                fontSize: '10px',
+                color: 'var(--color-text-primary)',
+              }}
+            >
+              {pinnedNotes.length}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
 
+  const tabs: { key: WorkspaceTab; label: string; icon: React.ReactNode; badge?: number }[] = [
+    {
+      key: 'notes',
+      label: 'Notes',
+      icon: <Pin size={12} />,
+      badge: pinnedNotes.length || undefined,
+    },
+    {
+      key: 'diagrams',
+      label: 'Diagrams',
+      icon: <Workflow size={12} />,
+      badge: detectedDiagrams.length || undefined,
+    },
+    { key: 'graph', label: 'Graph', icon: <GitBranch size={12} /> },
+  ];
+
   return (
-    <div className={`w-[340px] bg-[#1e1f20] border-l border-[#3c4043] flex flex-col h-full ${className}`}>
+    <div
+      className={variant === 'overlay'
+        ? `flex flex-col self-stretch min-h-0 relative h-full w-full ${className}`
+        : `border-l flex flex-col self-stretch min-h-0 relative ${className}`}
+      style={{
+        width: variant === 'overlay' ? '100%' : `${width}px`,
+        minWidth: variant === 'overlay' ? '0' : `${width}px`,
+        background: 'var(--color-bg-secondary)',
+        borderColor: 'var(--color-border-primary)',
+      }}
+    >
+      {/* Resize handle */}
+      {variant === 'sidebar' && onResize && (
+        <div
+          ref={resizeRef}
+          onMouseDown={handleResizeStart}
+          className="absolute left-0 top-0 bottom-0 z-10 w-1 cursor-col-resize transition-colors hover:bg-(--color-brand-primary)"
+          style={{ opacity: 0.4 }}
+        />
+      )}
+
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#3c4043]">
-        <span className="text-[15px] font-medium text-[#e8eaed]">Studio</span>
+      <div
+        className="flex items-center justify-between px-3 py-3 border-b"
+        style={{ borderColor: 'var(--color-border-primary)' }}
+      >
+        <span
+          className="text-[15px] font-medium"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
+          Workspace
+        </span>
         <button
           onClick={onToggleCollapse}
-          className="p-1.5 rounded hover:bg-[#28292a] text-[#9aa0a6] hover:text-[#e8eaed] transition-colors"
+          className="p-1.5 rounded transition-colors"
+          aria-label={variant === 'overlay' ? 'Close workspace panel' : 'Collapse workspace panel'}
+          style={{ color: 'var(--color-text-tertiary)' }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--color-bg-tertiary)';
+            e.currentTarget.style.color = 'var(--color-text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = 'var(--color-text-tertiary)';
+          }}
         >
           <PanelRightClose size={18} />
         </button>
       </div>
 
-      {/* Language Banner */}
-      <div className="px-4 py-3 border-b border-[#3c4043]">
-        <div className="px-3 py-2 bg-[#28292a] rounded-lg">
-          <p className="text-[12px] text-[#9aa0a6] leading-relaxed">
-            Create an Audio Overview in: <span className="text-[#e8eaed]">हिन्दी</span>, <span className="text-[#e8eaed]">বাংলা</span>, <span className="text-[#e8eaed]">ગુજરાતી</span>, <span className="text-[#e8eaed]">ಕನ್ನಡ</span>, <span className="text-[#e8eaed]">മലയാളം</span>, <span className="text-[#e8eaed]">मराठी</span>, <span className="text-[#e8eaed]">ਪੰਜਾਬੀ</span>, <span className="text-[#e8eaed]">தமிழ்</span>, <span className="text-[#e8eaed]">తెలుగు</span>
-          </p>
-        </div>
-      </div>
-
-      {/* Action Tiles Grid */}
-      <div className="px-4 py-4">
-        <div className="grid grid-cols-3 gap-2">
-          {STUDIO_ACTIONS.map((action) => {
-            const Icon = action.icon;
-            return (
-              <button
-                key={action.id}
-                onClick={() => handleAction(action.id)}
-                disabled={!hasSourcesSelected}
-                className="relative flex flex-col items-center justify-center gap-1.5 p-3 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] hover:border-[#5f6368] rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed group min-h-[72px]"
-              >
-                <Icon size={20} className="text-[#9aa0a6] group-hover:text-[#e8eaed] transition-colors" />
-                <span className="text-[11px] text-[#9aa0a6] group-hover:text-[#e8eaed] transition-colors text-center leading-tight">
-                  {action.label}
+      {/* Tabs */}
+      <div className="workspace-tabs">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            className={`workspace-tab ${activeTab === tab.key ? 'workspace-tab--active' : ''}`}
+            onClick={() => setActiveTab(tab.key)}
+          >
+            <div className="flex items-center justify-center gap-1">
+              {tab.icon}
+              <span>{tab.label}</span>
+              {tab.badge && tab.badge > 0 && (
+                <span
+                  className="text-[9px] px-1 py-0 rounded-full"
+                  style={{
+                    background: 'var(--color-brand-primary)',
+                    color: 'var(--color-text-primary)',
+                  }}
+                >
+                  {tab.badge}
                 </span>
-                
-                {/* Beta Badge */}
-                {action.beta && (
-                  <span className="absolute top-1.5 right-1.5 px-1 py-0.5 bg-[#3c4043] rounded text-[9px] text-[#9aa0a6] font-medium">
-                    BETA
-                  </span>
-                )}
-                
-                {/* Edit Icon */}
-                {action.hasEdit && (
-                  <div className="absolute top-1.5 left-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Pencil size={12} className="text-[#9aa0a6]" />
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+              )}
+            </div>
+          </button>
+        ))}
       </div>
 
-      {/* Output Area */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
-        {outputs.length === 0 ? (
-          <>
-            <Sparkles size={28} className="text-[#8ab4f8] mb-3" />
-            <p className="text-[13px] text-[#8ab4f8] font-medium mb-2">
-              Studio output will be saved here.
-            </p>
-            <p className="text-[12px] text-[#9aa0a6] leading-relaxed">
-              After adding sources, click to add Audio Overview, study guide, mind map and more!
-            </p>
-          </>
-        ) : (
-          <div className="w-full space-y-2">
-            {outputs.map((output) => (
-              <div
-                key={output.id}
-                className="flex items-center gap-3 p-3 bg-[#28292a] rounded-lg border border-[#3c4043]"
-              >
-                <FileText size={18} className="text-[#8ab4f8]" />
-                <div className="flex-1 text-left">
-                  <p className="text-[13px] text-[#e8eaed] truncate">{output.title}</p>
-                  <p className="text-[11px] text-[#9aa0a6]">
-                    {new Date(output.createdAt).toLocaleDateString()}
+      {/* Tab Content */}
+      <div className="flex-1 overflow-y-auto research-panel-scroll">
+        {activeTab === 'notes' && (
+          <WorkspacePinnedNotes
+            notes={pinnedNotes}
+            onRemoveNote={onRemoveNote || (() => {})}
+            onScrollToMessage={onScrollToMessage || (() => {})}
+          />
+        )}
+
+        {activeTab === 'diagrams' && (
+          <div className="p-2.5 space-y-2.5">
+            {detectedDiagrams.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-14 px-5 text-center">
+                <div
+                  className="w-12 h-12 rounded-xl flex items-center justify-center mb-3"
+                  style={{ background: 'var(--color-bg-tertiary)' }}
+                >
+                  <Workflow size={22} style={{ color: 'var(--color-text-muted)' }} />
+                </div>
+                <p className="text-[13px] font-medium mb-1" style={{ color: 'var(--color-text-secondary)' }}>
+                  No diagrams yet
+                </p>
+                <p className="text-[12px] leading-relaxed" style={{ color: 'var(--color-text-muted)' }}>
+                  Mermaid diagrams from AI responses will appear here automatically.
+                </p>
+              </div>
+            ) : (
+              detectedDiagrams.map((d) => (
+                <div
+                  key={d.id}
+                  className="rounded-lg border p-2.5"
+                  style={{
+                    borderColor: 'var(--color-border-primary)',
+                    background: 'var(--color-bg-tertiary)',
+                  }}
+                >
+                  <pre className="text-[11px] overflow-x-auto whitespace-pre-wrap" style={{ color: 'var(--color-text-secondary)' }}>
+                    {d.code.slice(0, 300)}{d.code.length > 300 ? '…' : ''}
+                  </pre>
+                  <p className="text-[10px] mt-2" style={{ color: 'var(--color-text-muted)' }}>
+                    {new Date(d.detectedAt).toLocaleTimeString()}
                   </p>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         )}
-      </div>
 
-      {/* Add Note Button */}
-      <div className="px-4 pb-4">
-        <button
-          onClick={onAddNote}
-          className="ml-auto flex items-center gap-2 px-4 py-2 bg-[#28292a] hover:bg-[#3c4043] border border-[#3c4043] rounded-full text-[13px] text-[#e8eaed] transition-colors float-right"
-        >
-          <Plus size={16} />
-          <span>Add note</span>
-        </button>
+        {activeTab === 'graph' && (
+          <div className="flex flex-col h-full">
+            {graphNodes.length === 0 && !isLoadingGraph ? (
+              <div className="flex flex-col items-center justify-center h-full px-4 gap-3">
+                <GitBranch size={32} style={{ color: 'var(--color-text-muted)' }} />
+                <p className="text-sm text-center" style={{ color: 'var(--color-text-muted)' }}>
+                  Build a citation graph to visualize paper relationships.
+                </p>
+                {onBuildGraph && (
+                  <button
+                    onClick={onBuildGraph}
+                    disabled={!hasSourcesSelected}
+                    className="px-4 py-2 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40"
+                    style={{
+                      background: 'var(--color-brand-primary)',
+                      color: 'var(--color-bg-primary)',
+                    }}
+                  >
+                    Build Graph
+                  </button>
+                )}
+              </div>
+            ) : isLoadingGraph ? (
+              <div className="flex items-center justify-center h-full gap-2">
+                <Loader2 size={18} className="animate-spin" style={{ color: 'var(--color-brand-secondary)' }} />
+                <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Building graph…</span>
+              </div>
+            ) : (
+              <div className="flex-1 min-h-0">
+                <ClaimLineageGraph nodes={graphNodes} edges={graphEdges} />
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

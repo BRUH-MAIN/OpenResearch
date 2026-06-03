@@ -228,7 +228,7 @@ See [Database Schema Documentation](../docs/database-schema.md) for comprehensiv
 - `papers` - Research papers metadata
 - `saved_papers` - User's saved papers (junction table)
 - `group_papers` - Papers linked to groups
-- `group_paper_vectors` - Vector embeddings for papers (pgvector, 1536-dim)
+- `group_paper_vectors` - Vector embeddings for papers (pgvector, 768-dim)
 - `refresh_tokens` - JWT refresh tokens
 - `group_memory_notes` - Group-scoped memory notes (embeddable)
 - `ai_artifacts` - Generated artifacts (summaries, reports)
@@ -236,7 +236,7 @@ See [Database Schema Documentation](../docs/database-schema.md) for comprehensiv
 
 ### Vector Storage
 - **Table**: `group_paper_vectors`
-- **Embedding**: 1536-dimensional OpenAI embeddings
+- **Embedding**: 768-dimensional SPECTER2 embeddings (local)
 - **Index Type**: HNSW (Hierarchical Navigable Small World)
 - **Distance Metric**: Cosine similarity
 - **Group Isolation**: Each group has isolated vector space

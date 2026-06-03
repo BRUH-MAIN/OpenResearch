@@ -8,59 +8,80 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   rightIcon?: React.ReactNode;
 }
 
-export function Input({ 
-  label, 
-  error, 
+export function Input({
+  label,
+  error,
   hint,
   leftIcon,
   rightIcon,
-  className = '', 
-  ...props 
+  className = '',
+  ...props
 }: InputProps) {
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-[#e4e4e7] mb-2">
+        <label
+          className="block text-sm font-medium mb-2"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
           {label}
         </label>
       )}
       <div className="relative">
         {leftIcon && (
-          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-[#71717a] pointer-events-none">
+          <div
+            className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
             {leftIcon}
           </div>
         )}
         <input
           className={`
             w-full px-4 py-2.5
-            bg-[#1a1a1a] text-white
-            border rounded-xl
-            placeholder:text-[#52525b]
+            rounded-xl
             transition-all duration-200
-            focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC]
-            hover:border-[#3a3a3a]
-            disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-[#0f0f0f]
-            ${error 
-              ? 'border-[#ef4444] focus:ring-red-500/40 focus:border-[#ef4444]' 
-              : 'border-[#2a2a2a]'
-            }
+            focus:outline-none
+            disabled:opacity-50 disabled:cursor-not-allowed
             ${leftIcon ? 'pl-10' : ''}
             ${rightIcon ? 'pr-10' : ''}
             ${className}
           `}
+          style={{
+            background: 'var(--color-bg-secondary)',
+            color: 'var(--color-text-primary)',
+            border: error
+              ? '1px solid var(--color-error)'
+              : '1px solid var(--color-border-primary)',
+          }}
+          onFocus={(e) => {
+            if (!error) {
+              e.currentTarget.style.borderColor = 'var(--color-border-focus)';
+              e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13, 115, 119, 0.15)';
+            }
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.borderColor = error
+              ? 'var(--color-error)'
+              : 'var(--color-border-primary)';
+            e.currentTarget.style.boxShadow = 'none';
+          }}
           {...props}
         />
         {rightIcon && (
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[#71717a]">
+          <div
+            className="absolute right-3 top-1/2 -translate-y-1/2"
+            style={{ color: 'var(--color-text-tertiary)' }}
+          >
             {rightIcon}
           </div>
         )}
       </div>
       {hint && !error && (
-        <p className="mt-1.5 text-sm text-[#71717a]">{hint}</p>
+        <p className="mt-1.5 text-sm" style={{ color: 'var(--color-text-tertiary)' }}>{hint}</p>
       )}
       {error && (
-        <p className="mt-1.5 text-sm text-[#ef4444] flex items-center gap-1">
+        <p className="mt-1.5 text-sm flex items-center gap-1" style={{ color: 'var(--color-error)' }}>
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
@@ -77,44 +98,58 @@ interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement
   hint?: string;
 }
 
-export function Textarea({ 
-  label, 
-  error, 
+export function Textarea({
+  label,
+  error,
   hint,
-  className = '', 
-  ...props 
+  className = '',
+  ...props
 }: TextareaProps) {
   return (
     <div className="w-full">
       {label && (
-        <label className="block text-sm font-medium text-[#e4e4e7] mb-2">
+        <label
+          className="block text-sm font-medium mb-2"
+          style={{ color: 'var(--color-text-primary)' }}
+        >
           {label}
         </label>
       )}
       <textarea
         className={`
           w-full px-4 py-3
-          bg-[#1a1a1a] text-white
-          border rounded-xl
-          placeholder:text-[#52525b]
+          rounded-xl resize-none
           transition-all duration-200
-          resize-none
-          focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC]
-          hover:border-[#3a3a3a]
-          disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-[#0f0f0f]
-          ${error 
-            ? 'border-[#ef4444] focus:ring-red-500/40 focus:border-[#ef4444]' 
-            : 'border-[#2a2a2a]'
-          }
+          focus:outline-none
+          disabled:opacity-50 disabled:cursor-not-allowed
           ${className}
         `}
+        style={{
+          background: 'var(--color-bg-secondary)',
+          color: 'var(--color-text-primary)',
+          border: error
+            ? '1px solid var(--color-error)'
+            : '1px solid var(--color-border-primary)',
+        }}
+        onFocus={(e) => {
+          if (!error) {
+            e.currentTarget.style.borderColor = 'var(--color-border-focus)';
+            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(13, 115, 119, 0.15)';
+          }
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = error
+            ? 'var(--color-error)'
+            : 'var(--color-border-primary)';
+          e.currentTarget.style.boxShadow = 'none';
+        }}
         {...props}
       />
       {hint && !error && (
-        <p className="mt-1.5 text-sm text-[#71717a]">{hint}</p>
+        <p className="mt-1.5 text-sm" style={{ color: 'var(--color-text-tertiary)' }}>{hint}</p>
       )}
       {error && (
-        <p className="mt-1.5 text-sm text-[#ef4444] flex items-center gap-1">
+        <p className="mt-1.5 text-sm flex items-center gap-1" style={{ color: 'var(--color-error)' }}>
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
           </svg>
@@ -129,10 +164,10 @@ interface SearchInputProps extends Omit<InputProps, 'leftIcon'> {
   onSearch?: (value: string) => void;
 }
 
-export function SearchInput({ 
-  onSearch, 
-  className = '', 
-  ...props 
+export function SearchInput({
+  onSearch,
+  className = '',
+  ...props
 }: SearchInputProps) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && onSearch) {

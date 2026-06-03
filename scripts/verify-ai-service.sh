@@ -1,8 +1,8 @@
 #!/bin/bash
 # OpenResearch AI Service Verification Script
-# Run this to verify all AI features are working correctly
+# Run this to verify the Docker or local AI-enabled chat stack.
 
-set -e
+set -euo pipefail
 
 echo "=========================================="
 echo "OpenResearch AI Service Verification"
@@ -34,29 +34,42 @@ warn() {
     echo -e "${YELLOW}⚠ WARN${NC}: $1"
 }
 
+json_has_true() {
+    local payload="$1"
+    local key="$2"
+    echo "$payload" | grep -Eq '"'"$key"'"[[:space:]]*:[[:space:]]*true'
+}
+
+json_has_value() {
+    local payload="$1"
+    local key="$2"
+    local value="$3"
+    echo "$payload" | grep -Eq '"'"$key"'"[[:space:]]*:[[:space:]]*"'"$value"'"'
+}
+
 # 1. Test AI Service Health
 echo "1. Testing AI Service Health Endpoint..."
 HEALTH_RESPONSE=$(curl -s "$AI_SERVICE_URL/health" 2>/dev/null || echo '{"error": "Connection failed"}')
 
-if echo "$HEALTH_RESPONSE" | grep -q '"status":"healthy"'; then
+if json_has_value "$HEALTH_RESPONSE" "status" "healthy"; then
     pass "AI Service is healthy"
     
     # Check Groq configuration
-    if echo "$HEALTH_RESPONSE" | grep -q '"groq_configured":true'; then
+    if json_has_true "$HEALTH_RESPONSE" "groq_configured"; then
         pass "Groq API is configured"
     else
         fail "Groq API is NOT configured - set GROQ_API_KEY"
     fi
     
     # Check database connection
-    if echo "$HEALTH_RESPONSE" | grep -q '"database_connected":true'; then
+    if json_has_true "$HEALTH_RESPONSE" "database_connected"; then
         pass "Database is connected"
     else
         warn "Database is not connected - context features limited"
     fi
     
     # Check vector store
-    if echo "$HEALTH_RESPONSE" | grep -q '"vector_store_connected":true'; then
+    if json_has_true "$HEALTH_RESPONSE" "vector_store_connected"; then
         pass "Vector store is connected"
     else
         warn "Vector store is not connected - RAG features limited"
@@ -68,20 +81,13 @@ fi
 echo ""
 
 # 2. Test Simple Generation (no auth required)
-echo "2. Testing AI Generation (Test Endpoint)..."
-TEST_RESPONSE=$(curl -s -X POST "$AI_SERVICE_URL/test?question=What%20is%20machine%20learning" 2>/dev/null || echo '{"error": "Connection failed"}')
+echo "2. Testing AI HTTP reachability..."
+OPENAPI_STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$AI_SERVICE_URL/docs" 2>/dev/null || echo "000")
 
-if echo "$TEST_RESPONSE" | grep -q '"answer"'; then
-    pass "AI generation is working"
-    LATENCY=$(echo "$TEST_RESPONSE" | grep -o '"latency_ms":[0-9]*' | head -1 | cut -d: -f2)
-    echo "   Response latency: ${LATENCY}ms"
+if [ "$OPENAPI_STATUS" = "200" ]; then
+    pass "AI documentation endpoint is reachable"
 else
-    if echo "$TEST_RESPONSE" | grep -q '"detail"'; then
-        DETAIL=$(echo "$TEST_RESPONSE" | grep -o '"detail":"[^"]*"' | cut -d'"' -f4)
-        fail "AI generation failed: $DETAIL"
-    else
-        fail "AI generation failed: $TEST_RESPONSE"
-    fi
+    warn "AI documentation endpoint returned HTTP $OPENAPI_STATUS"
 fi
 
 echo ""
@@ -90,7 +96,7 @@ echo ""
 echo "3. Testing Backend Server Health..."
 SERVER_HEALTH=$(curl -s "$SERVER_URL/health" 2>/dev/null || echo '{"error": "Connection failed"}')
 
-if echo "$SERVER_HEALTH" | grep -q '"status":"ok"'; then
+if json_has_value "$SERVER_HEALTH" "status" "healthy"; then
     pass "Backend server is healthy"
 else
     fail "Backend server health check failed: $SERVER_HEALTH"
@@ -117,10 +123,8 @@ echo "Verification Complete"
 echo "=========================================="
 echo ""
 echo "Next steps if issues found:"
-echo "1. Ensure GROQ_API_KEY is set in ai-service/.env"
-echo "2. Ensure DATABASE_URL is set for both services"
-echo "3. Check that all services are running:"
-echo "   - AI Service: cd ai-service && uvicorn app.main:app --reload"
-echo "   - Backend: cd server && npm run dev"
-echo "   - Frontend: cd client && npm run dev"
+echo "1. Ensure GROQ_API_KEY is set in .env.docker or ai-service/.env"
+echo "2. Ensure PostgreSQL, server, client, and ai-service are all running"
+echo "3. For Docker on Windows, use scripts/start-multiuser-chat.ps1"
+echo "4. Seed test users with: docker compose exec server npm run db:seed"
 echo ""

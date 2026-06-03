@@ -10,6 +10,7 @@ import { eq, and, desc, sql, notInArray, inArray } from 'drizzle-orm';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { createError } from '../middleware/error.js';
 import { aiClient } from '../services/aiClient.js';
+import logger from '../utils/logger.js';
 
 const router = Router();
 
@@ -35,16 +36,16 @@ router.get('/user', async (req: AuthRequest, res: Response, next) => {
     // Get papers user hasn't seen yet, ordered by recency
     const recommendations = existingIds.length > 0
       ? await db
-          .select()
-          .from(papers)
-          .where(notInArray(papers.id, existingIds))
-          .orderBy(desc(papers.createdAt))
-          .limit(limit)
+        .select()
+        .from(papers)
+        .where(notInArray(papers.id, existingIds))
+        .orderBy(desc(papers.createdAt))
+        .limit(limit)
       : await db
-          .select()
-          .from(papers)
-          .orderBy(desc(papers.createdAt))
-          .limit(limit);
+        .select()
+        .from(papers)
+        .orderBy(desc(papers.createdAt))
+        .limit(limit);
 
     res.json({
       recommendations: recommendations.map(p => ({
@@ -88,20 +89,8 @@ router.get('/group/:groupId', async (req: AuthRequest, res: Response, next) => {
     const existingIds = groupPaperIds.map(p => p.paperId);
 
     // Try to get AI-powered recommendations
-    try {
-      const aiRecommendations = await aiClient.getRecommendations({
-        group_id: groupId,
-        limit,
-        exclude_paper_ids: existingIds,
-      });
+    // Removed dead AI recommendations path
 
-      if (aiRecommendations.recommendations && aiRecommendations.recommendations.length > 0) {
-        res.json(aiRecommendations);
-        return;
-      }
-    } catch (aiError) {
-      console.error('AI recommendations failed, falling back:', aiError);
-    }
 
     // Fallback: recommend papers similar to those in group by tags
     let recommendations: any[] = [];
@@ -218,7 +207,7 @@ router.get('/similar/:paperId', async (req: AuthRequest, res: Response, next) =>
             .slice(0, limit);
 
           const similarPaperIds = filteredResults.map((r: any) => r.paper_id);
-          
+
           if (similarPaperIds.length > 0) {
             const similarPapers = await db
               .select()
@@ -243,13 +232,13 @@ router.get('/similar/:paperId', async (req: AuthRequest, res: Response, next) =>
           }
         }
       } catch (aiError) {
-        console.error('Vector similarity search failed:', aiError);
+        logger.warn({ err: aiError }, 'Vector similarity search failed, falling back to tags');
       }
     }
 
     // Fallback: find papers with similar tags
     const paperTags = Array.isArray(paper.tags) ? paper.tags : [];
-    
+
     const allPapers = await db
       .select()
       .from(papers)
