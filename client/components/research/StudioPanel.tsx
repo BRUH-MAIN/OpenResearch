@@ -4,12 +4,9 @@ import React, { useState, useRef, useCallback } from 'react';
 import {
   PanelRightClose,
   Pin,
-  GitBranch,
-  Loader2,
   Workflow,
 } from 'lucide-react';
 import { WorkspacePinnedNotes, PinnedNote } from './WorkspacePinnedNotes';
-import { ClaimLineageGraph, ClaimNode, ClaimEdge } from './ClaimLineageGraph';
 import { Source } from './SourcesPanel';
 
 // Keep exporting StudioOutput for backward compatibility
@@ -28,7 +25,7 @@ export interface DetectedDiagram {
   detectedAt: string;
 }
 
-type WorkspaceTab = 'notes' | 'diagrams' | 'graph';
+type WorkspaceTab = 'notes' | 'diagrams';
 
 interface StudioPanelProps {
   isCollapsed?: boolean;
@@ -43,18 +40,8 @@ interface StudioPanelProps {
   onScrollToMessage?: (messageId: string) => void;
   // Diagrams
   detectedDiagrams?: DetectedDiagram[];
-  // Graph
-  graphNodes?: ClaimNode[];
-  graphEdges?: ClaimEdge[];
-  isLoadingGraph?: boolean;
-  onBuildGraph?: () => void;
-  hasSourcesSelected?: boolean;
-  // Workflow
-  groupId?: string;
-  sessionId?: string;
   // Deprecated / backward compat
   outputs?: StudioOutput[];
-  onGenerateReport?: () => void;
   sources?: Source[];
 }
 
@@ -68,11 +55,6 @@ export function StudioPanel({
   onRemoveNote,
   onScrollToMessage,
   detectedDiagrams = [],
-  graphNodes = [],
-  graphEdges = [],
-  isLoadingGraph = false,
-  onBuildGraph,
-  hasSourcesSelected = false,
   variant = 'sidebar',
 }: StudioPanelProps) {
   const [activeTab, setActiveTab] = useState<WorkspaceTab>('notes');
@@ -165,7 +147,6 @@ export function StudioPanel({
       icon: <Workflow size={12} />,
       badge: detectedDiagrams.length || undefined,
     },
-    { key: 'graph', label: 'Graph', icon: <GitBranch size={12} /> },
   ];
 
   return (
@@ -295,40 +276,6 @@ export function StudioPanel({
           </div>
         )}
 
-        {activeTab === 'graph' && (
-          <div className="flex flex-col h-full">
-            {graphNodes.length === 0 && !isLoadingGraph ? (
-              <div className="flex flex-col items-center justify-center h-full px-4 gap-3">
-                <GitBranch size={32} style={{ color: 'var(--color-text-muted)' }} />
-                <p className="text-sm text-center" style={{ color: 'var(--color-text-muted)' }}>
-                  Build a citation graph to visualize paper relationships.
-                </p>
-                {onBuildGraph && (
-                  <button
-                    onClick={onBuildGraph}
-                    disabled={!hasSourcesSelected}
-                    className="px-4 py-2 rounded-lg text-[13px] font-medium transition-all disabled:opacity-40"
-                    style={{
-                      background: 'var(--color-brand-primary)',
-                      color: 'var(--color-bg-primary)',
-                    }}
-                  >
-                    Build Graph
-                  </button>
-                )}
-              </div>
-            ) : isLoadingGraph ? (
-              <div className="flex items-center justify-center h-full gap-2">
-                <Loader2 size={18} className="animate-spin" style={{ color: 'var(--color-brand-secondary)' }} />
-                <span className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Building graph…</span>
-              </div>
-            ) : (
-              <div className="flex-1 min-h-0">
-                <ClaimLineageGraph nodes={graphNodes} edges={graphEdges} />
-              </div>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

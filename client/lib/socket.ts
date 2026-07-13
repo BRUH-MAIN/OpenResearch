@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState, startTransition } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useAuthStore } from './auth';
-import { Message, IntentClassifiedEvent } from './api';
+import { Message } from './api';
 
 const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -23,7 +23,6 @@ export function useSocket(sessionId: string | null) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [aiError, setAIError] = useState<AIError | null>(null);
-  const [intentEvent, setIntentEvent] = useState<IntentClassifiedEvent | null>(null);
   const [streamingMessageIds, setStreamingMessageIds] = useState<Set<string>>(new Set());
 
   // ── rAF-batched token buffer for smooth streaming ──
@@ -88,23 +87,8 @@ export function useSocket(sessionId: string | null) {
       }
     });
 
-    // Handle intent classification results
-    socket.on('ai:intent_classified', (data: IntentClassifiedEvent) => {
-      setIntentEvent(data);
-      // Auto-clear after 15 seconds
-      setTimeout(() => setIntentEvent(null), 15000);
-    });
-
     socket.on('message:new', (message: Message) => {
       setMessages((prev) => [...prev, message]);
-    });
-
-    socket.on('agentic:progress', (data: { messageId: string; content: string }) => {
-      setMessages((prev) =>
-        prev.map((msg) =>
-          msg.id === data.messageId ? { ...msg, content: data.content } : msg
-        )
-      );
     });
 
     // Streaming: buffer tokens and flush via rAF for smooth rendering
@@ -178,13 +162,6 @@ export function useSocket(sessionId: string | null) {
       console.log(`${data.userName} left the session`);
     });
 
-    // ── Workflow orchestration events ──
-    // Forward workflow events from the socket to a window CustomEvent
-    // so WorkflowPanel (and any other listener) can react in real-time.
-    socket.on('workflow:event', (event: Record<string, unknown>) => {
-      window.dispatchEvent(new CustomEvent('workflow:event', { detail: event }));
-    });
-
     socketRef.current = socket;
 
     return () => {
@@ -211,10 +188,9 @@ export function useSocket(sessionId: string | null) {
     };
   }, [sessionId, isConnected]);
 
-  // Send message (with optional agent override: 'auto' lets backend classify)
-  const sendMessage = useCallback((content: string, taskType?: string) => {
+  const sendMessage = useCallback((content: string) => {
     if (!socketRef.current || !sessionId) return;
-    socketRef.current.emit('message:send', { sessionId, content, taskType: taskType || 'auto' });
+    socketRef.current.emit('message:send', { sessionId, content });
   }, [sessionId]);
 
   // Typing indicators
@@ -259,7 +235,6 @@ export function useSocket(sessionId: string | null) {
     messages,
     typingUsers,
     aiError,
-    intentEvent,
     streamingMessageIds,
     sendMessage,
     startTyping,

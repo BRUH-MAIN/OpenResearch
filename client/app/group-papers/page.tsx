@@ -213,7 +213,7 @@ function GroupPapersPageContent() {
               </p>
             </div>
           </div>
-          <Link href="/discover">
+          <Link href="/paper">
             <Button>
               <Sparkles className="w-4 h-4 mr-2" />
               Discover Papers
@@ -251,7 +251,7 @@ function GroupPapersPageContent() {
                   : 'Add papers from the Discover page to start collaborating'}
               </p>
               {!searchQuery && (
-                <Link href="/discover">
+                <Link href="/paper">
                   <Button>
                     <Sparkles className="w-4 h-4 mr-2" />
                     Discover Papers

@@ -35,25 +35,11 @@ interface SourcesPanelProps {
   onDeleteSource: (id: string) => void;
   onToggleAll: (enabled: boolean) => void;
   onAddSource: () => void;
-  selectedAgent: string;
-  onAgentChange: (agent: string) => void;
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
   className?: string;
   variant?: 'sidebar' | 'overlay';
 }
-
-const AGENT_OPTIONS = [
-  { value: 'auto', label: 'Auto (AI decides)', description: 'Intent classifier routes automatically' },
-  { value: 'deep_research', label: 'Deep Research', description: 'Comprehensive multi-source research' },
-  { value: 'literature_survey', label: 'Literature Survey', description: 'Systematic literature review' },
-  { value: 'gap_analysis', label: 'Gap Analysis', description: 'Identify research gaps' },
-  { value: 'fact_check', label: 'Fact Check', description: 'Verify claims against evidence' },
-  { value: 'novelty_assessment', label: 'Novelty Assessment', description: 'Evaluate idea novelty' },
-  { value: 'research_mentor', label: 'Research Mentor', description: 'Guidance and advice' },
-  { value: 'paper_writing', label: 'Paper Writing', description: 'Draft paper sections' },
-  { value: 'methodology_extraction', label: 'Structured Comparison', description: 'Compare architectures, methods, datasets, metrics, and findings' },
-];
 
 export function SourcesPanel({
   sources,
@@ -61,8 +47,6 @@ export function SourcesPanel({
   onDeleteSource,
   onToggleAll,
   onAddSource,
-  selectedAgent,
-  onAgentChange,
   isCollapsed = false,
   onToggleCollapse,
   className = '',
@@ -70,7 +54,6 @@ export function SourcesPanel({
 }: SourcesPanelProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [agentDropdownOpen, setAgentDropdownOpen] = useState(false);
 
   const allSelected = sources.length > 0 && sources.every((s) => s.enabled);
   const enabledCount = sources.filter((s) => s.enabled).length;
@@ -231,7 +214,7 @@ export function SourcesPanel({
         </div>
       </div>
 
-      {/* Add Sources + Agent Selector */}
+      {/* Add Sources */}
       <div className="px-3 pt-2.5 flex flex-col gap-2">
         <button
           onClick={onAddSource}
@@ -252,79 +235,6 @@ export function SourcesPanel({
           <Plus size={16} />
           <span>Add Source</span>
         </button>
-
-        {/* Agent Selector Dropdown */}
-        <div className="relative">
-          <button
-            onClick={() => setAgentDropdownOpen(!agentDropdownOpen)}
-            className="flex items-center justify-between gap-2 w-full px-3 py-2 rounded-lg text-[13px] transition-all"
-            style={{
-              background: 'rgba(13, 115, 119, 0.15)',
-              border: '1px solid rgba(13, 115, 119, 0.3)',
-              color: 'var(--color-brand-secondary)',
-            }}
-          >
-            <div className="flex items-center gap-1.5">
-              <Bot size={16} />
-              <span>{AGENT_OPTIONS.find(a => a.value === selectedAgent)?.label || 'Auto'}</span>
-            </div>
-            <ChevronDown
-              size={14}
-              style={{
-                transform: agentDropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                transition: 'transform 0.2s ease',
-              }}
-            />
-          </button>
-
-          {agentDropdownOpen && (
-            <div
-              className="absolute left-0 right-0 top-full mt-1 rounded-xl shadow-xl py-1 z-50 max-h-[280px] overflow-y-auto research-panel-scroll"
-              style={{
-                background: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border-primary)',
-              }}
-            >
-              {AGENT_OPTIONS.map((agent) => (
-                <button
-                  key={agent.value}
-                  onClick={() => {
-                    onAgentChange(agent.value);
-                    setAgentDropdownOpen(false);
-                  }}
-                  className="w-full text-left px-3 py-2 transition-colors flex flex-col"
-                  style={{
-                    background: selectedAgent === agent.value ? 'rgba(13, 115, 119, 0.1)' : 'transparent',
-                    borderLeft: selectedAgent === agent.value ? '2px solid var(--color-brand-secondary)' : '2px solid transparent',
-                  }}
-                  onMouseEnter={(e) => {
-                    if (selectedAgent !== agent.value) {
-                      e.currentTarget.style.background = 'var(--color-bg-tertiary)';
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = selectedAgent === agent.value ? 'rgba(13, 115, 119, 0.1)' : 'transparent';
-                  }}
-                >
-                  <span
-                    className="text-[13px] font-medium"
-                    style={{
-                      color: selectedAgent === agent.value ? 'var(--color-brand-secondary)' : 'var(--color-text-primary)',
-                    }}
-                  >
-                    {agent.label}
-                  </span>
-                  <span
-                    className="text-[11px]"
-                    style={{ color: 'var(--color-text-muted)' }}
-                  >
-                    {agent.description}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Select All */}

@@ -1,7 +1,7 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey, boolean, real, customType } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey, boolean, customType } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-// Custom vector type for pgvector (SPECTER2 produces 768-dimensional vectors)
+// Custom vector type for pgvector (768-dimensional embeddings)
 const vector = customType<{ data: number[]; driverData: string }>({
   dataType() {
     return 'vector(768)';
@@ -97,18 +97,6 @@ export const savedPapers = pgTable('saved_papers', {
   pk: primaryKey({ columns: [table.userId, table.paperId] }),
 }));
 
-// Tasks table
-export const tasks = pgTable('tasks', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  sessionId: uuid('session_id').notNull().references(() => sessions.id, { onDelete: 'cascade' }),
-  title: varchar('title', { length: 500 }).notNull(),
-  description: text('description'),
-  status: varchar('status', { length: 50 }).notNull().default('pending'), // 'pending' | 'in-progress' | 'completed'
-  assignedTo: uuid('assigned_to').references(() => users.id, { onDelete: 'set null' }),
-  extractedFromMessageId: uuid('extracted_from_message_id').references(() => messages.id, { onDelete: 'set null' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
-
 // Refresh tokens table (for JWT refresh token rotation)
 export const refreshTokens = pgTable('refresh_tokens', {
   id: uuid('id').defaultRandom().primaryKey(),
@@ -116,25 +104,6 @@ export const refreshTokens = pgTable('refresh_tokens', {
   token: text('token').notNull().unique(),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
-
-// Friends table - bidirectional friendship
-export const friends = pgTable('friends', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  friendId: uuid('friend_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
-
-// Friend requests table
-export const friendRequests = pgTable('friend_requests', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  fromUserId: uuid('from_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  toUserId: uuid('to_user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  status: varchar('status', { length: 50 }).notNull().default('pending'), // 'pending' | 'accepted' | 'rejected'
-  message: text('message'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
 // Group invitations table
@@ -148,143 +117,6 @@ export const groupInvitations = pgTable('group_invitations', {
   createdAt: timestamp('created_at').defaultNow().notNull(),
   expiresAt: timestamp('expires_at'),
 });
-
-// Relations
-export const usersRelations = relations(users, ({ many }) => ({
-  ownedGroups: many(groups),
-  groupMemberships: many(groupMembers),
-  messages: many(messages),
-  savedPapers: many(savedPapers),
-  tasks: many(tasks),
-  refreshTokens: many(refreshTokens),
-  friends: many(friends),
-  friendRequestsSent: many(friendRequests, { relationName: 'fromUser' }),
-  friendRequestsReceived: many(friendRequests, { relationName: 'toUser' }),
-  groupInvitationsReceived: many(groupInvitations, { relationName: 'invitedUser' }),
-}));
-
-export const groupsRelations = relations(groups, ({ one, many }) => ({
-  owner: one(users, {
-    fields: [groups.ownerId],
-    references: [users.id],
-  }),
-  members: many(groupMembers),
-  sessions: many(sessions),
-  invitations: many(groupInvitations),
-}));
-
-export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
-  group: one(groups, {
-    fields: [groupMembers.groupId],
-    references: [groups.id],
-  }),
-  user: one(users, {
-    fields: [groupMembers.userId],
-    references: [users.id],
-  }),
-}));
-
-export const sessionsRelations = relations(sessions, ({ one, many }) => ({
-  group: one(groups, {
-    fields: [sessions.groupId],
-    references: [groups.id],
-  }),
-  messages: many(messages),
-  tasks: many(tasks),
-  savedPapers: many(savedPapers),
-}));
-
-export const messagesRelations = relations(messages, ({ one }) => ({
-  session: one(sessions, {
-    fields: [messages.sessionId],
-    references: [sessions.id],
-  }),
-  user: one(users, {
-    fields: [messages.userId],
-    references: [users.id],
-  }),
-}));
-
-export const papersRelations = relations(papers, ({ many }) => ({
-  savedBy: many(savedPapers),
-}));
-
-export const savedPapersRelations = relations(savedPapers, ({ one }) => ({
-  user: one(users, {
-    fields: [savedPapers.userId],
-    references: [users.id],
-  }),
-  paper: one(papers, {
-    fields: [savedPapers.paperId],
-    references: [papers.id],
-  }),
-  session: one(sessions, {
-    fields: [savedPapers.sessionId],
-    references: [sessions.id],
-  }),
-}));
-
-export const tasksRelations = relations(tasks, ({ one }) => ({
-  session: one(sessions, {
-    fields: [tasks.sessionId],
-    references: [sessions.id],
-  }),
-  assignee: one(users, {
-    fields: [tasks.assignedTo],
-    references: [users.id],
-  }),
-  extractedFromMessage: one(messages, {
-    fields: [tasks.extractedFromMessageId],
-    references: [messages.id],
-  }),
-}));
-
-export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
-  user: one(users, {
-    fields: [refreshTokens.userId],
-    references: [users.id],
-  }),
-}));
-
-export const friendsRelations = relations(friends, ({ one }) => ({
-  user: one(users, {
-    fields: [friends.userId],
-    references: [users.id],
-  }),
-  friend: one(users, {
-    fields: [friends.friendId],
-    references: [users.id],
-  }),
-}));
-
-export const friendRequestsRelations = relations(friendRequests, ({ one }) => ({
-  fromUser: one(users, {
-    fields: [friendRequests.fromUserId],
-    references: [users.id],
-    relationName: 'fromUser',
-  }),
-  toUser: one(users, {
-    fields: [friendRequests.toUserId],
-    references: [users.id],
-    relationName: 'toUser',
-  }),
-}));
-
-export const groupInvitationsRelations = relations(groupInvitations, ({ one }) => ({
-  group: one(groups, {
-    fields: [groupInvitations.groupId],
-    references: [groups.id],
-  }),
-  inviter: one(users, {
-    fields: [groupInvitations.invitedBy],
-    references: [users.id],
-  }),
-  invitedUser: one(users, {
-    fields: [groupInvitations.invitedUserId],
-    references: [users.id],
-    relationName: 'invitedUser',
-  }),
-}));
 
 // ============ Group Context Isolation Tables ============
 
@@ -304,25 +136,13 @@ export const groupPaperVectors = pgTable('group_paper_vectors', {
   id: uuid('id').defaultRandom().primaryKey(),
   groupId: uuid('group_id').notNull(),
   paperId: text('paper_id').notNull(),
-  contentType: varchar('content_type', { length: 50 }).notNull().default('paper'), // paper, qa, summary, memory, report
+  contentType: varchar('content_type', { length: 50 }).notNull().default('paper'), // paper, qa, summary, report
   contentId: text('content_id'),
   chunkIndex: integer('chunk_index').default(0),
   content: text('content'),
   embedding: vector('embedding'),
   metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
-
-// Group Memory Notes - decisions, facts, internal guidelines
-export const groupMemoryNotes = pgTable('group_memory_notes', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
-  content: text('content').notNull(),
-  noteType: varchar('note_type', { length: 50 }).notNull().default('note'), // note, decision, guideline, fact
-  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
 // AI Artifacts - stores AI-generated content
@@ -356,82 +176,100 @@ export const groupReports = pgTable('group_reports', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 });
 
-// Workflow Runs - tracks multi-agent research workflow instances
-export const workflowRuns = pgTable('workflow_runs', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  groupId: uuid('group_id').references(() => groups.id, { onDelete: 'cascade' }),
-  sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
-  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
-  templateId: varchar('template_id', { length: 100 }), // null = AI-planned
-  goal: text('goal').notNull(), // natural language research goal
-  plan: jsonb('plan').$type<Record<string, unknown>>().notNull(), // full workflow DAG definition
-  status: varchar('status', { length: 50 }).notNull().default('planning'),
-  // 'planning' | 'awaiting_approval' | 'running' | 'paused' | 'completed' | 'failed' | 'cancelled'
-  currentStepIndex: integer('current_step_index').default(0),
-  finalOutput: jsonb('final_output').$type<Record<string, unknown>>(),
-  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
-});
+// ============ Relations ============
 
-// Workflow Steps - tracks individual steps within a workflow run
-export const workflowSteps = pgTable('workflow_steps', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  workflowRunId: uuid('workflow_run_id').notNull().references(() => workflowRuns.id, { onDelete: 'cascade' }),
-  stepIndex: integer('step_index').notNull(),
-  agentType: varchar('agent_type', { length: 100 }).notNull(), // maps to AgenticTaskType or special types like 'planner', 'latex_generator'
-  name: varchar('name', { length: 255 }).notNull(), // human-readable step name
-  description: text('description'),
-  status: varchar('status', { length: 50 }).notNull().default('pending'),
-  // 'pending' | 'running' | 'awaiting_approval' | 'approved' | 'rejected' | 'completed' | 'failed' | 'skipped'
-  isCheckpoint: boolean('is_checkpoint').default(false), // pause for human review after this step
-  input: jsonb('input').$type<Record<string, unknown>>(), // input data for this step
-  output: jsonb('output').$type<Record<string, unknown>>(), // output data from this step
-  userFeedback: text('user_feedback'), // user's review comments on checkpoint
-  errorMessage: text('error_message'),
-  startedAt: timestamp('started_at', { withTimezone: true }),
-  completedAt: timestamp('completed_at', { withTimezone: true }),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+export const usersRelations = relations(users, ({ many }) => ({
+  ownedGroups: many(groups),
+  groupMemberships: many(groupMembers),
+  messages: many(messages),
+  savedPapers: many(savedPapers),
+  refreshTokens: many(refreshTokens),
+  groupInvitationsReceived: many(groupInvitations, { relationName: 'invitedUser' }),
+}));
 
-// Methodology Matrices - stores structured methodology comparisons
-export const methodologyMatrices = pgTable('methodology_matrices', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
-  sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
-  userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
-  query: text('query').notNull(),
-  rows: jsonb('rows').$type<Array<Record<string, string>>>().notNull(),
-  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+export const groupsRelations = relations(groups, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [groups.ownerId],
+    references: [users.id],
+  }),
+  members: many(groupMembers),
+  sessions: many(sessions),
+  invitations: many(groupInvitations),
+}));
 
-// Claim Lineage Nodes - claim provenance tracking
-export const claimLineageNodes = pgTable('claim_lineage_nodes', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
-  sessionId: uuid('session_id').references(() => sessions.id, { onDelete: 'set null' }),
-  nodeType: varchar('node_type', { length: 50 }).notNull(), // 'claim' | 'source' | 'synthesis'
-  label: text('label').notNull(),
-  content: text('content'),
-  sourceUrl: text('source_url'),
-  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupMembers.groupId],
+    references: [groups.id],
+  }),
+  user: one(users, {
+    fields: [groupMembers.userId],
+    references: [users.id],
+  }),
+}));
 
-// Claim Lineage Edges - directed edges between claim nodes
-export const claimLineageEdges = pgTable('claim_lineage_edges', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  groupId: uuid('group_id').notNull().references(() => groups.id, { onDelete: 'cascade' }),
-  sourceNodeId: uuid('source_node_id').notNull().references(() => claimLineageNodes.id, { onDelete: 'cascade' }),
-  targetNodeId: uuid('target_node_id').notNull().references(() => claimLineageNodes.id, { onDelete: 'cascade' }),
-  edgeType: varchar('edge_type', { length: 50 }).notNull(), // 'supports' | 'contradicts' | 'derives_from' | 'cites'
-  weight: real('weight').default(1.0),
-  metadata: jsonb('metadata').$type<Record<string, unknown>>(),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+export const sessionsRelations = relations(sessions, ({ one, many }) => ({
+  group: one(groups, {
+    fields: [sessions.groupId],
+    references: [groups.id],
+  }),
+  messages: many(messages),
+  savedPapers: many(savedPapers),
+}));
 
-// Relations for new tables
+export const messagesRelations = relations(messages, ({ one }) => ({
+  session: one(sessions, {
+    fields: [messages.sessionId],
+    references: [sessions.id],
+  }),
+  user: one(users, {
+    fields: [messages.userId],
+    references: [users.id],
+  }),
+}));
+
+export const papersRelations = relations(papers, ({ many }) => ({
+  savedBy: many(savedPapers),
+}));
+
+export const savedPapersRelations = relations(savedPapers, ({ one }) => ({
+  user: one(users, {
+    fields: [savedPapers.userId],
+    references: [users.id],
+  }),
+  paper: one(papers, {
+    fields: [savedPapers.paperId],
+    references: [papers.id],
+  }),
+  session: one(sessions, {
+    fields: [savedPapers.sessionId],
+    references: [sessions.id],
+  }),
+}));
+
+export const refreshTokensRelations = relations(refreshTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [refreshTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+export const groupInvitationsRelations = relations(groupInvitations, ({ one }) => ({
+  group: one(groups, {
+    fields: [groupInvitations.groupId],
+    references: [groups.id],
+  }),
+  inviter: one(users, {
+    fields: [groupInvitations.invitedBy],
+    references: [users.id],
+  }),
+  invitedUser: one(users, {
+    fields: [groupInvitations.invitedUserId],
+    references: [users.id],
+    relationName: 'invitedUser',
+  }),
+}));
+
 export const groupPapersRelations = relations(groupPapers, ({ one }) => ({
   group: one(groups, {
     fields: [groupPapers.groupId],
@@ -443,17 +281,6 @@ export const groupPapersRelations = relations(groupPapers, ({ one }) => ({
   }),
   addedByUser: one(users, {
     fields: [groupPapers.addedBy],
-    references: [users.id],
-  }),
-}));
-
-export const groupMemoryNotesRelations = relations(groupMemoryNotes, ({ one }) => ({
-  group: one(groups, {
-    fields: [groupMemoryNotes.groupId],
-    references: [groups.id],
-  }),
-  user: one(users, {
-    fields: [groupMemoryNotes.userId],
     references: [users.id],
   }),
 }));
@@ -485,71 +312,5 @@ export const groupReportsRelations = relations(groupReports, ({ one }) => ({
   createdByUser: one(users, {
     fields: [groupReports.createdBy],
     references: [users.id],
-  }),
-}));
-
-export const methodologyMatricesRelations = relations(methodologyMatrices, ({ one }) => ({
-  group: one(groups, {
-    fields: [methodologyMatrices.groupId],
-    references: [groups.id],
-  }),
-  session: one(sessions, {
-    fields: [methodologyMatrices.sessionId],
-    references: [sessions.id],
-  }),
-  user: one(users, {
-    fields: [methodologyMatrices.userId],
-    references: [users.id],
-  }),
-}));
-
-export const claimLineageNodesRelations = relations(claimLineageNodes, ({ one }) => ({
-  group: one(groups, {
-    fields: [claimLineageNodes.groupId],
-    references: [groups.id],
-  }),
-  session: one(sessions, {
-    fields: [claimLineageNodes.sessionId],
-    references: [sessions.id],
-  }),
-}));
-
-export const claimLineageEdgesRelations = relations(claimLineageEdges, ({ one }) => ({
-  group: one(groups, {
-    fields: [claimLineageEdges.groupId],
-    references: [groups.id],
-  }),
-  sourceNode: one(claimLineageNodes, {
-    fields: [claimLineageEdges.sourceNodeId],
-    references: [claimLineageNodes.id],
-    relationName: 'sourceNode',
-  }),
-  targetNode: one(claimLineageNodes, {
-    fields: [claimLineageEdges.targetNodeId],
-    references: [claimLineageNodes.id],
-    relationName: 'targetNode',
-  }),
-}));
-
-export const workflowRunsRelations = relations(workflowRuns, ({ one, many }) => ({
-  group: one(groups, {
-    fields: [workflowRuns.groupId],
-    references: [groups.id],
-  }),
-  session: one(sessions, {
-    fields: [workflowRuns.sessionId],
-    references: [sessions.id],
-  }),
-  user: one(users, {
-    fields: [workflowRuns.userId],
-    references: [users.id],
-  }),
-  steps: many(workflowSteps),
-}));
-
-export const workflowStepsRelations = relations(workflowSteps, ({ one }) => ({
-  workflowRun: one(workflowRuns, {
-    fields: [workflowSteps.workflowRunId],
-    references: [workflowRuns.id],
   }),
 }));

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db, groups, groupMembers, users, groupInvitations, friends } from '../db/index.js';
+import { db, groups, groupMembers, users, groupInvitations } from '../db/index.js';
 import { eq, and, count, desc, lt } from 'drizzle-orm';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { createError } from '../middleware/error.js';
@@ -489,79 +489,6 @@ router.post('/:groupId/invitations', async (req: AuthRequest, res, next) => {
       invitedUserEmail: invitedUser.email,
       invitedUserAvatar: invitedUser.avatar,
     });
-  } catch (error) {
-    next(error);
-  }
-});
-
-// Invite a friend to group
-router.post('/:groupId/invite-friend/:friendId', async (req: AuthRequest, res, next) => {
-  try {
-    const { groupId, friendId } = req.params;
-    const userId = req.user!.id;
-    const { message } = req.body;
-
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
-
-    const [friendship] = await db
-      .select()
-      .from(friends)
-      .where(and(eq(friends.userId, userId), eq(friends.friendId, friendId)))
-      .limit(1);
-
-    if (!friendship) {
-      throw createError('User is not in your friends list', 400);
-    }
-
-    const [existingMember] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, friendId)))
-      .limit(1);
-
-    if (existingMember) {
-      throw createError('Friend is already a member of this group', 409);
-    }
-
-    const [existingInvite] = await db
-      .select()
-      .from(groupInvitations)
-      .where(
-        and(
-          eq(groupInvitations.groupId, groupId),
-          eq(groupInvitations.invitedUserId, friendId),
-          eq(groupInvitations.status, 'pending')
-        )
-      )
-      .limit(1);
-
-    if (existingInvite) {
-      throw createError('Friend already has a pending invitation', 409);
-    }
-
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-    const [newInvitation] = await db
-      .insert(groupInvitations)
-      .values({
-        groupId,
-        invitedBy: userId,
-        invitedUserId: friendId,
-        message,
-        status: 'pending',
-        expiresAt,
-      })
-      .returning();
-
-    res.status(201).json(newInvitation);
   } catch (error) {
     next(error);
   }

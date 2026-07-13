@@ -38,16 +38,6 @@ class Settings(BaseSettings):
     # LLM provider selection: "deepseek" (default) or "groq"
     llm_provider: str = "deepseek"
 
-    # Web Search (Tavily)
-    tavily_api_key: str = ""
-
-    # Deep research search configuration
-    server_url: str = "http://localhost:3001"
-
-    # MCP servers (JSON mapping of server_name -> base_url)
-    mcp_server_urls: str = ""
-    mcp_request_timeout: int = 30
-    
     # Rate limiting
     max_context_messages: int = 50
     max_context_tokens: int = 10000
@@ -65,10 +55,6 @@ class Settings(BaseSettings):
     log_max_bytes: int = 10 * 1024 * 1024  # 10 MB
     log_backup_count: int = 5
 
-    # Mem0 memory adapter
-    mem0_enabled: bool = False
-    mem0_database_url: str = ""
-    
     model_config = SettingsConfigDict(
         env_file=str(ENV_FILE),
         env_file_encoding="utf-8",

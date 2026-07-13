@@ -61,18 +61,6 @@ export const summarizeLimiter = rateLimit({
   legacyHeaders: false,
 });
 
-// Rate limiter for agentic / deep-research tasks (5 req/min)
-export const agenticLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: process.env.NODE_ENV === 'development' ? 50 : 5,
-  message: {
-    error: 'Agentic task rate limit exceeded, please wait before submitting another task',
-    retryAfter: '1 minute',
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
 // Rate limiter for report generation (5 req/hr)
 export const reportLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,

@@ -137,7 +137,7 @@ const options: swaggerJsdoc.Options = {
             { name: 'Groups', description: 'Research group management' },
             { name: 'Sessions', description: 'Research session management' },
             { name: 'Papers', description: 'Academic paper search & management' },
-            { name: 'AI', description: 'AI-powered chat & agentic tasks' },
+            { name: 'AI', description: 'AI-powered group chat and paper Q&A' },
             { name: 'Reports', description: 'Group report generation & retrieval' },
             { name: 'Recommendations', description: 'AI-powered paper recommendations' },
         ]

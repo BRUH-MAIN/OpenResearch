@@ -8,7 +8,7 @@ import { Button, Modal } from '@/components/ui';
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton';
 import { Loader2, FileText, PlusCircle, Bot, Copy, Wifi, WifiOff } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
-import { api, Session, GroupPaper, AgenticTaskType } from '@/lib/api';
+import { api, Session, GroupPaper } from '@/lib/api';
 import { useSocket } from '@/lib/socket';
 import { useToastStore } from '@/lib/toast';
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
@@ -18,14 +18,9 @@ import {
   StudioPanel,
   ResearchMessage,
   Source,
-  StudioOutput,
   Citation,
-  CommandPalette,
-  COMMANDS,
-  Command,
 } from '@/components/research';
 import { PaperContextMenuProvider, PaperLinkContextMenu } from '@/components/research/PaperLinkContextMenu';
-import type { ClaimNode, ClaimEdge } from '@/components/research/ClaimLineageGraph';
 import type { PinnedNote } from '@/components/research';
 
 // ==================== Skeleton Loading ====================
@@ -79,22 +74,6 @@ function ResearchSkeleton() {
 
 const PINS_KEY = (sessionId: string) => `openresearch_pins_${sessionId}`;
 
-const AGENTIC_SLASH_TASKS: Array<{ value: AgenticTaskType; label: string }> = [
-  { value: 'paper_retrieval', label: 'Paper Retrieval' },
-  { value: 'literature_survey', label: 'Literature Survey' },
-  { value: 'gap_analysis', label: 'Gap Analysis' },
-  { value: 'fact_check', label: 'Fact Check' },
-  { value: 'novelty_assessment', label: 'Novelty Assessment' },
-  { value: 'research_mentor', label: 'Research Mentor' },
-  { value: 'paper_writing', label: 'Paper Writing' },
-  { value: 'deep_research', label: 'Deep Research' },
-  { value: 'methodology_extraction', label: 'Structured Comparison' },
-];
-
-const AGENTIC_SLASH_TASK_SET = new Set<AgenticTaskType>(
-  AGENTIC_SLASH_TASKS.map((task) => task.value)
-);
-
 function loadPinnedNotes(sessionId: string): PinnedNote[] {
   if (typeof window === 'undefined') return [];
   try {
@@ -108,38 +87,6 @@ function loadPinnedNotes(sessionId: string): PinnedNote[] {
 function savePinnedNotes(sessionId: string, notes: PinnedNote[]) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(PINS_KEY(sessionId), JSON.stringify(notes));
-}
-
-function formatAgenticResult(result: unknown): string {
-  if (typeof result === 'string') {
-    return result;
-  }
-
-  if (result && typeof result === 'object') {
-    const orderedKeys = [
-      'deep_research',
-      'literature_review',
-      'research_gaps',
-      'fact_check',
-      'novelty',
-      'mentor_advice',
-      'paper_draft',
-      'research_plan',
-      'methodology_matrix',
-      'papers',
-      'result',
-    ];
-
-    for (const key of orderedKeys) {
-      if (!(key in result)) continue;
-      const value = (result as Record<string, unknown>)[key];
-      if (typeof value === 'string' && value.trim()) {
-        return value;
-      }
-    }
-  }
-
-  return JSON.stringify(result || {}, null, 2);
 }
 
 interface ResearchPanelPrefs {
@@ -204,26 +151,12 @@ function ResearchChatContent() {
 
   // Sources State
   const [sources, setSources] = useState<Source[]>([]);
-  const [studioOutputs, setStudioOutputs] = useState<StudioOutput[]>([]);
-  const [isDeepResearching, setIsDeepResearching] = useState(false);
-  const [deepResearchMessageId, setDeepResearchMessageId] = useState<string | null>(null);
-  const [selectedAgent, setSelectedAgent] = useState<string>('auto');
-
-  // Citation Graph
-  const [graphNodes, setGraphNodes] = useState<ClaimNode[]>([]);
-  const [graphEdges, setGraphEdges] = useState<ClaimEdge[]>([]);
-  const [isLoadingGraph, setIsLoadingGraph] = useState(false);
 
   // Diagrams detected from AI responses
   const [detectedDiagrams, setDetectedDiagrams] = useState<{ id: string; code: string; detectedAt: string }[]>([]);
 
   // Right panel resize
   const [rightPanelWidth, setRightPanelWidth] = useState(() => loadResearchPanelPrefs()?.rightPanelWidth ?? 340);
-
-  // Command Palette
-  const [showCommandPalette, setShowCommandPalette] = useState(false);
-  const [commandQuery, setCommandQuery] = useState('');
-  const [commandActiveIndex, setCommandActiveIndex] = useState(0);
 
   // Workspace State
   const [pinnedNotes, setPinnedNotes] = useState<PinnedNote[]>([]);
@@ -241,28 +174,6 @@ function ResearchChatContent() {
     appendMessage,
     updateMessage,
   } = useSocket(sessionId);
-
-  // Build citation graph from current sources
-  const handleBuildGraph = useCallback(async () => {
-    if (!accessToken || !session) return;
-    setIsLoadingGraph(true);
-    try {
-      const query = messages.length > 0
-        ? messages[messages.length - 1]?.content?.slice(0, 300) || 'research'
-        : 'research';
-      const res = await api.buildCitationGraph(accessToken, {
-        query,
-        groupId: session.groupId ?? undefined,
-      });
-      setGraphNodes(res.graph?.nodes ?? []);
-      setGraphEdges(res.graph?.edges ?? []);
-    } catch (err) {
-      console.error('Failed to build citation graph', err);
-      addToast('Failed to build citation graph', 'error');
-    } finally {
-      setIsLoadingGraph(false);
-    }
-  }, [accessToken, session, messages, addToast]);
 
   // Handle mermaid diagrams detected in AI responses
   const handleDiagramDetected = useCallback((code: string) => {
@@ -298,46 +209,10 @@ function ResearchChatContent() {
     setShowMobileWorkspacePanel(false);
   }, [useOverlayPanels]);
 
-  // Keyboard shortcuts for quick command-driven workflows.
+  // Keyboard shortcuts for panel toggles.
   useEffect(() => {
     const onWindowKeyDown = (event: KeyboardEvent) => {
       if (event.defaultPrevented) return;
-      const target = event.target as HTMLElement | null;
-      const tag = target?.tagName.toLowerCase();
-      const isEditable = !!target && (
-        target.isContentEditable ||
-        tag === 'input' ||
-        tag === 'textarea' ||
-        tag === 'select'
-      );
-
-      // Ctrl/Cmd + / opens command palette prefilled with slash trigger.
-      if ((event.ctrlKey || event.metaKey) && event.key === '/') {
-        event.preventDefault();
-        setInputMessage('/');
-        setCommandQuery('/');
-        setCommandActiveIndex(0);
-        setShowCommandPalette(true);
-        textareaRef.current?.focus();
-        return;
-      }
-
-      // Ctrl/Cmd + Shift + W inserts workflow command scaffold.
-      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'w') {
-        event.preventDefault();
-        setInputMessage('/workflow ');
-        setCommandQuery('/workflow');
-        setCommandActiveIndex(0);
-        setShowCommandPalette(true);
-        textareaRef.current?.focus();
-        return;
-      }
-
-      // Escape closes palette when not in an editable field.
-      if (!isEditable && event.key === 'Escape') {
-        setShowCommandPalette(false);
-        return;
-      }
 
       // Ctrl/Cmd + Shift + L toggles sources panel.
       if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'l') {
@@ -364,16 +239,6 @@ function ResearchChatContent() {
     window.addEventListener('keydown', onWindowKeyDown);
     return () => window.removeEventListener('keydown', onWindowKeyDown);
   }, [useOverlayPanels]);
-
-  const quickCommandChips = useMemo(() => {
-    return [
-      { label: '/workflow', value: '/workflow ' },
-      ...AGENTIC_SLASH_TASKS.slice(0, 4).map((task) => ({
-        label: `/${task.value}`,
-        value: `/${task.value} `,
-      })),
-    ];
-  }, []);
 
   // Dynamic empty state suggestions
   const dynamicSuggestions = useMemo(() => {
@@ -420,8 +285,8 @@ function ResearchChatContent() {
   }, [sources]);
 
   const workspaceArtifactCount = useMemo(() => {
-    return pinnedNotes.length + detectedDiagrams.length + (graphNodes.length > 0 ? 1 : 0);
-  }, [pinnedNotes.length, detectedDiagrams.length, graphNodes.length]);
+    return pinnedNotes.length + detectedDiagrams.length;
+  }, [pinnedNotes.length, detectedDiagrams.length]);
 
   const openSourcesPanel = useCallback(() => {
     if (useOverlayPanels) {
@@ -525,235 +390,25 @@ function ResearchChatContent() {
       typingTimeoutRef.current = setTimeout(() => {
         stopTyping();
       }, 2000);
-
-      // Command palette detection
-      const lastWord = value.split(/\s/).pop() || '';
-      if (lastWord.startsWith('/') || lastWord.startsWith('@')) {
-        setShowCommandPalette(true);
-        setCommandQuery(lastWord);
-        setCommandActiveIndex(0);
-      } else {
-        setShowCommandPalette(false);
-      }
     },
     [startTyping, stopTyping]
   );
 
-  const handleCommandSelect = useCallback(
-    (command: Command) => {
-      // Replace the last word (command trigger) with the command prefix
-      const words = inputMessage.split(/\s/);
-      words.pop();
-      const newInput = [...words, command.prefix + ' '].join(' ').trimStart();
-      setInputMessage(newInput);
-      setShowCommandPalette(false);
-      textareaRef.current?.focus();
-    },
-    [inputMessage]
-  );
-
-  const handleSendMessage = useCallback(async () => {
+  const handleSendMessage = useCallback(() => {
     const rawMessage = inputMessage.trim();
     if (!rawMessage) return;
-
-    const slashMatch = rawMessage.match(/^\/([a-z_]+)(?:\s+([\s\S]+))?$/i);
-    if (slashMatch) {
-      const slashCommand = slashMatch[1].toLowerCase();
-      const slashArg = slashMatch[2]?.trim() || '';
-
-      if (slashCommand === 'workflow') {
-        if (!accessToken || !sessionId) {
-          addToast('Please sign in to run workflows', 'error');
-          return;
-        }
-        if (slashArg.length < 10) {
-          addToast('Workflow usage: /workflow <goal (at least 10 chars)>', 'error');
-          return;
-        }
-
-        appendMessage({
-          id: `workflow-user-${Date.now()}`,
-          sessionId,
-          userId: user?.id || 'user',
-          content: rawMessage,
-          type: 'user',
-          createdAt: new Date().toISOString(),
-          userName: user?.name,
-          userAvatar: user?.avatar,
-        });
-
-        setInputMessage('');
-        stopTyping();
-        setShowCommandPalette(false);
-        if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
-        try {
-          const plan = await api.planWorkflow(accessToken, {
-            goal: slashArg,
-            groupId: session?.groupId,
-            sessionId,
-          });
-
-          const stepLines = plan.steps
-            .map((step) => `${step.is_checkpoint ? '⏸️' : '⬚'} Step ${step.step_index + 1}: ${step.name} (${step.agent_type})`)
-            .join('\n');
-
-          appendMessage({
-            id: `workflow-plan-${Date.now()}`,
-            sessionId,
-            userId: null,
-            content: `**🧭 ${plan.title}**\n\n${plan.description}\n\n- Research type: ${plan.research_type}\n- Estimated time: ~${plan.estimated_minutes} min\n- Steps: ${plan.steps.length}\n\n${stepLines}`,
-            type: 'ai',
-            createdAt: new Date().toISOString(),
-            userName: 'Research Assistant',
-            metadata: {
-              task_type: 'workflow_plan',
-              workflow_id: plan.workflow_id,
-              planned: true,
-            },
-          });
-          addToast('Workflow planned', 'success');
-        } catch (err) {
-          addToast(err instanceof Error ? err.message : 'Failed to plan workflow', 'error');
-        }
-        return;
-      }
-
-      if (!AGENTIC_SLASH_TASK_SET.has(slashCommand as AgenticTaskType)) {
-        addToast('Unknown slash command. Use /workflow or /<agent_name> <prompt>.', 'error');
-        return;
-      }
-
-      if (!slashArg) {
-        addToast(`Usage: /${slashCommand} <prompt>`, 'error');
-        return;
-      }
-
-      if (!accessToken || !sessionId) {
-        addToast('Please sign in to run agentic tasks', 'error');
-        return;
-      }
-
-      const taskType = slashCommand as AgenticTaskType;
-      const promptWithTrigger = slashArg.toLowerCase().includes('@ai') ? slashArg : `@ai ${slashArg}`;
-      const enabledPaperIds = sources
-        .filter((source) => source.enabled && source.type === 'paper')
-        .map((source) => source.id);
-
-      const pendingMessageId = `agentic-${Date.now()}`;
-
-      appendMessage({
-        id: `agentic-user-${Date.now()}`,
-        sessionId,
-        userId: user?.id || 'user',
-        content: rawMessage,
-        type: 'user',
-        createdAt: new Date().toISOString(),
-        userName: user?.name,
-        userAvatar: user?.avatar,
-      });
-
-      const label = AGENTIC_SLASH_TASKS.find((task) => task.value === taskType)?.label || 'Agentic Task';
-      appendMessage({
-        id: pendingMessageId,
-        sessionId,
-        userId: null,
-        content: `${label} is running...`,
-        type: 'ai',
-        createdAt: new Date().toISOString(),
-        userName: 'Research Assistant',
-      });
-
-      setInputMessage('');
-      stopTyping();
-      setShowCommandPalette(false);
-      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-
-      try {
-        const response = await api.runAgenticTask(accessToken, {
-          taskType,
-          prompt: promptWithTrigger,
-          groupId: session?.groupId,
-          sessionId,
-          paperIds: enabledPaperIds.length > 0 ? enabledPaperIds : undefined,
-          options: {
-            selected_source_count: enabledPaperIds.length,
-          },
-          agenticRunId: pendingMessageId,
-        });
-
-        const resultText = formatAgenticResult(response.result);
-        updateMessage(pendingMessageId, {
-          content: `## ${label}\n\n${resultText}`,
-        });
-        addToast('Agentic task completed', 'success');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Agentic task failed';
-        updateMessage(pendingMessageId, { content: `Agentic task failed.\n\n${message}` });
-        addToast(message, 'error');
-      }
-
-      return;
-    }
-
     if (!isConnected) return;
 
-    // Never auto-route to a specific agent for plain messages.
-    // This prevents accidental agentic triggers from arbitrary slash-like text.
-    sendMessage(rawMessage, 'auto');
+    sendMessage(rawMessage);
     setInputMessage('');
     stopTyping();
-    setShowCommandPalette(false);
 
     if (typingTimeoutRef.current) {
       clearTimeout(typingTimeoutRef.current);
     }
-  }, [
-    inputMessage,
-    accessToken,
-    sessionId,
-    session?.groupId,
-    user?.id,
-    user?.name,
-    user?.avatar,
-    sources,
-    isConnected,
-    appendMessage,
-    updateMessage,
-    sendMessage,
-    stopTyping,
-    addToast,
-  ]);
+  }, [inputMessage, isConnected, sendMessage, stopTyping]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (showCommandPalette) {
-      const filtered = COMMANDS.filter(
-        (cmd) =>
-          cmd.prefix.toLowerCase().includes(commandQuery.toLowerCase()) ||
-          cmd.label.toLowerCase().includes(commandQuery.toLowerCase())
-      );
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setCommandActiveIndex((prev) => Math.min(prev + 1, filtered.length - 1));
-        return;
-      }
-      if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setCommandActiveIndex((prev) => Math.max(prev - 1, 0));
-        return;
-      }
-      if (e.key === 'Enter' && filtered[commandActiveIndex]) {
-        e.preventDefault();
-        handleCommandSelect(filtered[commandActiveIndex]);
-        return;
-      }
-      if (e.key === 'Escape') {
-        setShowCommandPalette(false);
-        return;
-      }
-    }
-
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
@@ -838,89 +493,6 @@ function ResearchChatContent() {
     el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
-  // Studio handlers
-  const handleGenerateReport = useCallback(async () => {
-    if (!accessToken || !session?.groupId) return;
-
-    openWorkspacePanel();
-
-    try {
-      const result = await api.generateGroupReport(accessToken, session.groupId);
-      setStudioOutputs((prev) => [
-        {
-          id: result.reportId,
-          type: 'report' as const,
-          title: result.title,
-          status: result.status === 'completed' ? 'ready' as const : 'generating' as const,
-          createdAt: result.createdAt,
-          downloadUrl: result.downloadUrl || undefined,
-        },
-        ...prev,
-      ]);
-      addToast('Report generated successfully', 'success');
-    } catch (err) {
-      addToast(err instanceof Error ? err.message : 'Failed to generate report', 'error');
-    }
-  }, [accessToken, session?.groupId, addToast, openWorkspacePanel]);
-
-  const handleDeepResearch = useCallback(async () => {
-    if (!accessToken || !sessionId || !session?.groupId) {
-      addToast('Deep research requires an active group session', 'error');
-      return;
-    }
-
-    const enabledPaperIds = sources
-      .filter((source) => source.enabled && source.type === 'paper')
-      .map((source) => source.id);
-
-    const prompt = `@ai Deep research on "${session.title}". Focus on the selected sources and provide a comprehensive synthesis with citations.`;
-    const pendingMessageId = `agentic-${Date.now()}`;
-
-    setIsDeepResearching(true);
-    setDeepResearchMessageId(pendingMessageId);
-
-    appendMessage({
-      id: pendingMessageId,
-      sessionId,
-      userId: 'ai',
-      content: 'Deep Research is running…\n\nI will share a comprehensive report shortly.',
-      type: 'ai',
-      createdAt: new Date().toISOString(),
-      userName: 'Research Assistant',
-    });
-
-    try {
-      const response = await api.runAgenticTask(accessToken, {
-        taskType: 'deep_research',
-        prompt,
-        groupId: session.groupId,
-        sessionId,
-        paperIds: enabledPaperIds.length > 0 ? enabledPaperIds : undefined,
-        options: {
-          selected_source_count: enabledPaperIds.length,
-        },
-      });
-
-      const deepResearch =
-        (response.result?.deep_research as string | undefined) ||
-        (response.result?.report as string | undefined) ||
-        JSON.stringify(response.result || {}, null, 2);
-
-      // Artifacts and latency stored in metadata, not rendered in markdown
-      const content = deepResearch;
-
-      updateMessage(pendingMessageId, { content });
-      addToast('Deep research completed', 'success');
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Deep research failed';
-      updateMessage(pendingMessageId, { content: `Deep research failed.\n\n${message}` });
-      addToast(message, 'error');
-    } finally {
-      setIsDeepResearching(false);
-      setDeepResearchMessageId(null);
-    }
-  }, [accessToken, sessionId, session?.groupId, session?.title, sources, appendMessage, updateMessage, addToast]);
-
   // Message handlers
   const handleFeedback = useCallback(
     (messageId: string, feedback: 'up' | 'down') => {
@@ -990,12 +562,6 @@ function ResearchChatContent() {
 
   const enabledSources = sources.filter((s) => s.enabled);
   const showEmptyState = messages.length === 0;
-  const selectedAgentLabel = selectedAgent === 'auto'
-    ? 'Auto routing'
-    : selectedAgent
-        .split('_')
-        .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-        .join(' ');
 
   return (
     <PaperContextMenuProvider onAddToSources={handleAddPaperToSources}>
@@ -1012,8 +578,6 @@ function ResearchChatContent() {
             onDeleteSource={handleDeleteSource}
             onToggleAll={handleToggleAll}
             onAddSource={() => setShowAddSourceModal(true)}
-            selectedAgent={selectedAgent}
-            onAgentChange={setSelectedAgent}
             isCollapsed={leftPanelCollapsed}
             onToggleCollapse={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
           />
@@ -1062,9 +626,6 @@ function ResearchChatContent() {
                   </span>
                   <span className="research-header-meta-pill">
                     {messages.length} message{messages.length !== 1 ? 's' : ''}
-                  </span>
-                  <span className="research-header-meta-pill">
-                    {selectedAgentLabel}
                   </span>
                 </div>
               </div>
@@ -1166,7 +727,6 @@ function ResearchChatContent() {
               {messages.map((msg) => {
                 const isCurrentUser = msg.userId === user?.id;
                 const isAI = msg.type === 'ai';
-                const isAgenticPending = deepResearchMessageId === msg.id && isAI;
 
                 return (
                   <div key={msg.id} data-message-id={msg.id}>
@@ -1184,7 +744,6 @@ function ResearchChatContent() {
                       onPin={isAI ? handlePinMessage : undefined}
                       onCitationClick={handleCitationClick}
                       onDiagramDetected={isAI ? handleDiagramDetected : undefined}
-                      className={isAgenticPending ? 'ai-thinking-animation' : ''}
                     />
                   </div>
                 );
@@ -1235,15 +794,6 @@ function ResearchChatContent() {
             }}
           >
             <div className="mx-auto relative" style={{ maxWidth: RESEARCH_CHAT_CONTENT_MAX_WIDTH }}>
-              {/* Command Palette */}
-              {showCommandPalette && (
-                <CommandPalette
-                  query={commandQuery}
-                  activeIndex={commandActiveIndex}
-                  onSelect={handleCommandSelect}
-                />
-              )}
-
               {!isConnected && (
                 <div
                   className="flex items-center justify-center mb-3 text-sm px-4 py-2 rounded-xl"
@@ -1276,7 +826,7 @@ function ResearchChatContent() {
                   value={inputMessage}
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask a research question… (type / or @ for commands)"
+                  placeholder="Ask a research question… (mention @ai for an AI answer)"
                   disabled={!isConnected}
                   rows={1}
                   className="flex-1 bg-transparent text-[15px] disabled:opacity-50 research-textarea"
@@ -1286,9 +836,6 @@ function ResearchChatContent() {
                 <div className="flex items-center gap-2 shrink-0 self-end pb-1">
                   <span className="research-composer-pill">
                     {enabledSources.length} sources
-                  </span>
-                  <span className="research-composer-pill research-composer-pill--muted">
-                    {selectedAgentLabel}
                   </span>
 
                   <button
@@ -1313,39 +860,18 @@ function ResearchChatContent() {
               </div>
 
               {showEmptyState && (
-                <>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {quickCommandChips.map((chip) => (
-                      <button
-                        key={chip.label}
-                        type="button"
-                        onClick={() => {
-                          setInputMessage(chip.value);
-                          setCommandQuery(chip.value.trim());
-                          setCommandActiveIndex(0);
-                          setShowCommandPalette(true);
-                          textareaRef.current?.focus();
-                        }}
-                        className="research-command-chip"
-                      >
-                        {chip.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  <p
-                    className="text-[11px] mt-3"
-                    style={{ color: 'var(--color-text-muted)' }}
-                  >
-                    <span>Press </span>
-                    <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + /</kbd>
-                    <span> for commands, </span>
-                    <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + Shift + L</kbd>
-                    <span> and </span>
-                    <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + Shift + R</kbd>
-                    <span> for panels. OpenResearch can be inaccurate; please double-check its responses.</span>
-                  </p>
-                </>
+                <p
+                  className="text-[11px] mt-3"
+                  style={{ color: 'var(--color-text-muted)' }}
+                >
+                  <span>Mention </span>
+                  <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>@ai</kbd>
+                  <span> in a message to get an AI answer grounded in your sources. Press </span>
+                  <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + Shift + L</kbd>
+                  <span> and </span>
+                  <kbd className="px-1.5 py-0.5 rounded" style={{ background: 'var(--color-bg-tertiary)' }}>Ctrl/Cmd + Shift + R</kbd>
+                  <span> for panels. OpenResearch can be inaccurate; please double-check its responses.</span>
+                </p>
               )}
             </div>
           </div>
@@ -1358,17 +884,10 @@ function ResearchChatContent() {
             onToggleCollapse={() => setRightPanelCollapsed(!rightPanelCollapsed)}
             width={rightPanelWidth}
             onResize={setRightPanelWidth}
-            hasSourcesSelected={enabledSources.length > 0}
             pinnedNotes={pinnedNotes}
             onRemoveNote={handleRemoveNote}
             onScrollToMessage={handleScrollToMessage}
             detectedDiagrams={detectedDiagrams}
-            graphNodes={graphNodes}
-            graphEdges={graphEdges}
-            isLoadingGraph={isLoadingGraph}
-            onBuildGraph={handleBuildGraph}
-            groupId={session?.groupId ?? undefined}
-            sessionId={sessionId ?? undefined}
           />
         )}
       </div>
@@ -1392,8 +911,6 @@ function ResearchChatContent() {
                 setShowMobileSourcesPanel(false);
                 setShowAddSourceModal(true);
               }}
-              selectedAgent={selectedAgent}
-              onAgentChange={setSelectedAgent}
               onToggleCollapse={() => setShowMobileSourcesPanel(false)}
               variant="overlay"
             />
@@ -1409,17 +926,10 @@ function ResearchChatContent() {
           >
             <StudioPanel
               onToggleCollapse={() => setShowMobileWorkspacePanel(false)}
-              hasSourcesSelected={enabledSources.length > 0}
               pinnedNotes={pinnedNotes}
               onRemoveNote={handleRemoveNote}
               onScrollToMessage={handleScrollToMessage}
               detectedDiagrams={detectedDiagrams}
-              graphNodes={graphNodes}
-              graphEdges={graphEdges}
-              isLoadingGraph={isLoadingGraph}
-              onBuildGraph={handleBuildGraph}
-              groupId={session?.groupId ?? undefined}
-              sessionId={sessionId ?? undefined}
               variant="overlay"
             />
           </Modal>
@@ -1443,7 +953,7 @@ function ResearchChatContent() {
                 Browse Group Papers
               </Button>
             </Link>
-            <Link href="/discover">
+            <Link href="/paper">
               <Button variant="secondary" className="w-full justify-start">
                 <PlusCircle size={16} className="mr-2" />
                 Discover New Papers

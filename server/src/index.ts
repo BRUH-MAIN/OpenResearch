@@ -19,10 +19,8 @@ import groupRoutes from './routes/groups.js';
 import sessionRoutes from './routes/sessions.js';
 import paperRoutes from './routes/papers.js';
 import healthRoutes from './routes/health.js';
-import aiRoutes from './routes/ai.js';
 import groupPapersRoutes from './routes/groupPapers.js';
 import reportsRoutes from './routes/reports.js';
-import recommendationsRoutes from './routes/recommendations.js';
 
 // Middleware
 import { errorHandler, notFoundHandler } from './middleware/error.js';
@@ -112,9 +110,7 @@ app.use('/api/groups', groupRoutes);
 app.use('/api/groups', groupPapersRoutes); // Group papers and AI features
 app.use('/api/sessions', sessionRoutes);
 app.use('/api/papers', paperRoutes);
-app.use('/api/ai', aiRoutes);
 app.use('/api/reports', reportsRoutes);
-app.use('/api/recommendations', recommendationsRoutes);
 
 // Error handlers
 app.use(notFoundHandler);

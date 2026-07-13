@@ -5,22 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1766897397315,
-      "tag": "0000_bizarre_power_man",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1772210839376,
-      "tag": "0001_chief_silhouette",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1772300000000,
-      "tag": "0004_methodology_and_lineage_tables",
+      "when": 1783961133036,
+      "tag": "0000_init",
       "breakpoints": true
     }
   ]
