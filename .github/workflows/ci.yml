@@ -104,10 +104,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Lint
+        run: npm run lint
+
       - name: Run tests
         run: npm run test
 
-      - name: Build (also type-checks and lints)
+      - name: Build (also type-checks)
         env:
           NEXT_PUBLIC_API_URL: http://localhost:3001
         run: npm run build
