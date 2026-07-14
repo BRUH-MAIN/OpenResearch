@@ -1,23 +1,11 @@
-> [!WARNING]
-> **This document describes the pre-refactor system and is now out of date.**
->
-> It still specifies features that have been removed (agentic tasks, multi-step
-> workflows, citation graphs, claim lineage, methodology matrices,
-> recommendations, friends) and the local SPECTER2 embedding model, which was
-> replaced by a hosted API.
->
-> It has been kept rather than deleted because it is a course deliverable, but it
-> must be regenerated against the current scope before submission — an examiner
-> comparing it to the code will find the mismatch. See the README and
-> `docs/adr/` for what the system actually does now.
-
 # Software Requirements Specification (SRS)
 
-## OpenResearch - Collaboration-First Research Platform
+## OpenResearch — Collaborative Research Platform with Group-Scoped RAG
 
-**Document Version:** 1.0  
-**Date:** February 9, 2026  
-**Project Team:** OpenResearch Development Team
+**Document Version:** 2.0
+**Date:** July 2026
+**Supersedes:** v1.0 (February 2026), which specified a broader scope since
+deliberately reduced — see [ADR 0005](adr/0005-scope-cut.md).
 
 ---
 
@@ -27,8 +15,7 @@
 2. [Overall Description](#2-overall-description)
 3. [Specific Requirements](#3-specific-requirements)
 4. [Non-functional Requirements](#4-non-functional-requirements)
-5. [Other Requirements](#5-other-requirements)
-6. [Appendix](#appendix)
+5. [Appendix](#5-appendix)
 
 ---
 
@@ -36,48 +23,66 @@
 
 ### 1.1 Purpose
 
-This Software Requirements Specification (SRS) document describes the functional and non-functional requirements for **OpenResearch**, a collaboration-first research platform designed to enable research teams to collaborate in real-time with AI-powered features. This document is intended for developers, stakeholders, QA teams, and project managers involved in the development and maintenance of the system.
+This document specifies the requirements for **OpenResearch**, a web platform on
+which research teams share academic papers, discuss them in real time, and
+question an AI assistant that answers **only from the papers that team has
+collected**, citing the passages it used.
+
+It is written for the developers, examiners, and reviewers of the system, and
+describes the software as it is actually implemented at version 2.0.
 
 ### 1.2 Scope
 
-OpenResearch is a web-based platform that enables:
+OpenResearch allows a group of researchers to:
 
-- **Real-time Collaboration**: Research groups can communicate through live chat with typing indicators
-- **AI-Powered Research Assistance**: Integration with LLM models for paper Q&A, summarization, and discovery
-- **Academic Paper Management**: Search, save, organize, and annotate research papers from arXiv
-- **Vector-Based Semantic Search**: Find related content across papers using embeddings (pgvector)
-- **Report Generation**: Create PDF reports summarizing group research activity
+- form a **group** and invite members to it;
+- collect **papers** into that group, by arXiv search or by uploading a PDF;
+- hold **real-time discussions** in threaded sessions;
+- ask an **AI assistant** questions, by mentioning `@ai`, and receive an answer
+  retrieved from that group's papers and accompanied by citations;
+- generate a **PDF report** summarising the group's activity.
 
-The platform consists of three main services:
-1. **Frontend Client**: Next.js 16 with React 19
-2. **Backend Server**: Node.js 20 with Express and Socket.IO
-3. **AI Service**: Python 3.12 FastAPI with Groq LLM integration
+**The central requirement, from which most others follow, is group isolation.**
+A group's papers, discussions, and AI-generated content are visible only to its
+members, and the retrieval that produces an AI answer is confined to that
+group's material. This is a security boundary, not a convenience filter.
+
+**Out of scope (v2.0).** The following were specified in v1.0 and have been
+deliberately removed: autonomous agentic task execution, multi-step workflows
+with human checkpoints, citation-graph and claim-lineage visualisation,
+methodology comparison matrices, paper recommendation, and a friends/social
+graph. The reasoning is recorded in [ADR 0005](adr/0005-scope-cut.md). Optical
+character recognition of scanned PDFs is also out of scope.
 
 ### 1.3 Definitions, Acronyms, and Abbreviations
 
 | Term | Definition |
-|------|------------|
-| **RAG** | Retrieval-Augmented Generation - AI technique combining search with LLM generation |
-| **pgvector** | PostgreSQL extension for vector similarity search |
-| **HNSW** | Hierarchical Navigable Small World - algorithm for approximate nearest neighbor search |
-| **LLM** | Large Language Model |
-| **JWT** | JSON Web Token - standard for secure authentication |
-| **Socket.IO** | Real-time bidirectional event-based communication library |
-| **Embedding** | Vector representation of text for semantic similarity |
-| **arXiv** | Open-access repository of academic papers |
-| **Drizzle ORM** | TypeScript ORM for SQL databases |
+|---|---|
+| **RAG** | Retrieval-Augmented Generation. The LLM is given passages retrieved from a corpus and answers from them, rather than from its own parameters alone. |
+| **Embedding** | A text passage represented as a 768-dimensional vector, such that passages of similar meaning lie close together. |
+| **Chunk** | A ~1000-character passage of a paper: the unit that is embedded and retrieved. |
+| **pgvector** | The PostgreSQL extension providing the `vector` column type and similarity operators. |
+| **HNSW** | Hierarchical Navigable Small World: the index that makes vector similarity search fast without scanning every row. |
+| **BM25** | The classical keyword-relevance ranking function, provided here by PostgreSQL full-text search. |
+| **RRF** | Reciprocal Rank Fusion: combining two rankings by rank position rather than by score. |
+| **`@ai` trigger** | The literal string `@ai` in a message. The assistant responds if and only if it is present. |
+| **Group isolation** | The guarantee that retrieval and access are confined to a single group. |
+| **JWT** | JSON Web Token, the bearer credential used for authentication. |
 
 ### 1.4 References
 
-- [Next.js 16 Documentation](https://nextjs.org/docs)
-- [Socket.IO Documentation](https://socket.io/docs/v4/)
-- [PostgreSQL pgvector Documentation](https://github.com/pgvector/pgvector)
-- [Groq API Documentation](https://console.groq.com/docs)
-- [arXiv API Documentation](https://info.arxiv.org/help/api/index.html)
+- IEEE Std 830-1998, *Recommended Practice for Software Requirements Specifications*
+- Architecture Decision Records: [`docs/adr/`](adr/)
+- Database schema: [`docs/database-schema.md`](database-schema.md)
+- Realtime protocol: [`docs/socket-io-events.md`](socket-io-events.md)
+- Cormack et al., *Reciprocal Rank Fusion Outperforms Condorcet and Individual Rank Learning Methods* (2009)
 
 ### 1.5 Overview
 
-The remainder of this document provides a detailed description of the OpenResearch platform, including product perspective, functionality, constraints, user characteristics, and comprehensive functional and non-functional requirements.
+Section 2 describes the system in general terms and the constraints it operates
+under. Section 3 states the functional requirements and the principal use case.
+Section 4 states the non-functional requirements. Section 5 provides the API and
+database summaries and a traceability matrix.
 
 ---
 
@@ -85,148 +90,86 @@ The remainder of this document provides a detailed description of the OpenResear
 
 ### 2.1 Product Perspective
 
-OpenResearch operates as a standalone web application with the following system context:
+OpenResearch is a new, self-contained system deployed as three cooperating
+services over a single PostgreSQL database.
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              External Systems                                │
-├─────────────────┬───────────────────┬───────────────────┬───────────────────┤
-│    arXiv API    │    Groq API       │   OpenAI API      │   Email Service   │
-│  (Paper Search) │  (LLM - Llama 3.3)│  (Embeddings)     │  (Invitations)    │
-└────────┬────────┴─────────┬─────────┴─────────┬─────────┴─────────┬─────────┘
-         │                  │                   │                   │
-         │                  ▼                   │                   │
-         │          ┌──────────────────┐        │                   │
-         │          │   AI Service     │        │                   │
-         │          │  (FastAPI + RAG) │◀───────┘                   │
-         │          └────────┬─────────┘                            │
-         │                   │                                      │
-         ▼                   ▼                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                          Backend Server (Node.js)                           │
-│   ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐               │
-│   │  REST API │  │ Socket.IO │  │ Auth (JWT)│  │ Rate Limit│               │
-│   └───────────┘  └───────────┘  └───────────┘  └───────────┘               │
-└────────────────────────────────┬────────────────────────────────────────────┘
-                                 │
-                                 ▼
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    PostgreSQL 16 + pgvector                                 │
-│   Users │ Groups │ Sessions │ Messages │ Papers │ Vectors │ Reports        │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                 ▲
-                                 │
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         Frontend Client (Next.js 16)                        │
-│   ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐               │
-│   │  Auth UI  │  │  Groups   │  │  Chat     │  │  Papers   │               │
-│   └───────────┘  └───────────┘  └───────────┘  └───────────┘               │
-│   ┌───────────┐  ┌───────────┐  ┌───────────┐                              │
-│   │   AI Q&A  │  │  Reports  │  │  Profile  │                              │
-│   └───────────┘  └───────────┘  └───────────┘                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                 ▲
-                                 │
-                          ┌──────┴──────┐
-                          │   End User  │
-                          │ (Researcher)│
-                          └─────────────┘
+┌──────────────┐   REST    ┌──────────────────┐   HTTP    ┌─────────────────┐
+│  Web client  │◄─────────►│  Application     │◄─────────►│  AI service     │
+│  (Next.js)   │           │  server          │           │  (FastAPI)      │
+│              │ WebSocket │  (Node/Express)  │           │                 │
+│  browser     │◄─────────►│  + Socket.IO     │           │  RAG + LLM      │
+└──────────────┘           └────────┬─────────┘           └────────┬────────┘
+                                    │                              │
+                                    ▼                              ▼
+                          ┌────────────────────────────────────────────┐
+                          │  PostgreSQL 16 + pgvector                  │
+                          │  relational data + the 768-dim RAG index   │
+                          └────────────────────────────────────────────┘
+                                             │
+                                             ▼
+                            external: arXiv, embedding and LLM APIs
 ```
+
+Two structural constraints govern this arrangement:
+
+- **The browser never contacts the AI service.** All AI requests are proxied by
+  the application server, which is therefore the single place where
+  authorization, rate limiting, and the `@ai` gate are enforced.
+- **Only the application server may define the database schema.** All DDL is a
+  Drizzle migration; the AI service reads and writes rows and issues none. See
+  [ADR 0001](adr/0001-service-boundaries.md).
 
 ### 2.2 Product Functionality
 
-**Major System Functions:**
-
-- **User Authentication & Profile Management**
-  - User registration and login (email/password)
-  - JWT-based authentication with refresh tokens
-  - User profile management with research interests
-
-- **Research Group Collaboration**
-  - Create and manage research groups
-  - Invite members via email
-  - Role-based access (owner, member)
-
-- **Real-time Communication**
-  - Live chat within group sessions
-  - Typing indicators
-  - Message history persistence
-
-- **AI-Powered Research Tools**
-  - Paper Q&A with `@ai` trigger
-  - Automatic paper summarization with key points extraction
-  - AI-powered paper recommendations
-  - Group AI chat with RAG context
-
-- **Paper Management**
-  - Search arXiv for academic papers
-  - Import and save papers to personal/group libraries
-  - Add notes and annotations
-
-- **Semantic Search**
-  - Vector-based similarity search across group papers
-  - Find related content using embeddings
-
-- **Report Generation**
-  - Generate PDF reports summarizing group activity
-  - Customizable report types (weekly, monthly, custom)
+| # | Function |
+|---|---|
+| F1 | Register, authenticate, and manage a user profile |
+| F2 | Create research groups; invite, accept, decline, and remove members |
+| F3 | Create discussion sessions within a group and exchange messages in real time |
+| F4 | Search arXiv, save papers to the library, and attach papers to a group |
+| F5 | Upload a paper as a PDF; the system extracts, chunks, and indexes its text |
+| F6 | Ask the AI assistant a question with `@ai`; receive a streamed answer retrieved from the group's papers, with citations |
+| F7 | Ask a question about, or request a summary of, a single paper |
+| F8 | Generate a PDF report of a group's papers, discussions, and AI outputs |
 
 ### 2.3 User Classes and Characteristics
 
-| User Class | Description | Technical Expertise | Frequency of Use |
-|------------|-------------|---------------------|------------------|
-| **Researcher** | Academic researchers or students conducting literature reviews and collaborative research | Moderate | Daily |
-| **Group Owner** | Users who create and manage research groups | Moderate | Daily |
-| **Guest Member** | Invited members with limited permissions | Low to Moderate | Weekly |
-| **System Administrator** | Technical staff managing deployment and maintenance | High | As needed |
+| Class | Description | Privileges |
+|---|---|---|
+| **Anonymous visitor** | Not authenticated | The landing page and the sign-in/sign-up pages only |
+| **Group member** | Authenticated; belongs to a group | Full read/write within that group: papers, sessions, messages, AI features |
+| **Group owner** | The member who created the group | Everything a member may do, plus: rename and delete the group, add and remove members, clear a session's messages |
+
+Users are assumed to be researchers or students: technically capable, but not
+required to understand retrieval or embeddings in order to use the system.
 
 ### 2.4 Operating Environment
 
-**Hardware Requirements:**
-- Client: Any device with a modern web browser
-- Server: Minimum 2 CPU cores, 4GB RAM
-- Database: PostgreSQL 16+ with pgvector extension
-
-**Software Requirements:**
-- **Frontend**: Modern browsers (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
-- **Backend**: Node.js 20+, npm 10+
-- **AI Service**: Python 3.12+
-- **Database**: PostgreSQL 16+ with pgvector extension
+- **Server side:** Docker; PostgreSQL 16 with the `pgvector` extension; Node.js
+  20; Python 3.12.
+- **Client side:** any modern browser with WebSocket support.
+- **External dependencies:** an embedding API (Gemini `text-embedding-004`), a
+  chat LLM API (DeepSeek, with Groq as fallback), and the public arXiv API.
 
 ### 2.5 Design and Implementation Constraints
 
-1. **AI Trigger Requirement**: All AI features require the `@ai` trigger to activate, preventing accidental AI calls and controlling costs
-
-2. **Group Isolation**: All vector searches and AI context are strictly isolated by group ID to prevent cross-group data leakage
-
-3. **Rate Limiting**: API endpoints are rate-limited to prevent abuse:
-   - Group Chat: 60/minute
-   - Paper Q&A: 30/minute
-   - Summarization: 10/minute
-   - Report Generation: 5/hour
-
-4. **External API Dependencies**:
-   - Groq API for LLM (Llama 3.3 70B)
-   - SPECTER2 for text embeddings (768 dimensions, local model)
-   - arXiv API for paper search
-
-5. **Real-time Communication**: Socket.IO requires persistent WebSocket connections
-
-6. **Vector Storage**: Embeddings require ~10KB per vector chunk, scaling with paper count
+| # | Constraint |
+|---|---|
+| C1 | Embeddings **must** be 768-dimensional. The database column is `vector(768)` and its HNSW index is built for that width; a model of any other width cannot be substituted without a migration and a full re-index. |
+| C2 | Every retrieval query **must** filter by `group_id` inside the SQL `WHERE` clause, not by discarding results afterwards. |
+| C3 | The AI **must not** respond to any message lacking the `@ai` trigger. |
+| C4 | The AI service **must not** issue DDL. |
+| C5 | Access tokens are short-lived (15 minutes); the refresh token is delivered only as an `httpOnly` cookie and is never readable by client-side JavaScript. |
+| C6 | The system must remain usable when an external AI provider fails: it degrades, it does not crash (NFR-R1). |
 
 ### 2.6 Assumptions and Dependencies
 
-**Assumptions:**
-- Users have stable internet connectivity for real-time features
-- External APIs (Groq, arXiv) maintain availability and API compatibility
-- Users have modern browsers with JavaScript enabled
-- Research papers are publicly accessible via arXiv
-
-**Dependencies:**
-- PostgreSQL 16 with pgvector extension for vector storage
-- Groq API for LLM inference
-- SPECTER2 model for embedding generation (local)
-- arXiv API for paper metadata and search
+- Users supply their own API keys for the embedding and LLM providers.
+- Uploaded PDFs contain a text layer; scanned images are rejected with a clear
+  message rather than indexed as empty.
+- The free tiers of the external APIs suffice for the expected load; rate
+  limiting is absorbed by retry with exponential backoff.
 
 ---
 
@@ -236,480 +179,285 @@ OpenResearch operates as a standalone web application with the following system 
 
 #### 3.1.1 User Interfaces
 
-| Interface | Description |
-|-----------|-------------|
-| **Landing Page** | Marketing page with feature overview and login/signup CTAs |
-| **Authentication Pages** | Sign in and sign up forms with validation |
-| **Home Dashboard** | Display user's groups with creation option |
-| **Group View** | Group details, member management, session list |
-| **Chat Interface** | Real-time messaging with typing indicators and AI responses |
-| **Paper Search** | arXiv search interface with filters |
-| **Paper Library** | Saved papers with notes and organization |
-| **Group Papers** | Group paper collection with AI Q&A interface |
-| **Report Generator** | Report configuration and PDF download |
-| **Profile Settings** | User profile and research interests management |
+A responsive web interface with light and dark themes. Its principal screens:
 
-#### 3.1.2 Hardware Interfaces
+| Screen | Route | Purpose |
+|---|---|---|
+| Sign in / Sign up | `/auth/signin`, `/auth/signup` | Authentication |
+| Groups | `/home` | List and create groups |
+| Group | `/group/[id]` | Members, sessions, invitations |
+| Research workspace | `/research/[sessionId]` | Three panes: sources, chat, workspace |
+| Group papers | `/group-papers/[groupId]` | The group's papers; PDF upload |
+| Paper library | `/paper` | arXiv search, saved papers |
+| Reports | `/reports/[groupId]` | Generate and download reports |
+| Invitations | `/invitations` | Accept or decline invitations |
 
-| Interface | Description |
-|-----------|-------------|
-| **Web Browser** | Standard HTTP/HTTPS and WebSocket protocols |
-| **No direct hardware** | System operates entirely as a web application |
+The research workspace is the primary screen. An AI answer streams in token by
+token and, on completion, displays **citation chips** naming the passages that
+grounded it, with their retrieval scores.
 
-#### 3.1.3 Software Interfaces
+#### 3.1.2 Software Interfaces
 
-| Interface | Protocol | Description |
-|-----------|----------|-------------|
-| **arXiv API** | REST/HTTP | Search and retrieve academic paper metadata |
-| **Groq API** | REST/HTTP | LLM inference for Q&A and summarization |
-| **SPECTER2** | Local | Text embedding generation (768 dimensions) |
-| **PostgreSQL** | TCP/IP | Primary data storage with pgvector |
+| Interface | Protocol | Purpose |
+|---|---|---|
+| Client ↔ Server | HTTPS REST (JSON) | CRUD |
+| Client ↔ Server | WebSocket (Socket.IO) | Chat and the streamed AI answer |
+| Server ↔ AI service | HTTP; NDJSON for streams | Retrieval and generation |
+| Server, AI service ↔ PostgreSQL | TCP | Data and vector search |
+| AI service ↔ Gemini | HTTPS | Embeddings |
+| AI service ↔ DeepSeek / Groq | HTTPS | Chat completion |
+| Server ↔ arXiv | HTTPS (Atom XML) | Paper search |
 
-#### 3.1.4 Communications Interfaces
+#### 3.1.3 Communications Interfaces
 
-| Protocol | Usage |
-|----------|-------|
-| **HTTPS** | All REST API communication |
-| **WSS** | WebSocket for real-time chat (Socket.IO) |
-| **SMTP** | Email notifications for invitations (future) |
+The AI service streams NDJSON: one JSON object per line — `{"token": "..."}` per
+token, terminated by `{"done": true, "sources": [...], "latency_ms": N}`. The
+application server relays each token to the browser as a Socket.IO `ai:token`
+event and the final frame as `ai:token:done`. A correlation ID accompanies every
+request across all three tiers.
 
 ### 3.2 Functional Requirements
 
-#### Authentication & User Management
+#### Authentication and user management
 
 | ID | Requirement |
-|----|-------------|
-| **F1** | The system shall allow users to register with email and password |
-| **F2** | The system shall authenticate users via JWT tokens with configurable expiration |
-| **F3** | The system shall provide JWT token refresh functionality |
-| **F4** | The system shall allow users to update their profile (name, avatar, interests) |
-| **F5** | The system shall hash and securely store user passwords |
+|---|---|
+| FR-A1 | The system shall register a user with a name, a unique email, and a password of at least 6 characters. |
+| FR-A2 | Passwords shall be stored only as bcrypt hashes (cost factor 12). |
+| FR-A3 | On authentication the system shall issue a 15-minute access token and a 7-day refresh token, **signed with different secrets**. |
+| FR-A4 | The refresh token shall be delivered only as an `httpOnly`, `SameSite=Lax` cookie scoped to `/api/auth`, and shall never appear in a response body. |
+| FR-A5 | Presenting a refresh token shall rotate it: the presented token is revoked and a new pair issued. A revoked token shall be rejected. |
+| FR-A6 | Every route other than authentication and health shall require a valid access token. |
 
-#### Group Management
-
-| ID | Requirement |
-|----|-------------|
-| **F6** | The system shall allow authenticated users to create research groups |
-| **F7** | The system shall allow group owners to invite members by email |
-| **F8** | The system shall support two roles: owner and member |
-| **F9** | The system shall allow group owners to remove members |
-| **F10** | The system shall allow group owners to update group details |
-| **F11** | The system shall allow group owners to delete groups |
-| **F12** | The system shall cascade delete all group data when a group is deleted |
-
-#### Real-time Communication
+#### Group management and authorization
 
 | ID | Requirement |
-|----|-------------|
-| **F13** | The system shall provide real-time chat within group sessions |
-| **F14** | The system shall display typing indicators when users are typing |
-| **F15** | The system shall persist all messages to the database |
-| **F16** | The system shall support message deletion by message author |
-| **F17** | The system shall notify connected users when members join/leave sessions |
+|---|---|
+| FR-G1 | Any authenticated user may create a group, and becomes its owner. |
+| FR-G2 | The system shall reject any request to read or write a group's data from a user who is not a member of it. |
+| FR-G3 | Only the owner may rename or delete a group, add or remove members, or clear a session's messages. |
+| FR-G4 | A member may invite a user by email; the invitee may accept or decline. Accepting grants membership. |
+| FR-G5 | The system shall reject a duplicate invitation, and an invitation to an existing member. |
 
-#### AI Features
-
-| ID | Requirement |
-|----|-------------|
-| **F18** | The system shall process AI requests only when the `@ai` trigger is present |
-| **F19** | The system shall provide paper Q&A functionality using RAG |
-| **F20** | The system shall generate paper summaries with key points extraction |
-| **F21** | The system shall provide AI-powered paper recommendations based on group context |
-| **F22** | The system shall support group AI chat with context from all group papers |
-| **F23** | The system shall store AI-generated content (summaries, Q&A) as embeddings for future retrieval |
-| **F24** | The system shall return a 400 error if `@ai` trigger is missing from AI requests |
-
-#### Paper Management
+#### Real-time communication
 
 | ID | Requirement |
-|----|-------------|
-| **F25** | The system shall allow users to search arXiv for academic papers |
-| **F26** | The system shall allow users to save papers to their personal library |
-| **F27** | The system shall allow users to add papers to group libraries |
-| **F28** | The system shall allow users to add notes to saved papers |
-| **F29** | The system shall automatically generate embeddings for papers added to groups |
+|---|---|
+| FR-C1 | A member may create discussion sessions within a group. |
+| FR-C2 | Messages shall be delivered in real time to all members present in a session. |
+| FR-C3 | The system shall indicate which users are currently typing. |
+| FR-C4 | The WebSocket connection shall be authenticated at handshake, and every event payload validated before use. |
+| FR-C5 | A user may delete their own messages; the group owner may delete any message. |
 
-#### Semantic Search
-
-| ID | Requirement |
-|----|-------------|
-| **F30** | The system shall provide vector-based semantic search across group papers |
-| **F31** | The system shall use cosine similarity with HNSW index for efficient search |
-| **F32** | The system shall filter search results by group ID for isolation |
-
-#### Report Generation
+#### Papers
 
 | ID | Requirement |
-|----|-------------|
-| **F33** | The system shall generate PDF reports for group activity |
-| **F34** | The system shall support weekly, monthly, and custom date range reports |
-| **F35** | The system shall allow selection of report sections (overview, papers, discussions, insights) |
-| **F36** | The system shall provide report download functionality |
+|---|---|
+| FR-P1 | A user may search arXiv and import a result into the paper library. |
+| FR-P2 | A user may save papers, annotate them, and filter the library by tag. |
+| FR-P3 | A member may attach a paper to a group, whereupon the system shall embed it into that group's index. |
+| FR-P4 | A member may upload a paper as a PDF (≤ 20 MB). The system shall extract its text, chunk it, embed it, and store it. |
+| FR-P5 | A PDF with no extractable text layer shall be rejected with an explanatory message. |
+
+#### AI assistant — the flagship
+
+| ID | Requirement |
+|---|---|
+| FR-AI1 | The assistant shall respond **only** to messages containing `@ai`. Absence of the trigger shall produce no AI activity whatsoever. |
+| FR-AI2 | On an `@ai` message, the system shall retrieve relevant passages **from that group's papers only**. |
+| FR-AI3 | Retrieval shall be hybrid: vector similarity and BM25 keyword ranking, combined by Reciprocal Rank Fusion ([ADR 0004](adr/0004-hybrid-retrieval.md)). |
+| FR-AI4 | The answer shall be streamed to the browser token by token. |
+| FR-AI5 | On completion the system shall return the passages that grounded the answer, and the interface shall display them as citations with their retrieval scores. |
+| FR-AI6 | The answer and its metadata shall be persisted as a message, so that reopening the session shows it and its citations. |
+| FR-AI7 | A member may ask a question about, or request a summary of, an individual paper (both `@ai`-gated). |
+| FR-AI8 | If no AI provider is configured or reachable, the system shall report this to the user and continue to function as a chat platform. |
+
+#### Reports
+
+| ID | Requirement |
+|---|---|
+| FR-R1 | A member may generate a PDF report of a group's papers, discussions, and AI outputs. |
+| FR-R2 | A report shall be downloadable only by a member of the group it belongs to, and only through the application server. |
 
 ### 3.3 Use Case Model
 
-```
-                              ┌─────────────────────────────────────────┐
-                              │           OpenResearch System           │
-                              │                                         │
-    ┌──────────┐              │  ┌─────────────────────────────────┐   │
-    │          │──────────────┼─▶│       U1: Register/Login        │   │
-    │          │              │  └─────────────────────────────────┘   │
-    │          │              │                                         │
-    │          │              │  ┌─────────────────────────────────┐   │
-    │          │──────────────┼─▶│    U2: Manage Research Group    │   │
-    │          │              │  └───────────────┬─────────────────┘   │
-    │          │              │                  │                      │
-    │          │              │          ┌───────┴───────┐              │
-    │Researcher│              │          │   «include»   │              │
-    │          │              │          ▼               ▼              │
-    │          │              │  ┌──────────────┐ ┌──────────────┐     │
-    │          │              │  │ U3: Invite   │ │ U4: Manage   │     │
-    │          │              │  │   Members    │ │   Sessions   │     │
-    │          │              │  └──────────────┘ └──────────────┘     │
-    │          │              │                                         │
-    │          │              │  ┌─────────────────────────────────┐   │
-    │          │──────────────┼─▶│      U5: Real-time Chat         │   │
-    │          │              │  └───────────────┬─────────────────┘   │
-    │          │              │                  │                      │
-    │          │              │          ┌───────┴───────┐              │
-    │          │              │          │   «extend»    │              │
-    │          │              │          ▼               │              │
-    │          │              │  ┌──────────────┐        │              │
-    │          │              │  │ U6: AI Chat  │        │              │
-    │          │              │  │   (@ai)      │        │              │
-    │          │              │  └──────────────┘        │              │
-    │          │              │                                         │
-    │          │              │  ┌─────────────────────────────────┐   │
-    │          │──────────────┼─▶│     U7: Search/Save Papers      │   │
-    │          │              │  └───────────────┬─────────────────┘   │
-    │          │              │                  │                      │
-    │          │              │          ┌───────┴───────┐              │
-    │          │              │          │   «extend»    │              │
-    │          │              │          ▼               ▼              │
-    │          │              │  ┌──────────────┐ ┌──────────────┐     │
-    │          │              │  │ U8: AI Paper │ │U9: Summarize │     │
-    │          │              │  │     Q&A      │ │    Paper     │     │
-    │          │              │  └──────────────┘ └──────────────┘     │
-    │          │              │                                         │
-    │          │              │  ┌─────────────────────────────────┐   │
-    │          │──────────────┼─▶│     U10: Generate Report        │   │
-    └──────────┘              │  └─────────────────────────────────┘   │
-                              │                                         │
-    ┌──────────┐              │  ┌─────────────────────────────────┐   │
-    │  arXiv   │◀─────────────┼──│     U7: Search/Save Papers      │   │
-    │   API    │              │  └─────────────────────────────────┘   │
-    └──────────┘              │                                         │
-                              │                                         │
-    ┌──────────┐              │  ┌─────────────────────────────────┐   │
-    │ Groq AI  │◀─────────────┼──│    U6, U8, U9: AI Features      │   │
-    │   API    │              │  └─────────────────────────────────┘   │
-    └──────────┘              │                                         │
-                              └─────────────────────────────────────────┘
+```mermaid
+graph TB
+    U["Group Member"]
+    O["Group Owner"]
+    AI["AI Service<br/>(supporting actor)"]
+
+    subgraph OpenResearch
+        UC1["UC1 Register / Sign in"]
+        UC2["UC2 Create group"]
+        UC3["UC3 Invite member"]
+        UC4["UC4 Discuss in real time"]
+        UC5["UC5 Add paper to group"]
+        UC6["UC6 Upload paper PDF"]
+        UC7["UC7 Ask @ai a question"]
+        UC8["UC8 Summarize a paper"]
+        UC9["UC9 Generate a report"]
+    end
+
+    U --> UC1
+    U --> UC4
+    U --> UC5
+    U --> UC6
+    U --> UC7
+    U --> UC8
+    U --> UC9
+    O --> UC2
+    O --> UC3
+
+    UC7 -.->|"«include» retrieve + generate"| AI
+    UC8 -.->|"«include»"| AI
+    UC6 -.->|"«include» extract + embed"| AI
+    UC5 -.->|"«include» embed"| AI
 ```
 
-#### 3.3.1 Use Case U1: Register/Login
+#### UC7 — Ask `@ai` a question *(primary use case)*
 
-| Attribute | Description |
-|-----------|-------------|
-| **Author** | OpenResearch Team |
-| **Purpose** | Allow users to create accounts and authenticate to access the platform |
-| **Requirements Traceability** | F1, F2, F3, F5 |
-| **Priority** | High |
-| **Preconditions** | User has a valid email address |
-| **Postconditions** | User is authenticated and has valid JWT tokens |
-| **Actors** | User (primary) |
-| **Extends** | None |
-| **Includes** | None |
+| | |
+|---|---|
+| **Actor** | Group member |
+| **Precondition** | The member is in a session of a group that has at least one indexed paper. |
+| **Trigger** | The member sends a message containing `@ai`. |
 
-**Basic Flow:**
+**Main flow**
 
-| Actor's Action | System's Response |
-|----------------|-------------------|
-| 1. User navigates to registration page | System displays registration form |
-| 2. User enters email, password, and name | System validates input format |
-| 3. User submits registration form | System creates account, hashes password, generates JWT tokens |
-| 4. — | System redirects to home dashboard |
+1. The member sends `@ai which architecture does this paper propose?`
+2. The server verifies group membership and persists the message.
+3. The server broadcasts the message to the session and creates an empty AI
+   message, so the assistant's reply appears immediately as a placeholder.
+4. The server calls the AI service with the prompt, group, and session.
+5. The AI service embeds the question and retrieves the top passages **from that
+   group's index**, using hybrid vector + BM25 search fused by RRF.
+6. The AI service builds a prompt from the retrieved passages and the recent
+   conversation, and streams the LLM's response back as NDJSON.
+7. The server relays each token to every member present in the session.
+8. On the final frame, the server persists the completed answer with its source
+   metadata and signals completion.
+9. The interface renders the answer and, beneath it, one citation chip per source
+   passage, showing the paper title and the retrieval score.
 
-**Alternative Flow (Login):**
+**Alternative flows**
 
-| Actor's Action | System's Response |
-|----------------|-------------------|
-| 1. User navigates to login page | System displays login form |
-| 2. User enters email and password | System validates credentials |
-| 3. — | System generates JWT tokens and redirects to dashboard |
+- *3a. No `@ai` trigger* — no AI activity occurs; the message is an ordinary chat
+  message.
+- *5a. The group has no indexed papers* — retrieval returns nothing; the
+  assistant answers from the conversation alone and returns no citations.
+- *6a. The primary LLM fails* — the request is retried, then replayed against the
+  fallback provider. If both fail, an `ai:error` is emitted and the chat
+  continues to function.
 
-**Exceptions:**
-
-| Actor's Action | System's Response |
-|----------------|-------------------|
-| User enters existing email during registration | System displays "Email already registered" error |
-| User enters invalid credentials during login | System displays "Invalid credentials" error |
-
----
-
-#### 3.3.2 Use Case U5: Real-time Chat
-
-| Attribute | Description |
-|-----------|-------------|
-| **Author** | OpenResearch Team |
-| **Purpose** | Enable real-time communication within group sessions |
-| **Requirements Traceability** | F13, F14, F15, F16, F17 |
-| **Priority** | High |
-| **Preconditions** | User is authenticated and is a member of the group |
-| **Postconditions** | Message is sent and visible to all session members |
-| **Actors** | User (primary), Other Group Members (secondary) |
-| **Extends** | U6: AI Chat |
-| **Includes** | None |
-
-**Basic Flow:**
-
-| Actor's Action | System's Response |
-|----------------|-------------------|
-| 1. User joins a group session | System establishes WebSocket connection, loads message history |
-| 2. User starts typing a message | System broadcasts typing indicator to other members |
-| 3. User sends message | System persists message, broadcasts to all connected users |
-| 4. — | Other members see the new message in real-time |
-
-**Alternative Flow (AI Chat):**
-
-| Actor's Action | System's Response |
-|----------------|-------------------|
-| 1. User types message containing `@ai` | System detects AI trigger |
-| 2. User sends message | System forwards to AI service with group context |
-| 3. — | System broadcasts AI response as new message |
-
----
-
-#### 3.3.3 Use Case U8: AI Paper Q&A
-
-| Attribute | Description |
-|-----------|-------------|
-| **Author** | OpenResearch Team |
-| **Purpose** | Allow users to ask questions about papers using AI |
-| **Requirements Traceability** | F18, F19, F23, F24 |
-| **Priority** | Medium |
-| **Preconditions** | User is authenticated, paper is in group library, question contains `@ai` |
-| **Postconditions** | AI response is generated and stored |
-| **Actors** | User (primary), Groq AI API (secondary) |
-| **Extends** | None |
-| **Includes** | None |
-
-**Basic Flow:**
-
-| Actor's Action | System's Response |
-|----------------|-------------------|
-| 1. User navigates to paper in group library | System displays paper details and Q&A interface |
-| 2. User clicks "Ask @ai" and types question | System validates `@ai` trigger presence |
-| 3. User submits question | System retrieves paper context via RAG |
-| 4. — | System sends context + question to Groq API |
-| 5. — | System displays response and stores as embedding |
-
-**Exceptions:**
-
-| Actor's Action | System's Response |
-|----------------|-------------------|
-| User submits question without `@ai` trigger | System returns 400 error with message about missing trigger |
-| AI service is unavailable | System returns 500 error with retry suggestion |
-
----
-
-#### 3.3.4 Use Case U10: Generate Report
-
-| Attribute | Description |
-|-----------|-------------|
-| **Author** | OpenResearch Team |
-| **Purpose** | Generate PDF reports summarizing group research activity |
-| **Requirements Traceability** | F33, F34, F35, F36 |
-| **Priority** | Medium |
-| **Preconditions** | User is authenticated and is a group member |
-| **Postconditions** | PDF report is generated and available for download |
-| **Actors** | User (primary), AI Service (secondary) |
-| **Extends** | None |
-| **Includes** | None |
-
-**Basic Flow:**
-
-| Actor's Action | System's Response |
-|----------------|-------------------|
-| 1. User navigates to Reports page | System displays report configuration options |
-| 2. User selects report type (weekly/monthly/custom) | System updates date range |
-| 3. User selects sections to include | System validates selections |
-| 4. User clicks "Generate Report" | System starts async report generation |
-| 5. — | System generates PDF using ReportLab |
-| 6. — | System notifies user and provides download link |
+**Postcondition** — The answer is persisted as a message, visible with its
+citations to every member of the group.
 
 ---
 
 ## 4. Non-functional Requirements
 
-### 4.1 Performance Requirements
-
-| ID | Requirement | Target |
-|----|-------------|--------|
-| **NFR1** | API response time for standard CRUD operations | < 200ms (95th percentile) |
-| **NFR2** | Real-time message delivery latency | < 100ms |
-| **NFR3** | Vector similarity search response time | < 500ms for 50,000 vectors |
-| **NFR4** | AI response generation time | < 10 seconds |
-| **NFR5** | PDF report generation time | < 30 seconds |
-| **NFR6** | System should support 100 concurrent users per instance | Required |
-| **NFR7** | WebSocket connection limit per server | 10,000 connections |
-
-### 4.2 Safety and Security Requirements
+### 4.1 Performance
 
 | ID | Requirement |
-|----|-------------|
-| **NFR8** | All API endpoints must require JWT authentication (except public routes) |
-| **NFR9** | Passwords must be hashed using bcrypt with minimum 10 rounds |
-| **NFR10** | All communication must use HTTPS/WSS in production |
-| **NFR11** | JWT tokens must expire within 24 hours; refresh tokens within 7 days |
-| **NFR12** | Rate limiting must be enforced on all API endpoints |
-| **NFR13** | Vector searches must always filter by group_id to prevent cross-group data access |
-| **NFR14** | User data must be removed or anonymized upon account deletion |
-| **NFR15** | API keys (Groq, OpenAI) must never be exposed to the client |
+|---|---|
+| NFR-P1 | A vector search over a group's index shall be served by the HNSW index, not by a sequential scan. |
+| NFR-P2 | The first token of an AI answer should reach the user within roughly 2 seconds; the answer streams thereafter, so the user is never shown a blank spinner. |
+| NFR-P3 | Ingesting a paper shall embed all of its chunks in a single batched API call and write them in a single transaction. |
+| NFR-P4 | Foreign-key columns used in hot query paths shall be indexed (PostgreSQL does not do so automatically). |
+| NFR-P5 | The AI service shall start in seconds, not minutes; it shall load no machine-learning model at boot. |
 
-### 4.3 Software Quality Attributes
+### 4.2 Safety and Security
 
-#### 4.3.1 Reliability
+| ID | Requirement |
+|---|---|
+| NFR-S1 | **Group isolation.** Every retrieval query and every group-scoped route shall be confined to a group of which the requester is a member. This is enforced in SQL and in middleware, never in the interface alone. |
+| NFR-S2 | Passwords shall be stored only as bcrypt hashes. |
+| NFR-S3 | Access tokens shall expire in 15 minutes; refresh tokens shall be `httpOnly` and revocable. A stolen access token is therefore short-lived, and a refresh token is unreachable by injected script. |
+| NFR-S4 | All request bodies, query parameters, and WebSocket payloads shall be schema-validated before use. |
+| NFR-S5 | Error responses shall not disclose stack traces or internal messages; the detail is logged server-side against a correlation ID. |
+| NFR-S6 | Secrets shall be supplied by environment and never committed. |
+| NFR-S7 | Rate limits shall apply to authentication, search, chat, and report generation. |
+| NFR-S8 | Containers shall run as a non-root user. |
 
-| Requirement | Implementation |
-|-------------|----------------|
-| The system shall maintain ≥99.5% uptime | Health check endpoints, automated monitoring, graceful error handling |
-| The system shall recover gracefully from external API failures | Retry logic with exponential backoff, fallback messages |
-| Test coverage must be ≥90% for all services | Vitest (server), pytest (AI service), coverage thresholds in CI |
+### 4.3 Reliability
 
-#### 4.3.2 Maintainability
+| ID | Requirement |
+|---|---|
+| NFR-R1 | **The system degrades rather than fails.** An embedding-API failure retries with backoff and then falls back to a deterministic vector; an LLM failure retries and then falls back to the secondary provider; a full-text-search failure falls back to vector-only retrieval. |
+| NFR-R2 | Database migrations shall be applied transactionally, exactly once, and recorded. |
+| NFR-R3 | Each service shall expose a health endpoint reporting the state of its dependencies. |
 
-| Requirement | Implementation |
-|-------------|----------------|
-| Code shall follow consistent TypeScript/Python style guides | ESLint, Prettier, Ruff configurations |
-| Database schema changes shall be managed via migrations | Drizzle ORM with versioned migrations |
-| All API endpoints shall be documented | OpenAPI/Swagger specifications |
-| Logging shall use structured JSON format | Winston logger with log levels |
+### 4.4 Maintainability and Verifiability
 
-#### 4.3.3 Scalability
-
-| Requirement | Implementation |
-|-------------|----------------|
-| The system shall support horizontal scaling | Stateless backend design, Redis for Socket.IO adapter (future) |
-| Database shall use connection pooling | Drizzle ORM connection pool configuration |
-| Vector index shall use HNSW for O(log n) search | pgvector HNSW index with cosine similarity |
-
-#### 4.3.4 Usability
-
-| Requirement | Implementation |
-|-------------|----------------|
-| UI shall be responsive across devices | TailwindCSS responsive breakpoints |
-| Loading states shall be displayed for async operations | Skeleton loaders, progress indicators |
-| Error messages shall be user-friendly | Toast notifications with actionable messages |
-| AI interactions shall be clearly marked | `@ai` trigger, distinct AI message styling |
+| ID | Requirement |
+|---|---|
+| NFR-M1 | The database schema shall have exactly one owner (the application server). |
+| NFR-M2 | Authorization shall be enforced by shared middleware, not repeated per route. |
+| NFR-M3 | Server tests shall run against a real PostgreSQL instance with pgvector, migrated with the migrations the system ships with. Mocking the database is not acceptable: the schema and its constraints are part of what must be verified. |
+| NFR-M4 | Tests of AI behaviour shall mock the external providers, so that the suite requires no API keys and incurs no cost. |
+| NFR-M5 | A correlation ID shall make a single user action traceable across all three services. |
+| NFR-M6 | Every significant design decision shall be recorded as an ADR. |
 
 ---
 
-## 5. Other Requirements
+## 5. Appendix
 
-### 5.1 Database Requirements
+### Appendix A — API summary
 
-- PostgreSQL 16 or higher with pgvector extension
-- HNSW index on vector embeddings for efficient similarity search
-- Foreign key constraints with appropriate CASCADE/SET NULL behavior
-- Regular backups with point-in-time recovery capability
+**Authentication** — `POST /api/auth/register`, `/login`, `/refresh`, `/logout`;
+`GET|PATCH /api/auth/me`
 
-### 5.2 Legal and Compliance
+**Groups** — `GET|POST /api/groups`; `GET|PATCH|DELETE /api/groups/:groupId`;
+`GET|POST /api/groups/:groupId/members`;
+`DELETE /api/groups/:groupId/members/:memberId`;
+`GET|POST /api/groups/:groupId/invitations`;
+`GET /api/groups/invitations/pending`;
+`POST /api/groups/invitations/:id/accept|decline`
 
-- User data subject to applicable privacy regulations
-- arXiv papers used under fair use for research purposes
-- AI interactions logged for audit purposes
+**Sessions** — `POST /api/sessions`; `GET /api/sessions/group/:groupId`;
+`GET|PATCH|DELETE /api/sessions/:sessionId`;
+`GET|DELETE /api/sessions/:sessionId/messages`
 
-### 5.3 Internationalization
+**Papers** — `GET|POST /api/papers`; `GET /api/papers/search/external`;
+`POST /api/papers/import`; `GET /api/papers/saved`;
+`POST|DELETE /api/papers/:paperId/save`; `GET /api/papers/meta/tags`
 
-- NIL (English-only for initial release)
+**Group papers and AI** — `GET|POST /api/groups/:groupId/papers`;
+`POST /api/groups/:groupId/papers/upload`;
+`POST /api/groups/:groupId/papers/:paperId/question|summarize`;
+`POST /api/groups/:groupId/search`
 
----
+**Reports** — `POST /api/reports/group/:groupId/generate`;
+`GET /api/reports/group/:groupId`; `GET /api/reports/:reportId[/download]`
 
-## Appendix
+**WebSocket** — client → server: `join:session`, `leave:session`,
+`message:send`, `typing:start|stop`. Server → client: `message:new`, `ai:token`,
+`ai:token:done`, `ai:error`, `user:typing`.
 
-### Appendix A - Technology Stack
+### Appendix B — Database summary
 
-| Layer | Technology | Version |
-|-------|------------|---------|
-| Frontend Framework | Next.js | 16 |
-| UI Library | React | 19 |
-| Styling | TailwindCSS | 4 |
-| State Management | Zustand | Latest |
-| Backend Runtime | Node.js | 20+ |
-| API Framework | Express | 5 |
-| Real-time | Socket.IO | 4.8 |
-| ORM | Drizzle | Latest |
-| Database | PostgreSQL | 16 |
-| Vector Extension | pgvector | Latest |
-| AI Service | FastAPI (Python) | 3.12+ |
-| LLM Provider | Groq (Llama 3.3 70B) | Latest |
-| Embeddings | SPECTER2 (local) | 768-dim |
-| PDF Generation | ReportLab | Latest |
-| Testing (Server) | Vitest | Latest |
-| Testing (AI) | pytest | Latest |
+Thirteen tables; full detail in [`database-schema.md`](database-schema.md).
 
-### Appendix B - API Endpoint Summary
+`users`, `groups`, `group_members`, `group_invitations`, `sessions`, `messages`,
+`refresh_tokens`, `papers`, `saved_papers`, `group_papers`,
+`group_paper_vectors`, `ai_artifacts`, `group_reports`
 
-#### Authentication Endpoints
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `POST /api/auth/logout` - Logout user
-- `POST /api/auth/refresh` - Refresh access token
-- `GET /api/auth/me` - Get current user
-- `PATCH /api/auth/me` - Update user profile
+The table carrying the flagship feature is **`group_paper_vectors`**: one row per
+chunk, holding the `content`, a `vector(768)` `embedding` (HNSW index), a
+generated `content_tsv` (GIN index), and the `group_id` on which every query
+filters.
 
-#### Group Endpoints
-- `GET /api/groups` - List user's groups
-- `POST /api/groups` - Create group
-- `GET /api/groups/:id` - Get group details
-- `PATCH /api/groups/:id` - Update group
-- `DELETE /api/groups/:id` - Delete group
-- `GET /api/groups/:id/members` - List members
-- `POST /api/groups/:id/members` - Add member
-- `DELETE /api/groups/:id/members/:userId` - Remove member
+### Appendix C — Requirements traceability
 
-#### Session Endpoints
-- `GET /api/sessions/group/:groupId` - List group sessions
-- `POST /api/sessions` - Create session
-- `GET /api/sessions/:id` - Get session
-- `GET /api/sessions/:id/messages` - Get messages
-
-#### Paper Endpoints
-- `GET /api/papers/search/external` - Search arXiv
-- `POST /api/papers/import` - Import paper
-- `GET /api/papers/saved` - Get saved papers
-- `POST /api/papers/:id/save` - Save paper
-- `DELETE /api/papers/:id/save` - Unsave paper
-
-#### AI Endpoints
-- `POST /api/groups/:groupId/papers/:paperId/question` - Paper Q&A
-- `POST /api/groups/:groupId/papers/:paperId/summarize` - Summarize paper
-- `GET /api/recommendations/group/:groupId` - AI recommendations
-
-#### Report Endpoints
-- `POST /api/reports/group/:groupId/generate` - Generate report
-- `GET /api/reports/:reportId/download` - Download PDF
-
-### Appendix C - Database Schema Summary
-
-| Table | Description |
-|-------|-------------|
-| `users` | User accounts and profiles |
-| `groups` | Research collaboration groups |
-| `group_members` | Group membership (junction) |
-| `sessions` | Discussion sessions within groups |
-| `messages` | Messages within sessions |
-| `papers` | Academic papers (arXiv and imported) |
-| `saved_papers` | User's saved papers |
-| `group_papers` | Papers added to groups |
-| `group_paper_vectors` | Vector embeddings for RAG |
-| `group_memory_notes` | Group knowledge base |
-| `ai_artifacts` | AI-generated content storage |
-| `group_reports` | Report generation metadata |
-| `group_invitations` | Pending group invitations |
-
----
-
-*Document Generated: February 9, 2026*
+| Requirement | Realised in |
+|---|---|
+| FR-A3, FR-A4, FR-A5 | `server/src/middleware/auth.ts`, `server/src/routes/auth.ts` |
+| FR-G2, FR-G3 | `server/src/middleware/groupAccess.ts` |
+| FR-C4 | `server/src/socket/index.ts`, `server/src/validation/schemas.ts` |
+| FR-AI1 | `ai-service/app/deps.py` (`validate_ai_trigger`) and the Pydantic validators |
+| FR-AI2, FR-AI3, NFR-S1 | `ai-service/app/vector_store.py` (`hybrid_search_group_vectors`) |
+| FR-AI4, FR-AI5 | `ai-service/app/routers/chat.py`, `server/src/services/aiChatService.ts` |
+| FR-P4, FR-P5 | `ai-service/app/routers/papers.py` (`extract_pdf_text`) |
+| NFR-R1 | `ai-service/app/embeddings.py`, `ai-service/app/llm_client.py` |
+| NFR-M3 | `server/tests/` — 32 integration tests against a real PostgreSQL |

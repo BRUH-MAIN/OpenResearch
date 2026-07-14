@@ -1,32 +1,16 @@
-> [!WARNING]
-> **This document describes the pre-refactor system and is now out of date.**
->
-> It still specifies features that have been removed (agentic tasks, multi-step
-> workflows, citation graphs, claim lineage, methodology matrices,
-> recommendations, friends) and the local SPECTER2 embedding model, which was
-> replaced by a hosted API.
->
-> It has been kept rather than deleted because it is a course deliverable, but it
-> must be regenerated against the current scope before submission — an examiner
-> comparing it to the code will find the mismatch. See the README and
-> `docs/adr/` for what the system actually does now.
+# UML Diagrams — OpenResearch
 
-# UML Diagrams — OpenResearch Platform
+**Version 2.0 — July 2026.** Regenerated against the implemented system; every
+class, event, and endpoint below exists in the code.
 
-**Document Version:** 1.0
-**Date:** February 10, 2026
-**Project:** OpenResearch — Collaboration-First Research Platform
-
----
-
-## Table of Contents
+## Contents
 
 1. [Use Case Diagram](#1-use-case-diagram)
 2. [Class Diagram](#2-class-diagram)
-3. [Activity Diagram](#3-activity-diagram)
-4. [Sequence Diagram](#4-sequence-diagram)
-5. [State Chart (State Machine) Diagram](#5-state-chart-diagram)
-6. [Component Diagram](#6-component-diagram)
+3. [Component Diagram](#3-component-diagram)
+4. [Sequence Diagrams](#4-sequence-diagrams)
+5. [Activity Diagrams](#5-activity-diagrams)
+6. [State Machine Diagrams](#6-state-machine-diagrams)
 7. [Deployment Diagram](#7-deployment-diagram)
 
 ---
@@ -34,591 +18,566 @@
 ## 1. Use Case Diagram
 
 ```mermaid
-graph LR
-    %% Actors
-    Researcher([🧑‍🔬 Researcher])
-    GroupOwner([👑 Group Owner])
-    Guest([👤 Guest Member])
-    Admin([🔧 System Admin])
+graph TB
+    Member["👤 Group Member"]
+    Owner["👤 Group Owner"]
+    AIService["⚙️ AI Service<br/>(supporting actor)"]
+    ArXiv["⚙️ arXiv API<br/>(supporting actor)"]
 
-    %% External Systems
-    ArXiv([📚 arXiv API])
-    GroqAI([🤖 Groq LLM API])
-
-    %% System Boundary
-    subgraph OpenResearch ["🔬 OpenResearch System"]
-        UC1["U1: Register / Login"]
-        UC2["U2: Manage Profile"]
-        UC3["U3: Create Research Group"]
-        UC4["U4: Invite Members"]
-        UC5["U5: Manage Group Settings"]
-        UC6["U6: Remove Members"]
-        UC7["U7: Real-time Chat"]
-        UC8["U8: AI Chat — @ai trigger"]
-        UC9["U9: Search Papers on arXiv"]
-        UC10["U10: Save Papers to Library"]
-        UC11["U11: Add Paper to Group"]
-        UC12["U12: AI Paper Q&A"]
-        UC13["U13: AI Paper Summarization"]
-        UC14["U14: Semantic Vector Search"]
-        UC15["U15: Generate PDF Report"]
-        UC16["U16: Download Report"]
-        UC17["U17: Agentic Research Tasks"]
-        UC18["U18: System Monitoring"]
+    subgraph OpenResearch
+        UC1["UC1<br/>Register / Sign in"]
+        UC2["UC2<br/>Create group"]
+        UC3["UC3<br/>Invite member"]
+        UC4["UC4<br/>Manage members"]
+        UC5["UC5<br/>Discuss in real time"]
+        UC6["UC6<br/>Search papers"]
+        UC7["UC7<br/>Add paper to group"]
+        UC8["UC8<br/>Upload paper PDF"]
+        UC9["UC9<br/>Ask @ai a question"]
+        UC10["UC10<br/>Summarize a paper"]
+        UC11["UC11<br/>Generate a report"]
     end
 
-    %% Researcher associations
-    Researcher --> UC1
-    Researcher --> UC2
-    Researcher --> UC3
-    Researcher --> UC7
-    Researcher --> UC9
-    Researcher --> UC10
-    Researcher --> UC11
-    Researcher --> UC12
-    Researcher --> UC13
-    Researcher --> UC14
-    Researcher --> UC15
-    Researcher --> UC16
-    Researcher --> UC17
+    Member --> UC1
+    Member --> UC5
+    Member --> UC6
+    Member --> UC7
+    Member --> UC8
+    Member --> UC9
+    Member --> UC10
+    Member --> UC11
 
-    %% Group Owner extends Researcher
-    GroupOwner --> UC4
-    GroupOwner --> UC5
-    GroupOwner --> UC6
+    Owner --> UC2
+    Owner --> UC3
+    Owner --> UC4
 
-    %% Guest
-    Guest --> UC1
-    Guest --> UC7
-    Guest --> UC9
+    UC6 -.->|"«include»"| ArXiv
+    UC7 -.->|"«include» embed"| AIService
+    UC8 -.->|"«include» extract + embed"| AIService
+    UC9 -.->|"«include» retrieve + generate"| AIService
+    UC10 -.->|"«include»"| AIService
+    UC11 -.->|"«include»"| AIService
 
-    %% Admin
-    Admin --> UC18
-
-    %% Extends and Includes
-    UC7 -.->|extends| UC8
-    UC9 -.->|extends| UC10
-    UC11 -.->|includes| UC14
-    UC12 -.->|includes| UC14
-
-    %% External system connections
-    UC9 --> ArXiv
-    UC8 --> GroqAI
-    UC12 --> GroqAI
-    UC13 --> GroqAI
-    UC17 --> GroqAI
-    UC11 --> OpenAIAPI
-    UC14 --> OpenAIAPI
+    UC9 -.->|"«extend» cite sources"| UC9a["UC9a<br/>Display citations"]
 ```
+
+> **Owner generalises Member:** an owner may do everything a member may do, plus
+> UC2–UC4.
 
 ---
 
 ## 2. Class Diagram
 
+### 2.1 Domain model (persisted entities)
+
 ```mermaid
 classDiagram
-    direction TB
-
     class User {
         +UUID id
-        +String name
-        +String email
-        +String passwordHash
-        +String avatar
-        +JSON researchInterests
-        +String bio
-        +DateTime createdAt
-        +DateTime updatedAt
-        +register()
-        +login()
-        +updateProfile()
-        +refreshToken()
+        +string name
+        +string email
+        +string passwordHash
+        +string[] interests
     }
 
     class Group {
         +UUID id
-        +String name
-        +String description
-        +UUID createdBy
-        +DateTime createdAt
-        +DateTime updatedAt
-        +create()
-        +update()
-        +delete()
-        +getMembers()
+        +string name
+        +string description
+        +UUID ownerId
     }
 
     class GroupMember {
         +UUID groupId
         +UUID userId
-        +String role
-        +DateTime joinedAt
+        +Role role
+        +Date joinedAt
     }
 
     class Session {
         +UUID id
         +UUID groupId
-        +String title
-        +String description
-        +String status
-        +DateTime createdAt
-        +start()
-        +end()
+        +string title
+        +Status status
+        +Date lastActivityAt
     }
 
     class Message {
         +UUID id
         +UUID sessionId
         +UUID userId
-        +String content
-        +String type
-        +JSON metadata
-        +DateTime createdAt
-        +send()
-        +delete()
+        +string content
+        +MessageType type
+        +json metadata
     }
 
     class Paper {
         +UUID id
-        +String title
-        +JSON authors
-        +String abstract
-        +String arxivId
-        +String pdfUrl
-        +String publishedDate
-        +JSON categories
-        +DateTime createdAt
-        +search()
-        +import()
-    }
-
-    class SavedPaper {
-        +UUID userId
-        +UUID paperId
-        +String notes
-        +DateTime savedAt
-        +save()
-        +unsave()
-        +addNotes()
+        +string title
+        +string[] authors
+        +string abstract
+        +string[] tags
+        +string url
     }
 
     class GroupPaper {
         +UUID id
         +UUID groupId
         +UUID paperId
-        +UUID addedBy
-        +DateTime addedAt
-        +addToGroup()
-        +removeFromGroup()
+        +string fullText
     }
 
     class GroupPaperVector {
         +UUID id
-        +UUID groupPaperId
         +UUID groupId
-        +String chunkText
-        +String chunkType
+        +string paperId
         +int chunkIndex
-        +Vector embedding
-        +JSON metadata
-        +DateTime createdAt
-    }
-
-    class GroupMemoryNote {
-        +UUID id
-        +UUID groupId
-        +String category
-        +String content
-        +JSON metadata
-        +DateTime createdAt
-        +DateTime updatedAt
-    }
-
-    class AIArtifact {
-        +UUID id
-        +UUID groupId
-        +String artifactType
-        +String prompt
-        +String content
-        +JSON metadata
-        +DateTime createdAt
-        +store()
-    }
-
-    class GroupReport {
-        +UUID id
-        +UUID groupId
-        +UUID generatedBy
-        +String reportType
-        +String status
-        +String filePath
-        +JSON config
-        +DateTime createdAt
-        +generate()
-        +download()
-    }
-
-    class GroupInvitation {
-        +UUID id
-        +UUID groupId
-        +UUID invitedBy
-        +UUID invitedUserId
-        +String email
-        +String status
-        +String message
-        +DateTime createdAt
-        +DateTime expiresAt
-        +send()
-        +accept()
-        +decline()
+        +string content
+        +vector~768~ embedding
+        +tsvector contentTsv
     }
 
     class RefreshToken {
         +UUID id
         +UUID userId
-        +String token
-        +DateTime expiresAt
-        +DateTime createdAt
+        +string token
+        +Date expiresAt
     }
 
-    %% Relationships
-    User "1" --> "*" Group : creates
-    User "1" --> "*" GroupMember : has memberships
-    Group "1" --> "*" GroupMember : has members
-    Group "1" --> "*" Session : contains
-    Session "1" --> "*" Message : contains
-    User "1" --> "*" Message : sends
-    User "1" --> "*" SavedPaper : saves
-    Paper "1" --> "*" SavedPaper : saved as
-    Group "1" --> "*" GroupPaper : has papers
-    Paper "1" --> "*" GroupPaper : linked via
-    GroupPaper "1" --> "*" GroupPaperVector : has vectors
-    Group "1" --> "*" GroupMemoryNote : has notes
-    Group "1" --> "*" AIArtifact : has artifacts
-    Group "1" --> "*" GroupReport : has reports
-    Group "1" --> "*" GroupInvitation : has invitations
-    User "1" --> "*" RefreshToken : has tokens
-```
-
----
-
-## 3. Activity Diagram
-
-### 3.1 AI Paper Q&A Activity
-
-```mermaid
-flowchart TD
-    Start([Start]) --> A["User navigates to Group Papers"]
-    A --> B["User selects a paper"]
-    B --> C["User types question with @ai trigger"]
-    C --> D{"Contains @ai trigger?"}
-
-    D -->|No| E["Return 400 Error: Missing @ai trigger"]
-    E --> End1([End])
-
-    D -->|Yes| F["Validate UUID and request"]
-    F --> G{"Valid request?"}
-    G -->|No| H["Return validation error"]
-    H --> End2([End])
-
-    G -->|Yes| I["Fetch paper from database"]
-    I --> J{"Paper found in group?"}
-    J -->|No| K["Return 404 Error"]
-    K --> End3([End])
-
-    J -->|Yes| L["Generate embedding for question"]
-    L --> M["Vector search in group namespace"]
-    M --> N["Retrieve relevant paper chunks (RAG)"]
-    N --> O["Build context from chunks + paper abstract"]
-    O --> P["Send prompt + context to Groq LLM"]
-    P --> Q["Receive AI response"]
-    Q --> R["Store response as AI Artifact"]
-    R --> S["Store embedding for future retrieval"]
-    S --> T["Return response to user"]
-    T --> End4([End])
-```
-
-### 3.2 User Registration & Authentication Activity
-
-```mermaid
-flowchart TD
-    Start([Start]) --> A{"New User?"}
-
-    A -->|Yes| B["Fill registration form"]
-    B --> C["Submit email, password, name"]
-    C --> D{"Valid input?"}
-    D -->|No| E["Show validation errors"]
-    E --> B
-    D -->|Yes| F{"Email already exists?"}
-    F -->|Yes| G["Show 'Email already registered' error"]
-    G --> B
-    F -->|No| H["Hash password with bcrypt"]
-    H --> I["Create user record in DB"]
-    I --> J["Generate JWT access + refresh tokens"]
-    J --> K["Redirect to Home Dashboard"]
-    K --> End1([End])
-
-    A -->|No| L["Fill login form"]
-    L --> M["Submit email + password"]
-    M --> N{"Valid credentials?"}
-    N -->|No| O["Show 'Invalid credentials' error"]
-    O --> L
-    N -->|Yes| J
-```
-
----
-
-## 4. Sequence Diagram
-
-### 4.1 Real-time Chat with AI (@ai trigger)
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Client as Next.js Client
-    participant Socket as Socket.IO Server
-    participant Server as Express Backend
-    participant AI as FastAPI AI Service
-    participant Groq as Groq LLM API
-    participant DB as PostgreSQL + pgvector
-
-    User->>Client: Types message with @ai
-    Client->>Socket: emit("typing", {sessionId, userId})
-    Socket-->>Client: broadcast("user_typing") to others
-
-    User->>Client: Sends message
-    Client->>Socket: emit("send_message", {content, sessionId})
-    Socket->>DB: INSERT message (type: 'user')
-    Socket-->>Client: broadcast("new_message") to all members
-
-    Socket->>Server: Detect @ai trigger
-    Server->>AI: POST /groups/{groupId}/ai-chat
-    AI->>AI: Validate @ai trigger
-    AI->>AI: Generate embedding for prompt (SPECTER2)
-    AI->>DB: Vector similarity search (filtered by groupId)
-    DB-->>AI: Return relevant context chunks
-    AI->>Groq: Send prompt + RAG context
-    Groq-->>AI: Return AI response
-    AI->>DB: Store AI artifact + embedding
-    AI-->>Server: Return AI response
-    Server->>DB: INSERT message (type: 'ai')
-    Server-->>Socket: Emit AI response
-    Socket-->>Client: broadcast("new_message") AI reply
-    Client-->>User: Display AI response in chat
-```
-
-### 4.2 Paper Search, Save & Embed
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Client as Next.js Client
-    participant Server as Express Backend
-    participant ArXiv as arXiv API
-    participant AI as FastAPI AI Service
-    participant DB as PostgreSQL + pgvector
-
-    User->>Client: Enter search query
-    Client->>Server: GET /api/papers/search/external?q=...
-    Server->>ArXiv: Search papers
-    ArXiv-->>Server: Return paper metadata
-    Server-->>Client: Return search results
-    Client-->>User: Display paper list
-
-    User->>Client: Click "Save Paper"
-    Client->>Server: POST /api/papers/import
-    Server->>DB: INSERT into papers table
-    Server-->>Client: Paper saved
-    Client->>Server: POST /api/papers/{id}/save
-    Server->>DB: INSERT into saved_papers
-    Server-->>Client: Confirmation
-
-    User->>Client: Click "Add to Group"
-    Client->>Server: POST /api/groups/{groupId}/papers
-    Server->>DB: INSERT into group_papers
-    Server->>AI: POST /groups/{groupId}/papers/embed
-    AI->>AI: Chunk paper text
-    AI->>AI: Generate embeddings for each chunk (SPECTER2)
-    AI->>DB: INSERT vectors into group_paper_vectors
-    AI-->>Server: Embedding complete
-    Server-->>Client: Paper added to group
-    Client-->>User: Show success
-```
-
----
-
-## 5. State Chart (State Machine) Diagram
-
-### 5.1 Group Session Lifecycle
-
-```mermaid
-stateDiagram-v2
-    [*] --> Created : Owner creates session
-
-    Created --> Active : First member joins
-    Active --> Active : Members send messages
-    Active --> Active : AI responds to @ai
-    Active --> Active : Members join/leave
-
-    Active --> Idle : No activity (timeout)
-    Idle --> Active : New message received
-    Idle --> Closed : Auto-close after extended idle
-
-    Active --> Closed : Owner ends session
-    Closed --> [*]
-
-    state Active {
-        [*] --> Chatting
-        Chatting --> AIProcessing : @ai message sent
-        AIProcessing --> Chatting : AI response received
-        Chatting --> Typing : User starts typing
-        Typing --> Chatting : User sends/stops
+    class AiArtifact {
+        +UUID id
+        +UUID groupId
+        +ArtifactType artifactType
+        +string content
     }
+
+    User "1" -- "*" GroupMember
+    Group "1" -- "*" GroupMember : membership
+    User "1" -- "*" RefreshToken
+    Group "1" -- "*" Session
+    Session "1" -- "*" Message
+    User "1" -- "*" Message : authors
+    Group "1" -- "*" GroupPaper
+    Paper "1" -- "*" GroupPaper
+    Group "1" -- "*" GroupPaperVector : isolates
+    Group "1" -- "*" AiArtifact
+    GroupPaper ..> GroupPaperVector : chunked and embedded into
 ```
 
-### 5.2 Group Invitation Lifecycle
+> `Message.metadata` carries the `sources` array for an AI message — the data the
+> interface renders as citation chips.
+>
+> `GroupPaperVector.groupId` is the isolation boundary: **every** retrieval query
+> filters on it.
+
+### 2.2 AI service — class structure
 
 ```mermaid
-stateDiagram-v2
-    [*] --> Pending : Owner sends invitation
+classDiagram
+    class ChatRouter {
+        <<router>>
+        +group_ai_chat(group_id, request)
+        +group_ai_chat_stream(group_id, request)
+        -_prepare(group_id, request)
+    }
 
-    Pending --> Accepted : Invitee accepts
-    Pending --> Declined : Invitee declines
-    Pending --> Expired : Invitation expires
+    class PapersRouter {
+        <<router>>
+        +extract_pdf_text(file)
+        +add_paper_to_group(group_id, request)
+        +paper_question(request)
+        +paper_summarize(request)
+    }
 
-    Accepted --> [*] : User added as member
-    Declined --> [*]
-    Expired --> [*]
+    class Deps {
+        <<module>>
+        +validate_ai_trigger(text) str
+        +get_group_context(group_id, query) tuple
+        +build_chat_prompt(items, history, prompt) str
+        +build_sources(items) list
+        +store_ai_artifact(...) str
+    }
+
+    class VectorStore {
+        +insert_paper_chunks(group_id, paper_id, ...) list
+        +hybrid_search_group_vectors(group_id, query, ...) list
+        +search_group_vectors(group_id, query, ...) list
+    }
+
+    class EmbeddingService {
+        +EMBEDDING_DIMENSION = 768
+        +generate_embedding(text, task_type) tuple
+        +generate_embeddings_batch(texts) tuple
+        +chunk_text(text, size, overlap) list
+        -_mock_embedding(text) list
+    }
+
+    class LLMClient {
+        +provider: str
+        +model_name: str
+        +generate(prompt, system) tuple
+        +generate_stream(prompt, system)
+        -_invoke_with_fallback(messages)
+    }
+
+    class Database {
+        +get_session_messages(session_id) list
+        +get_paper_info(paper_id) dict
+        +store_ai_artifact(...) str
+    }
+
+    class DbEngine {
+        <<singleton>>
+        +init_engine() bool
+        +get_session_factory()
+    }
+
+    ChatRouter ..> Deps
+    PapersRouter ..> Deps
+    Deps ..> VectorStore
+    Deps ..> LLMClient
+    Deps ..> Database
+    VectorStore ..> EmbeddingService
+    VectorStore ..> DbEngine
+    Database ..> DbEngine
 ```
 
-### 5.3 Report Generation Lifecycle
+> Dependencies run in one direction only: **router → deps → (vector store | LLM
+> client | database) → engine**. A router contains no SQL; the vector store knows
+> nothing of HTTP.
+>
+> `DbEngine` is a single shared connection pool. Before the refactor, `Database`
+> and `VectorStore` each opened their own.
+
+### 2.3 Server — authorization middleware
 
 ```mermaid
-stateDiagram-v2
-    [*] --> Requested : User clicks Generate Report
+classDiagram
+    class AuthMiddleware {
+        +authenticate(req, res, next)
+        +generateTokens(userId, email) TokenPair
+        +verifyRefreshToken(token) Payload
+        +ACCESS_TOKEN_TTL = "15m"
+    }
 
-    Requested --> Validating : Validate config & permissions
-    Validating --> Fetching : Validation passed
-    Validating --> Failed : Validation error
+    class GroupAccessMiddleware {
+        +requireGroupMember(req, res, next)
+        +requireGroupOwner(req, res, next)
+        +requireSessionAccess(req, res, next)
+        -findMembership(groupId, userId)
+    }
 
-    Fetching --> Processing : Data fetched from DB
-    Processing --> Generating : AI summaries generated
-    Generating --> Completed : PDF created successfully
-    Generating --> Failed : Generation error
+    class AiClient {
+        +isAvailable() bool
+        +groupAIChatStream(request)
+        +extractPdfText(buffer, filename)
+        +addPaperToGroup(request)
+        -buildHeaders() Headers
+    }
 
-    Completed --> Downloaded : User downloads PDF
-    Downloaded --> [*]
-    Failed --> [*]
+    class AiChatService {
+        +streamAiChatToSession(io, params)
+    }
 
-    Completed --> [*] : Expires after retention period
+    AuthMiddleware <|.. GroupAccessMiddleware : runs after
+    AiChatService ..> AiClient
 ```
+
+> `GroupAccessMiddleware` replaced 34 copy-pasted membership checks. Every
+> group-scoped route now passes through it.
 
 ---
 
-## 6. Component Diagram
+## 3. Component Diagram
 
 ```mermaid
 graph TB
-    subgraph ClientLayer ["🖥️ Frontend — Next.js 16 + React 19"]
-        AuthUI["Auth Module<br/>(Login / Register)"]
-        Dashboard["Home Dashboard"]
-        GroupView["Group Management"]
-        ChatUI["Real-time Chat UI"]
-        PaperSearch["Paper Search & Library"]
-        GroupPapers["Group Papers + AI Q&A"]
-        ReportUI["Report Generator"]
-        ProfileUI["Profile Settings"]
-        SocketClient["Socket.IO Client"]
-        APIClient["REST API Client<br/>(Axios)"]
-        AuthStore["Auth Store<br/>(Zustand)"]
+    subgraph Client["Web Client — Next.js 16"]
+        Pages["App Router pages"]
+        Hooks["React Query hooks<br/>useResearchSession"]
+        SocketC["Socket.IO client"]
+        ApiC["API client"]
     end
 
-    subgraph ServerLayer ["⚙️ Backend — Node.js 20 + Express 5"]
-        AuthMiddleware["JWT Auth Middleware"]
-        RateLimiter["Rate Limiter"]
-        Validator["Request Validator<br/>(Zod)"]
-        ErrorHandler["Error Handler"]
-
-        AuthRoutes["Auth Routes"]
-        GroupRoutes["Group Routes"]
-        SessionRoutes["Session Routes"]
-        PaperRoutes["Paper Routes"]
-        AIRoutes["AI Proxy Routes"]
-        ReportRoutes["Report Routes"]
-        RecommendRoutes["Recommendation Routes"]
-        HealthRoutes["Health Check"]
-
-        SocketHandler["Socket.IO Handler"]
-        DrizzleORM["Drizzle ORM"]
+    subgraph Server["Application Server — Node 20 / Express 5"]
+        Routes["Routes<br/>auth · groups · sessions<br/>papers · groupPapers · reports"]
+        MW["Middleware<br/>authenticate · groupAccess<br/>validate · correlationId · rateLimit"]
+        SocketS["Socket.IO server"]
+        ChatSvc["aiChatService"]
+        AiCl["aiClient"]
+        Drizzle["Drizzle ORM<br/>(sole schema owner)"]
     end
 
-    subgraph AILayer ["🤖 AI Service — Python 3.12 + FastAPI"]
-        AIMain["FastAPI App"]
-        GroqClient["Groq LLM Client"]
-        EmbeddingService["Embedding Service<br/>(SPECTER2 Local)"]
-        VectorStore["Vector Store<br/>(pgvector)"]
-        ReportGen["Report Generator<br/>(ReportLab)"]
-        AgenticService["Agentic Orchestration"]
-        IntentClassifier["Intent Classifier"]
-        MemoryModule["Memory Module"]
-        DBModule["Database Module"]
+    subgraph AI["AI Service — FastAPI / Python 3.12"]
+        Routers["Routers<br/>chat · papers · vectors<br/>reports · health"]
+        DepsM["deps<br/>RAG pipeline"]
+        VS["vectorStore<br/>hybrid search"]
+        Emb["embeddings<br/>Gemini"]
+        LLM["llmClient<br/>DeepSeek → Groq"]
+        Rep["reportGenerator"]
     end
 
-    subgraph DataLayer ["🗄️ Data — PostgreSQL 16 + pgvector"]
-        UsersTbl["users"]
-        GroupsTbl["groups"]
-        SessionsTbl["sessions"]
-        MessagesTbl["messages"]
-        PapersTbl["papers"]
-        VectorsTbl["group_paper_vectors"]
-        ArtifactsTbl["ai_artifacts"]
-        ReportsTbl["group_reports"]
+    DB[("PostgreSQL 16<br/>+ pgvector")]
+    Gemini(["Gemini API"])
+    LLMs(["DeepSeek / Groq"])
+    Arxiv(["arXiv API"])
+
+    Pages --> Hooks --> ApiC
+    Pages --> SocketC
+    ApiC -->|REST| Routes
+    SocketC <-->|WebSocket| SocketS
+
+    Routes --> MW
+    MW --> Drizzle
+    SocketS --> ChatSvc --> AiCl
+    Routes --> AiCl
+    AiCl -->|"HTTP + X-Correlation-Id"| Routers
+
+    Routers --> DepsM
+    DepsM --> VS
+    DepsM --> LLM
+    VS --> Emb
+    Routers --> Rep
+
+    Drizzle --> DB
+    VS --> DB
+    Emb --> Gemini
+    LLM --> LLMs
+    Routes --> Arxiv
+```
+
+> Note the arrow that does **not** exist: the client never reaches the AI
+> service. Every AI request is proxied by the server, which is why the `@ai` gate
+> and authorization live in exactly one place.
+
+---
+
+## 4. Sequence Diagrams
+
+### 4.1 `@ai` question — the flagship flow
+
+```mermaid
+sequenceDiagram
+    actor U as Member
+    participant C as Client
+    participant S as Server
+    participant AI as AI Service
+    participant E as Gemini
+    participant L as LLM
+    participant DB as PostgreSQL
+
+    U->>C: "@ai which architecture is proposed?"
+    C->>S: socket message:send
+    S->>DB: verify group membership
+    S->>DB: INSERT user message
+    S-->>C: message:new (broadcast to session)
+
+    Note over S: content contains "@ai"
+
+    S->>DB: INSERT empty AI message
+    S-->>C: message:new (placeholder — bubble appears at once)
+
+    S->>AI: POST /groups/{id}/ai-chat/stream<br/>X-Correlation-Id
+    AI->>E: embed the question (768-dim)
+    E-->>AI: query vector
+
+    Note over AI,DB: ONE SQL statement:<br/>vector CTE (HNSW) + BM25 CTE (GIN)<br/>fused by RRF, WHERE group_id = ...
+
+    AI->>DB: hybrid search
+    DB-->>AI: top-k chunks (+ title, url, scores)
+
+    AI->>AI: build_chat_prompt(chunks, history, question)
+    AI->>L: stream completion
+
+    loop each token
+        L-->>AI: token
+        AI-->>S: {"token": "..."}  (NDJSON)
+        S-->>C: ai:token
+        C-->>U: text appears live
     end
 
-    subgraph ExternalAPIs ["🌐 External APIs"]
-        ArXivAPI["arXiv API"]
-        GroqAPI["Groq LLM API"]
+    L-->>AI: end of stream
+    AI->>DB: persist ai_artifact + embed it back
+    AI-->>S: {"done": true, "sources": [...]}
+    S->>DB: UPDATE message (content + sources)
+    S-->>C: ai:token:done
+    C-->>U: answer + citation chips
+```
+
+### 4.2 PDF upload and indexing
+
+```mermaid
+sequenceDiagram
+    actor U as Member
+    participant C as Client
+    participant S as Server
+    participant AI as AI Service
+    participant E as Gemini
+    participant DB as PostgreSQL
+
+    U->>C: choose a PDF
+    C->>S: POST .../papers/upload (multipart)
+    S->>S: multer — memory, ≤20MB, PDF only
+    S->>AI: POST /papers/extract-text
+    AI->>AI: pypdf — read the text layer
+
+    alt no text layer (scanned)
+        AI-->>S: 422 "scanned PDFs are not supported"
+        S-->>C: 422 (a clear message, not a silent empty index)
+    else text extracted
+        AI-->>S: {text, page_count}
+        S->>DB: INSERT paper + group_paper (full_text)
+        Note over S,DB: the SERVER writes — it owns the schema
+        S->>AI: POST /groups/{id}/papers (embed)
+        AI->>AI: chunk (1000 chars, 200 overlap)
+        AI->>E: embed ALL chunks — one batched call
+        E-->>AI: vectors
+        AI->>DB: one INSERT, one transaction
+        AI-->>S: {vectors_created}
+        S-->>C: 201 {pageCount, vectorsCreated}
     end
+```
 
-    %% Client to Server
-    APIClient -->|REST/HTTPS| AuthMiddleware
-    SocketClient -->|WebSocket/WSS| SocketHandler
+### 4.3 Authentication and token refresh
 
-    %% Middleware chain
-    AuthMiddleware --> RateLimiter
-    RateLimiter --> Validator
-    Validator --> AuthRoutes
-    Validator --> GroupRoutes
-    Validator --> SessionRoutes
-    Validator --> PaperRoutes
-    Validator --> AIRoutes
-    Validator --> ReportRoutes
-    Validator --> RecommendRoutes
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant C as Client
+    participant S as Server
+    participant DB as PostgreSQL
 
-    %% Server to DB
-    DrizzleORM -->|TCP| DataLayer
+    U->>C: sign in
+    C->>S: POST /api/auth/login
+    S->>DB: find user, then bcrypt.compare
+    Note over S: sign access token (JWT_SECRET, 15m)<br/>sign refresh token (JWT_REFRESH_SECRET, 7d)
+    S->>DB: INSERT refresh_token row
+    S-->>C: Set-Cookie: refresh_token (HttpOnly, Path=/api/auth)<br/>body: { accessToken } only
 
-    %% Server to AI
-    AIRoutes -->|REST/HTTP| AIMain
-    ReportRoutes -->|REST/HTTP| AIMain
+    Note over C: the refresh token is unreadable by JS
 
-    %% AI Service internal
-    AIMain --> GroqClient
-    AIMain --> EmbeddingService
-    AIMain --> VectorStore
-    AIMain --> ReportGen
-    AIMain --> AgenticService
-    AIMain --> IntentClassifier
-    AIMain --> MemoryModule
-    AIMain --> DBModule
+    C->>S: GET /api/groups (Bearer access)
+    S-->>C: 200
 
-    %% AI to External
-    GroqClient --> GroqAPI
-    PaperRoutes --> ArXivAPI
+    Note over C,S: ...15 minutes pass...
 
-    %% AI to DB
-    DBModule -->|TCP| DataLayer
-    VectorStore -->|TCP| DataLayer
+    C->>S: GET /api/groups (expired)
+    S-->>C: 401 Token expired
+    C->>S: POST /api/auth/refresh (cookie sent automatically)
+    S->>DB: look up the token row
+    S->>DB: DELETE it — rotation
+    S->>DB: INSERT the new one
+    S-->>C: new cookie + { accessToken }
+    C->>S: retry the request
+    S-->>C: 200
+```
+
+---
+
+## 5. Activity Diagrams
+
+### 5.1 Handling an incoming message
+
+```mermaid
+flowchart TD
+    A([Message received]) --> B{Zod: payload valid?}
+    B -->|no| B1[emit error] --> Z([end])
+    B -->|yes| C{Member of the group?}
+    C -->|no| C1[emit Access denied] --> Z
+    C -->|yes| D[persist message]
+    D --> E[broadcast message:new]
+    E --> F{contains @ai?}
+
+    F -->|no| Z
+    F -->|yes| G{AI service reachable?}
+    G -->|no| G1[emit ai:error<br/>AI_NOT_CONFIGURED] --> Z
+
+    G -->|yes| H[insert placeholder AI message]
+    H --> I[embed the question]
+    I --> J[hybrid retrieval, scoped to the group]
+    J --> K{full-text search failed?}
+    K -->|yes| K1[fall back to vector-only]
+    K -->|no| L
+    K1 --> L[build the prompt]
+    L --> M[stream from the primary LLM]
+    M --> N{primary failed?}
+    N -->|yes| N1[retry, then the fallback provider]
+    N -->|no| O
+    N1 --> O[relay tokens to the session]
+    O --> P[persist answer + sources]
+    P --> Q[emit ai:token:done]
+    Q --> R[render citation chips]
+    R --> Z
+```
+
+### 5.2 Retrieval — hybrid search and RRF
+
+```mermaid
+flowchart TD
+    A([Query]) --> B[embed the query, 768-dim]
+    B --> C[ONE SQL statement]
+
+    C --> D["CTE vector_results<br/>ORDER BY embedding &lt;=&gt; query<br/>HNSW index<br/>WHERE group_id = :group_id"]
+    C --> E["CTE bm25_results<br/>ORDER BY ts_rank_cd(content_tsv, ...)<br/>GIN index<br/>WHERE group_id = :group_id"]
+
+    D --> F[LEFT JOIN on chunk id]
+    E --> F
+
+    F --> G["RRF fusion:<br/>0.6/(60 + vector_rank)<br/>+ 0.4/(60 + bm25_rank)"]
+    G --> H["a chunk found by only one engine still scores —<br/>COALESCE ranks it last on the other side"]
+    H --> I[ORDER BY rrf_score DESC, LIMIT k]
+    I --> J[enrich with paper title + url]
+    J --> K([chunks + scores → prompt and citations])
+```
+
+---
+
+## 6. State Machine Diagrams
+
+### 6.1 An AI message
+
+```mermaid
+stateDiagram-v2
+    [*] --> Placeholder : @ai detected, empty message inserted
+    Placeholder --> Streaming : first ai:token
+    Streaming --> Streaming : subsequent tokens
+    Streaming --> Complete : ai:token:done (content + sources persisted)
+    Streaming --> Failed : provider error after fallback
+    Placeholder --> Failed : retrieval or provider unavailable
+    Complete --> [*]
+    Failed --> [*]
+
+    note right of Complete
+        metadata.sources → citation chips
+    end note
+```
+
+### 6.2 A group invitation
+
+```mermaid
+stateDiagram-v2
+    [*] --> Pending : member invites by email
+    Pending --> Accepted : invitee accepts → group_members row created
+    Pending --> Declined : invitee declines
+    Pending --> Expired : expiresAt passes
+    Pending --> Cancelled : owner or inviter withdraws it
+    Accepted --> [*]
+    Declined --> [*]
+    Expired --> [*]
+    Cancelled --> [*]
+```
+
+### 6.3 A refresh token
+
+```mermaid
+stateDiagram-v2
+    [*] --> Active : issued at login, row stored
+    Active --> Rotated : presented at /refresh — row deleted, new pair issued
+    Active --> Revoked : logout
+    Active --> Expired : after 7 days
+    Rotated --> [*] : replaying it now fails
+    Revoked --> [*]
+    Expired --> [*]
 ```
 
 ---
@@ -627,63 +586,39 @@ graph TB
 
 ```mermaid
 graph TB
-    subgraph UserDevice ["👤 User Device"]
-        Browser["Web Browser<br/>(Chrome / Firefox / Safari / Edge)"]
+    subgraph Browser["«device» User's browser"]
+        SPA["«artifact»<br/>Next.js app"]
     end
 
-    subgraph DockerHost ["🐳 Docker Host — docker-compose"]
-        subgraph Network ["openresearch-network (bridge)"]
-
-            subgraph ClientContainer ["📦 openresearch-client"]
-                NextJS["Next.js 16<br/>Port: 3000<br/>Memory: 512MB"]
-            end
-
-            subgraph ServerContainer ["📦 openresearch-server"]
-                Express["Node.js 20 + Express 5<br/>+ Socket.IO 4.8<br/>Port: 3001<br/>Memory: 512MB"]
-            end
-
-            subgraph AIContainer ["📦 openresearch-ai"]
-                FastAPI["Python 3.12 + FastAPI<br/>+ Uvicorn<br/>Port: 8000<br/>Memory: 4GB"]
-            end
-
-            subgraph MCPContainer ["📦 openresearch-mcp-academic-papers"]
-                MCPServer["MCP Academic Papers<br/>Port: 9010<br/>Memory: 512MB"]
-            end
-
-            subgraph DBContainer ["📦 openresearch-db"]
-                Postgres["PostgreSQL 16<br/>+ pgvector extension<br/>Port: 5432<br/>Memory: 1GB"]
-                Volume[("postgres_data<br/>(persistent volume)")]
-            end
-
+    subgraph Host["«device» Docker host"]
+        subgraph N1["«container» openresearch-client:342MB"]
+            C["Next.js (standalone)<br/>:3000"]
+        end
+        subgraph N2["«container» openresearch-server:354MB"]
+            S["Node 20 · Express · Socket.IO<br/>:3001 · non-root"]
+        end
+        subgraph N3["«container» openresearch-ai:480MB"]
+            A["FastAPI · uvicorn<br/>:8000 · non-root"]
+        end
+        subgraph N4["«container» postgres"]
+            P[("PostgreSQL 16 + pgvector<br/>:5432")]
         end
     end
 
-    subgraph ExternalServices ["☁️ External Cloud Services"]
-        GroqCloud["Groq Cloud API<br/>(Llama 3.3 70B)"]
-        ArXivService["arXiv.org API"]
-    end
+    Ext1(["Gemini API"])
+    Ext2(["DeepSeek / Groq"])
+    Ext3(["arXiv"])
 
-    %% Connections
-    Browser -->|"HTTPS :3000"| NextJS
-    Browser -->|"WSS :3001"| Express
-
-    NextJS -->|"HTTP :3001"| Express
-    Express -->|"HTTP :8000"| FastAPI
-    FastAPI -->|"HTTP :9010"| MCPServer
-
-    Express -->|"TCP :5432"| Postgres
-    FastAPI -->|"TCP :5432"| Postgres
-    Postgres --- Volume
-
-    FastAPI -->|"HTTPS"| GroqCloud
-    MCPServer -->|"HTTPS"| ArXivService
-
-    %% Health Checks
-    Express -.->|healthcheck| Express
-    FastAPI -.->|healthcheck| FastAPI
-    Postgres -.->|pg_isready| Postgres
+    SPA -->|HTTPS| C
+    SPA -->|REST + WebSocket| S
+    S -->|HTTP| A
+    S -->|TCP| P
+    A -->|TCP| P
+    A -->|HTTPS| Ext1
+    A -->|HTTPS| Ext2
+    S -->|HTTPS| Ext3
 ```
 
----
-
-*Document Generated: February 10, 2026*
+> The AI service is **not** published to the browser; only the server may reach
+> it. Its image was 2.81 GB before the local transformer models were removed
+> ([ADR 0003](adr/0003-hosted-embeddings.md)).
