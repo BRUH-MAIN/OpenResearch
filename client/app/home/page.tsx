@@ -3,10 +3,11 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
-import { Button, Card, CardBody, CardHeader, Avatar, Input, Modal } from '@/components/ui';
+import { Button, Card, CardBody, CardHeader, Avatar, Input, Textarea, Modal } from '@/components/ui';
 import { Plus, Users, Calendar, Search, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { useGroups, useCreateGroup } from '@/lib/hooks/useGroups';
+import type { Group } from '@/lib/api';
 import { toast } from '@/lib/toast';
 
 export default function HomePage() {
@@ -21,7 +22,7 @@ export default function HomePage() {
   });
 
   const filteredGroups = groups.filter(
-    (group: any) =>
+    (group: Group) =>
       group.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       group.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -107,7 +108,7 @@ export default function HomePage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredGroups.map((group: any) => {
+            {filteredGroups.map((group: Group) => {
               const isOwner = group.ownerId === user?.id;
               return (
                 <Link key={group.id} href={`/group/${group.id}`}>
@@ -184,18 +185,13 @@ export default function HomePage() {
             value={newGroup.name}
             onChange={(e) => setNewGroup({ ...newGroup, name: e.target.value })}
           />
-          <div>
-            <label className="block text-sm font-medium text-[var(--color-text-secondary)] mb-2">
-              Description
-            </label>
-            <textarea
-              placeholder="What's this group about?"
-              value={newGroup.description}
-              onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
-              className="w-full px-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-secondary)]/40 focus:border-[var(--color-brand-secondary)] resize-none bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
-              rows={4}
-            />
-          </div>
+          <Textarea
+            label="Description"
+            placeholder="What's this group about?"
+            value={newGroup.description}
+            onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
+            rows={4}
+          />
         </div>
       </Modal>
     </div>

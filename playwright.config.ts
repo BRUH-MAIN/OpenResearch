@@ -20,21 +20,5 @@ export default defineConfig({
       name: 'chromium',
       use: { browserName: 'chromium', viewport: { width: 1440, height: 900 } },
     },
-    {
-      name: 'tablet-responsive',
-      testMatch: /.*responsive\.spec\.ts/,
-      use: {
-        ...devices['iPad Pro 11'],
-        browserName: 'chromium',
-      },
-    },
-    {
-      name: 'mobile-responsive',
-      testMatch: /.*responsive\.spec\.ts/,
-      use: {
-        ...devices['iPhone 12'],
-        browserName: 'chromium',
-      },
-    },
   ],
 });

@@ -101,14 +101,17 @@ app.use('/api/reports', reportsRoutes);
 app.use(notFoundHandler);
 app.use(errorHandler);
 
-// Start server
+// Start server. Integration tests import `app` directly and drive it with
+// supertest, so binding a port there would be pointless (and would collide).
 const PORT = env.PORT;
 
-httpServer.listen(PORT, () => {
-  logger.info(`🚀 Server running on http://localhost:${PORT}`);
-  logger.info(`📡 Socket.IO ready for connections`);
-  logger.info(`🌍 Environment: ${env.NODE_ENV}`);
-});
+if (env.NODE_ENV !== 'test') {
+  httpServer.listen(PORT, () => {
+    logger.info(`🚀 Server running on http://localhost:${PORT}`);
+    logger.info(`📡 Socket.IO ready for connections`);
+    logger.info(`🌍 Environment: ${env.NODE_ENV}`);
+  });
+}
 
 // Graceful shutdown
 process.on('SIGTERM', () => {

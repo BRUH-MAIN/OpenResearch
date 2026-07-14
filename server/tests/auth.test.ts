@@ -1,176 +1,136 @@
 /**
- * Tests for Authentication Routes
- * 
- * These tests cover user authentication, token management, and user profile.
+ * Auth: registration, login, the access/refresh token split, and rotation.
+ *
+ * The refresh flow is the part that was previously broken (both tokens signed
+ * with the same secret, both 7-day, refresh token echoed in the JSON body), so
+ * these assertions exist specifically to keep that from regressing.
  */
 
-import { describe, it, expect, vi } from 'vitest';
-import bcrypt from 'bcryptjs';
+import { describe, it, expect, beforeEach } from 'vitest';
 import jwt from 'jsonwebtoken';
+import { app, request, resetDb, createUser } from './helpers.js';
 
-// Mock the database
-vi.mock('../src/db/index.js', () => ({
-  db: {
-    select: vi.fn().mockReturnThis(),
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue([]),
-    insert: vi.fn().mockReturnThis(),
-    values: vi.fn().mockReturnThis(),
-    returning: vi.fn().mockResolvedValue([{ id: 'test-id', name: 'Test User', email: 'test@example.com' }]),
-    update: vi.fn().mockReturnThis(),
-    set: vi.fn().mockReturnThis(),
-    delete: vi.fn().mockReturnThis(),
-  },
-  users: {},
-  refreshTokens: {},
-}));
+const REFRESH_COOKIE = 'refresh_token';
 
-describe('Auth Routes', () => {
-  const testUser = {
-    name: 'Test User',
-    email: 'test@example.com',
-    password: 'testpassword123',
-    interests: ['AI', 'Machine Learning'],
-  };
+function getCookie(res: request.Response, name: string): string | undefined {
+  const raw = res.headers['set-cookie'] as unknown as string[] | undefined;
+  return raw?.find((c) => c.startsWith(`${name}=`));
+}
 
-  describe('POST /api/auth/register', () => {
-    it('should hash password before storing', async () => {
-      const hashedPassword = await bcrypt.hash(testUser.password, 10);
-      expect(hashedPassword).not.toBe(testUser.password);
-      expect(hashedPassword.length).toBeGreaterThan(50);
-    });
+describe('auth', () => {
+  beforeEach(resetDb);
 
-    it('should return tokens on registration', async () => {
-      const mockResponse = {
-        user: { id: 'test-id', name: testUser.name, email: testUser.email },
-        accessToken: 'mock-access-token',
-        refreshToken: 'mock-refresh-token',
-      };
-      
-      expect(mockResponse).toHaveProperty('user');
-      expect(mockResponse).toHaveProperty('accessToken');
-      expect(mockResponse).toHaveProperty('refreshToken');
-      expect(mockResponse.user.email).toBe(testUser.email);
-      expect(mockResponse.user).not.toHaveProperty('password');
-    });
+  it('registers a user and returns an access token, never the refresh token', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Ada', email: 'ada@test.dev', password: 'Password123!' })
+      .expect(201);
 
-    it('should reject duplicate email', async () => {
-      const existingUser = { id: 'existing-id', email: testUser.email };
-      expect(existingUser).toBeTruthy();
-      // Duplicate registration should be rejected
-    });
+    expect(res.body.user.email).toBe('ada@test.dev');
+    expect(res.body.accessToken).toBeTruthy();
+    expect(res.body.refreshToken).toBeUndefined();
+    expect(res.body.user.password).toBeUndefined();
+  });
 
-    it('should validate required fields', async () => {
-      const isValidRegister = (data: { name?: string; email?: string; password?: string }) => {
-        return !!data.name && !!data.email && !!data.password;
-      };
-      
-      expect(isValidRegister({ email: 'test@example.com' })).toBe(false);
-      expect(isValidRegister({ name: 'Test', email: 'test@example.com', password: 'pass' })).toBe(true);
+  it('delivers the refresh token as an httpOnly, path-scoped cookie', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Ada', email: 'ada@test.dev', password: 'Password123!' })
+      .expect(201);
+
+    const cookie = getCookie(res, REFRESH_COOKIE);
+    expect(cookie).toBeDefined();
+    expect(cookie).toContain('HttpOnly');
+    expect(cookie).toContain('Path=/api/auth');
+    expect(cookie).toMatch(/SameSite=Lax/i);
+  });
+
+  it('signs the access token with a 15-minute expiry', async () => {
+    const user = await createUser();
+    const decoded = jwt.decode(user.token) as { iat: number; exp: number };
+
+    expect(decoded.exp - decoded.iat).toBe(15 * 60);
+  });
+
+  it('signs access and refresh tokens with different secrets', async () => {
+    const res = await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Ada', email: 'ada@test.dev', password: 'Password123!' })
+      .expect(201);
+
+    const refreshToken = getCookie(res, REFRESH_COOKIE)!.split(';')[0].split('=')[1];
+
+    // The refresh token must NOT validate against the access-token secret.
+    expect(() => jwt.verify(refreshToken, process.env.JWT_SECRET!)).toThrow();
+    expect(jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET!)).toMatchObject({
+      type: 'refresh',
     });
   });
 
-  describe('POST /api/auth/login', () => {
-    it('should verify password correctly', async () => {
-      const storedHash = await bcrypt.hash(testUser.password, 10);
-      const isValid = await bcrypt.compare(testUser.password, storedHash);
-      expect(isValid).toBe(true);
-    });
+  it('rejects a duplicate email', async () => {
+    await createUser({ email: 'dup@test.dev' });
 
-    it('should reject invalid password', async () => {
-      const storedHash = await bcrypt.hash(testUser.password, 10);
-      const isValid = await bcrypt.compare('wrongpassword', storedHash);
-      expect(isValid).toBe(false);
-    });
-
-    it('should generate JWT tokens', async () => {
-      const secret = 'test-secret';
-      const token = jwt.sign({ userId: 'test-id', email: testUser.email }, secret, { expiresIn: '1h' });
-      expect(token).toBeTruthy();
-      expect(token.split('.')).toHaveLength(3);
-    });
+    await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Other', email: 'dup@test.dev', password: 'Password123!' })
+      .expect(409);
   });
 
-  describe('GET /api/auth/me', () => {
-    it('should decode JWT token correctly', async () => {
-      const secret = 'test-secret';
-      const payload = { userId: 'test-id', email: testUser.email };
-      const token = jwt.sign(payload, secret);
-      
-      const decoded = jwt.verify(token, secret) as typeof payload;
-      expect(decoded.userId).toBe(payload.userId);
-      expect(decoded.email).toBe(payload.email);
-    });
+  it('rejects a bad password', async () => {
+    await createUser({ email: 'ada@test.dev', password: 'Password123!' });
 
-    it('should reject expired token', async () => {
-      const secret = 'test-secret';
-      const token = jwt.sign({ userId: 'test-id' }, secret, { expiresIn: '-1h' });
-      
-      expect(() => jwt.verify(token, secret)).toThrow();
-    });
-
-    it('should reject invalid token', async () => {
-      const secret = 'test-secret';
-      expect(() => jwt.verify('invalidtoken', secret)).toThrow();
-    });
+    await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'ada@test.dev', password: 'wrong' })
+      .expect(401);
   });
 
-  describe('PATCH /api/auth/me', () => {
-    it('should allow updating name', async () => {
-      const updateData = { name: 'Updated Name' };
-      expect(updateData.name).toBe('Updated Name');
-    });
+  it('rotates the refresh token: the old cookie stops working', async () => {
+    const login = await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'Ada', email: 'ada@test.dev', password: 'Password123!' })
+      .expect(201);
 
-    it('should not allow password in updates', async () => {
-      const updateData = { name: 'Test', password: 'newpass' };
-      const sanitized = { name: updateData.name };
-      expect(sanitized).not.toHaveProperty('password');
-    });
+    const oldCookie = getCookie(login, REFRESH_COOKIE)!;
+
+    const refreshed = await request(app)
+      .post('/api/auth/refresh')
+      .set('Cookie', oldCookie)
+      .expect(200);
+
+    expect(refreshed.body.accessToken).toBeTruthy();
+    const newCookie = getCookie(refreshed, REFRESH_COOKIE)!;
+    expect(newCookie).not.toBe(oldCookie);
+
+    // Replaying the rotated-out token must fail.
+    await request(app)
+      .post('/api/auth/refresh')
+      .set('Cookie', oldCookie)
+      .expect(401);
   });
 
-  describe('POST /api/auth/refresh', () => {
-    it('should generate new token pair', async () => {
-      const mockTokens = {
-        accessToken: 'new-access-token',
-        refreshToken: 'new-refresh-token',
-      };
-      
-      expect(mockTokens.accessToken).not.toBe(mockTokens.refreshToken);
-    });
-
-    it('should reject invalid refresh token', async () => {
-      const isValidRefreshToken = (token: string, storedToken: string) => token === storedToken;
-      expect(isValidRefreshToken('invalid', 'stored')).toBe(false);
-    });
+  it('refuses to refresh without a cookie', async () => {
+    await request(app).post('/api/auth/refresh').expect(401);
   });
-});
 
-describe('Health Check', () => {
-  it('should return healthy status', async () => {
-    const healthResponse = {
-      status: 'ok',
-      timestamp: new Date().toISOString(),
-      database: 'connected',
-    };
-    
-    expect(healthResponse).toHaveProperty('status', 'ok');
-    expect(healthResponse).toHaveProperty('timestamp');
+  it('requires a token for protected routes', async () => {
+    await request(app).get('/api/auth/me').expect(401);
+    await request(app).get('/api/groups').expect(401);
   });
-});
 
-describe('Token Validation', () => {
-  it('should validate Bearer token format', () => {
-    const extractToken = (header?: string) => {
-      if (!header) return null;
-      const parts = header.split(' ');
-      if (parts.length !== 2 || parts[0] !== 'Bearer') return null;
-      return parts[1];
-    };
-    
-    expect(extractToken('Bearer abc123')).toBe('abc123');
-    expect(extractToken('Bearer')).toBe(null);
-    expect(extractToken('Basic abc123')).toBe(null);
-    expect(extractToken()).toBe(null);
+  it('rejects a token signed with the wrong secret', async () => {
+    const forged = jwt.sign({ userId: 'x', email: 'x@test.dev' }, 'not-the-real-secret-not-the-real-secret');
+
+    await request(app)
+      .get('/api/auth/me')
+      .set('Authorization', `Bearer ${forged}`)
+      .expect(401);
+  });
+
+  it('validates the registration payload', async () => {
+    await request(app)
+      .post('/api/auth/register')
+      .send({ name: 'A', email: 'not-an-email', password: '123' })
+      .expect(400);
   });
 });

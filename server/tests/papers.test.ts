@@ -1,100 +1,101 @@
-import { describe, it, expect, vi } from 'vitest';
+/**
+ * Papers: library CRUD, tag filtering, and the tag index.
+ *
+ * The tag-filter test is here because the old implementation filtered in JS
+ * *after* the SQL LIMIT, so a tag match sitting outside the first page was
+ * silently dropped. It only shows up once there are more papers than the limit.
+ */
 
-// Mock the database before importing app
-vi.mock('../src/db/index.js', () => ({
-  db: {
-    select: vi.fn().mockReturnThis(),
-    from: vi.fn().mockReturnThis(),
-    where: vi.fn().mockReturnThis(),
-    limit: vi.fn().mockResolvedValue([]),
-    insert: vi.fn().mockReturnThis(),
-    values: vi.fn().mockReturnThis(),
-    returning: vi.fn().mockResolvedValue([{ id: 'test-id' }]),
-    delete: vi.fn().mockReturnThis(),
-    orderBy: vi.fn().mockResolvedValue([]),
-    leftJoin: vi.fn().mockReturnThis(),
-    groupBy: vi.fn().mockReturnThis(),
-  },
-  papers: {},
-  savedPapers: {},
-  users: {},
-  refreshTokens: {},
-}));
+import { describe, it, expect, beforeEach } from 'vitest';
+import { app, request, resetDb, createUser, createPaper, TestUser } from './helpers.js';
 
-vi.mock('../src/middleware/auth.js', () => ({
-  authenticate: (req: any, _res: any, next: any) => {
-    req.user = { id: 'test-user-id', email: 'test@example.com' };
-    next();
-  },
-  AuthRequest: {},
-}));
+describe('papers', () => {
+  let user: TestUser;
 
-describe('Papers Routes', () => {
-  describe('GET /api/papers', () => {
-    it('should list papers', async () => {
-      // Test that paper list works (mocked)
-      const mockPapers = [
-        { id: '1', title: 'Paper 1', authors: ['Author 1'], abstract: 'Abstract 1', tags: ['ML'], url: 'https://example.com/1' },
-        { id: '2', title: 'Paper 2', authors: ['Author 2'], abstract: 'Abstract 2', tags: ['AI'], url: 'https://example.com/2' },
-      ];
-      
-      expect(Array.isArray(mockPapers)).toBe(true);
-      expect(mockPapers.length).toBe(2);
-    });
-
-    it('should support search query', async () => {
-      const searchQuery = 'machine learning';
-      const mockResults = [
-        { id: '1', title: 'Machine Learning Basics', authors: [], abstract: 'ML basics', tags: ['ML'], url: 'https://example.com' },
-      ];
-      
-      const filtered = mockResults.filter(p => 
-        p.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      expect(filtered.length).toBe(1);
-    });
-
-    it('should reject without authentication', async () => {
-      // Without auth middleware, requests are rejected
-      const errorResponse = { error: 'Authentication required' };
-      expect(errorResponse).toHaveProperty('error');
-    });
+  beforeEach(async () => {
+    await resetDb();
+    user = await createUser();
   });
 
-  describe('GET /api/papers/saved', () => {
-    it('should list saved papers for user', async () => {
-      const userId = 'test-user-id';
-      const mockSavedPapers = [
-        { userId, paperId: 'p1', savedAt: new Date() },
-      ];
-      
-      expect(mockSavedPapers.every(p => p.userId === userId)).toBe(true);
-    });
+  it('creates and reads back a paper', async () => {
+    const paperId = await createPaper(user);
+
+    const res = await request(app)
+      .get(`/api/papers/${paperId}`)
+      .set('Authorization', `Bearer ${user.token}`)
+      .expect(200);
+
+    expect(res.body.title).toBe('Attention Is All You Need');
+    expect(res.body.tags).toContain('nlp');
   });
 
-  describe('GET /api/papers/search/external', () => {
-    it('should search external APIs', async () => {
-      // Mock arXiv response
-      const mockArxivResults = [
-        { id: 'arxiv:1234', title: 'Neural Networks', authors: ['Researcher'], abstract: 'About NN', url: 'https://arxiv.org/1234' },
-      ];
-      
-      expect(mockArxivResults.length).toBeGreaterThan(0);
-    });
+  it('filters by tag in SQL, so matches beyond the first page still surface', async () => {
+    // 5 papers tagged "vision", then the one "nlp" paper we are looking for.
+    for (let i = 0; i < 5; i++) {
+      await createPaper(user, { title: `Vision Paper ${i}`, tags: ['vision'] });
+    }
+    await createPaper(user, { title: 'The NLP One', tags: ['nlp'] });
 
-    it('should require query parameter', async () => {
-      // Without query param, should error
-      const isQueryProvided = (query?: string) => !!query?.trim();
-      expect(isQueryProvided()).toBe(false);
-      expect(isQueryProvided('neural networks')).toBe(true);
-    });
+    // A limit smaller than the number of non-matching papers: the old
+    // filter-after-LIMIT bug would return an empty list here.
+    const res = await request(app)
+      .get('/api/papers?tag=nlp&limit=3')
+      .set('Authorization', `Bearer ${user.token}`)
+      .expect(200);
+
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].title).toBe('The NLP One');
   });
 
-  describe('GET /api/papers/meta/tags', () => {
-    it('should return all tags', async () => {
-      const mockTags = ['ML', 'AI', 'NLP', 'Computer Vision'];
-      expect(Array.isArray(mockTags)).toBe(true);
-      expect(mockTags.length).toBeGreaterThan(0);
-    });
+  it('searches by title and abstract', async () => {
+    await createPaper(user, { title: 'Transformers for Vision', tags: [] });
+    await createPaper(user, { title: 'Graph Neural Networks', abstract: 'About graphs.', tags: [] });
+
+    const res = await request(app)
+      .get('/api/papers?search=transformers')
+      .set('Authorization', `Bearer ${user.token}`)
+      .expect(200);
+
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].title).toBe('Transformers for Vision');
+  });
+
+  it('lists every distinct tag', async () => {
+    await createPaper(user, { tags: ['nlp', 'transformers'] });
+    await createPaper(user, { title: 'Another', tags: ['nlp', 'vision'] });
+
+    const res = await request(app)
+      .get('/api/papers/meta/tags')
+      .set('Authorization', `Bearer ${user.token}`)
+      .expect(200);
+
+    expect(res.body).toEqual(['nlp', 'transformers', 'vision']);
+  });
+
+  it('saves and unsaves a paper for the current user', async () => {
+    const paperId = await createPaper(user);
+
+    await request(app)
+      .post(`/api/papers/${paperId}/save`)
+      .set('Authorization', `Bearer ${user.token}`)
+      .send({})
+      .expect(201);
+
+    let saved = await request(app)
+      .get('/api/papers/saved')
+      .set('Authorization', `Bearer ${user.token}`)
+      .expect(200);
+    expect(saved.body).toHaveLength(1);
+
+    await request(app)
+      .delete(`/api/papers/${paperId}/save`)
+      .set('Authorization', `Bearer ${user.token}`)
+      .expect(200);
+
+    saved = await request(app)
+      .get('/api/papers/saved')
+      .set('Authorization', `Bearer ${user.token}`)
+      .expect(200);
+    expect(saved.body).toHaveLength(0);
   });
 });

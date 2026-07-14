@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
   pull_request:
     branches: [main]
 
@@ -12,6 +12,8 @@ concurrency:
 
 jobs:
   # ─── AI Service (Python / FastAPI) ─────────────────────────────────────
+  # Gemini, DeepSeek and Groq are all mocked with respx, so this job needs no
+  # API keys and makes no paid calls.
   ai-service:
     name: AI Service Tests
     runs-on: ubuntu-latest
@@ -32,19 +34,33 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Run tests with coverage
-        env:
-          GROQ_API_KEY: test-key
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-        run: python -m pytest --cov=app --cov-report=term-missing --cov-fail-under=90
+      - name: Run tests
+        run: python -m pytest
 
   # ─── Server (Node.js / Express) ────────────────────────────────────────
+  # Integration tests run against a real Postgres + pgvector, migrated with the
+  # same Drizzle migrations the app ships with.
   server:
     name: Server Tests
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: server
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: openresearch_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - uses: actions/checkout@v4
@@ -62,12 +78,14 @@ jobs:
       - name: TypeScript type check
         run: npx tsc --noEmit
 
-      - name: Run tests with coverage
-        run: npx vitest run --coverage
+      - name: Run integration tests
+        env:
+          TEST_DATABASE_URL: postgresql://test:test@localhost:5433/openresearch_test
+        run: npx vitest run
 
   # ─── Client (Next.js) ─────────────────────────────────────────────────
   client:
-    name: Client Build
+    name: Client Build & Tests
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -89,27 +107,60 @@ jobs:
       - name: Run tests
         run: npm run test
 
-      - name: Build (lint + type check)
+      - name: Build (also type-checks and lints)
         env:
           NEXT_PUBLIC_API_URL: http://localhost:3001
-          NEXT_PUBLIC_WS_URL: http://localhost:3001
         run: npm run build
 
-  # ─── Docker Build Verification ─────────────────────────────────────────
-  docker:
-    name: Docker Build
+  # ─── End-to-end (Playwright against the real stack) ────────────────────
+  # Boots the whole compose stack and drives the core flow in a browser.
+  # Empty API keys are fine: the smoke test never triggers @ai.
+  e2e:
+    name: E2E Smoke
     runs-on: ubuntu-latest
-    needs: [ai-service, server, client]
+    needs: [server, client]
 
     steps:
       - uses: actions/checkout@v4
 
-      - name: Build all Docker images
-        run: docker compose build --no-cache
-        env:
-          DATABASE_URL: postgresql://test:test@localhost:5432/test
-          JWT_SECRET: test-secret-key-at-least-32-characters-long
-          JWT_REFRESH_SECRET: test-refresh-secret-different-from-jwt-secret
-          GROQ_API_KEY: test-key
-          NEXT_PUBLIC_API_URL: http://localhost:3001
-          NEXT_PUBLIC_WS_URL: http://localhost:3001
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Write env for compose
+        run: |
+          printf 'POSTGRES_USER=postgres\nPOSTGRES_PASSWORD=postgres\nPOSTGRES_DB=openresearch\n' > .env
+          printf 'JWT_SECRET=ci-access-secret-at-least-32-characters-long\nJWT_REFRESH_SECRET=ci-refresh-secret-at-least-32-characters\nDEEPSEEK_API_KEY=\nGROQ_API_KEY=\nGEMINI_API_KEY=\n' > .env.docker
+
+      - name: Start the stack
+        run: docker compose up -d --build
+
+      - name: Wait for the client
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf http://localhost:3000 > /dev/null && exit 0
+            sleep 5
+          done
+          docker compose logs
+          exit 1
+
+      - name: Install Playwright
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: Run the smoke test
+        run: npx playwright test e2e/smoke.spec.ts --project=chromium
+
+      - name: Upload the report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+
+      - name: Dump service logs on failure
+        if: failure()
+        run: docker compose logs

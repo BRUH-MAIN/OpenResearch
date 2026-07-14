@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -15,12 +15,19 @@ export function Input({
   leftIcon,
   rightIcon,
   className = '',
+  id,
   ...props
 }: InputProps) {
+  // Tie the label to the input so assistive tech (and getByLabel in tests)
+  // can resolve one from the other.
+  const generatedId = useId();
+  const inputId = id ?? generatedId;
+
   return (
     <div className="w-full">
       {label && (
         <label
+          htmlFor={inputId}
           className="block text-sm font-medium mb-2"
           style={{ color: 'var(--color-text-primary)' }}
         >
@@ -37,6 +44,8 @@ export function Input({
           </div>
         )}
         <input
+          id={inputId}
+          aria-invalid={!!error}
           className={`
             w-full px-4 py-2.5
             rounded-xl
@@ -103,12 +112,17 @@ export function Textarea({
   error,
   hint,
   className = '',
+  id,
   ...props
 }: TextareaProps) {
+  const generatedId = useId();
+  const textareaId = id ?? generatedId;
+
   return (
     <div className="w-full">
       {label && (
         <label
+          htmlFor={textareaId}
           className="block text-sm font-medium mb-2"
           style={{ color: 'var(--color-text-primary)' }}
         >
@@ -116,6 +130,8 @@ export function Textarea({
         </label>
       )}
       <textarea
+        id={textareaId}
+        aria-invalid={!!error}
         className={`
           w-full px-4 py-3
           rounded-xl resize-none

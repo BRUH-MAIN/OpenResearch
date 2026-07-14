@@ -1,0 +1,22 @@
+# Ephemeral Postgres for the server integration tests.
+#   docker compose -f docker-compose.test.yml up -d
+#   cd server && npm test
+#
+# tmpfs storage: the data never touches disk, and a `down` throws it all away.
+services:
+  postgres-test:
+    image: pgvector/pgvector:pg16
+    container_name: openresearch-db-test
+    environment:
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: openresearch_test
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test"]
+      interval: 3s
+      timeout: 3s
+      retries: 10
