@@ -5,6 +5,7 @@
  */
 
 import { Router, Response } from 'express';
+import multer from 'multer';
 import { db, groupPapers, papers } from '../db/index.js';
 import { eq, and, desc } from 'drizzle-orm';
 import { authenticate } from '../middleware/auth.js';
@@ -16,6 +17,21 @@ import { aiClient } from '../services/aiClient.js';
 import logger from '../utils/logger.js';
 
 const router = Router();
+
+// PDFs are held in memory just long enough to forward them to the extractor;
+// the bytes are never written to disk, only the extracted text is persisted.
+const MAX_PDF_BYTES = 20 * 1024 * 1024;
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_PDF_BYTES, files: 1 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype !== 'application/pdf') {
+      cb(new Error('Only PDF uploads are supported'));
+      return;
+    }
+    cb(null, true);
+  },
+});
 
 // All routes require authentication + group membership
 router.use(authenticate);
@@ -123,6 +139,91 @@ router.post('/:groupId/papers', validate(addGroupPaperSchema), async (req: Group
     next(error);
   }
 });
+
+/**
+ * Upload a paper PDF: extract its text, register the paper, and embed it.
+ *
+ * The PDF's text layer is what makes RAG answers specific — without it the
+ * index only holds the title and abstract, so the assistant can only ever
+ * answer at abstract depth.
+ */
+router.post(
+  '/:groupId/papers/upload',
+  upload.single('file'),
+  async (req: GroupRequest, res: Response, next) => {
+    try {
+      const { groupId } = req.params;
+      const userId = req.user!.id;
+      const file = req.file;
+
+      if (!file) {
+        throw createError('A PDF file is required', 400);
+      }
+
+      const title = (req.body.title as string)?.trim() || file.originalname.replace(/\.pdf$/i, '');
+      const url = (req.body.url as string)?.trim() || '';
+
+      // Text extraction happens in the AI service (pypdf is a Python library).
+      const extracted = await aiClient.extractPdfText(file.buffer, file.originalname);
+
+      // The abstract is unknown for an uploaded PDF; use the opening text as a
+      // stand-in so the title+abstract chunk still carries signal.
+      const abstract =
+        (req.body.abstract as string)?.trim() || extracted.text.slice(0, 1000);
+
+      // The server owns the schema, so it is what writes the row.
+      const [paper] = await db
+        .insert(papers)
+        .values({
+          title,
+          authors: [],
+          abstract,
+          url,
+          tags: [],
+        })
+        .returning();
+
+      const [groupPaper] = await db
+        .insert(groupPapers)
+        .values({
+          groupId,
+          paperId: paper.id,
+          addedBy: userId,
+          fullText: extracted.text,
+        })
+        .returning();
+
+      // Chunk + embed the full text into the group's vector namespace.
+      let vectorsCreated = 0;
+      try {
+        const result = await aiClient.addPaperToGroup({
+          paper_id: paper.id,
+          group_id: groupId,
+          user_id: userId,
+          title: paper.title,
+          abstract: paper.abstract,
+          full_text: extracted.text,
+          metadata: { source: 'upload', page_count: extracted.page_count },
+        });
+        vectorsCreated = result.vectors_created;
+      } catch (aiError) {
+        logger.warn({ err: aiError, paperId: paper.id, groupId }, 'Failed to embed uploaded paper');
+        // The paper is saved either way; it just is not searchable yet.
+      }
+
+      res.status(201).json({
+        ...groupPaper,
+        paper,
+        pageCount: extracted.page_count,
+        charCount: extracted.char_count,
+        truncated: extracted.truncated,
+        vectorsCreated,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
 
 /**
  * Remove paper from group

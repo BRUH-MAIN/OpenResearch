@@ -1,10 +1,11 @@
 """Paper ingestion, Q&A, and summarization."""
 
+import io
 import logging
 import time
 import uuid
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, File, HTTPException, UploadFile, status
 
 from ..database import database
 from ..deps import (
@@ -55,6 +56,63 @@ Provide a structured summary with:
 2. Key findings (3-5 bullet points)
 3. Methodology overview (1 paragraph)
 4. Implications (1-2 sentences)"""
+
+
+# A paper's text is what gets chunked and embedded, so cap it: a pathological
+# PDF should not turn into thousands of embedding calls.
+MAX_PDF_BYTES = 20 * 1024 * 1024
+MAX_EXTRACTED_CHARS = 500_000
+
+
+@router.post("/papers/extract-text", summary="Extract text from an uploaded PDF")
+async def extract_pdf_text(file: UploadFile = File(...)) -> dict:
+    """Pull the text out of a PDF so it can be chunked and embedded.
+
+    Text extraction lives here rather than in the Node server because pypdf is
+    a Python library — but the extracted text is handed straight back, and the
+    server is what writes it to the database (see docs/adr/0001).
+    """
+    if file.content_type not in ("application/pdf", "application/octet-stream"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only PDF uploads are supported.",
+        )
+
+    contents = await file.read()
+    if len(contents) > MAX_PDF_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"PDF exceeds the {MAX_PDF_BYTES // (1024 * 1024)}MB limit.",
+        )
+
+    try:
+        from pypdf import PdfReader
+
+        reader = PdfReader(io.BytesIO(contents))
+        pages = [page.extract_text() or "" for page in reader.pages]
+    except Exception as exc:
+        logger.warning("PDF extraction failed: %s", exc)
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Could not read this PDF. It may be corrupt or image-only.",
+        )
+
+    text = "\n\n".join(p.strip() for p in pages if p.strip())
+
+    if not text:
+        # A scanned PDF has no text layer; OCR is out of scope.
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="No selectable text found. Scanned PDFs are not supported.",
+        )
+
+    truncated = len(text) > MAX_EXTRACTED_CHARS
+    return {
+        "text": text[:MAX_EXTRACTED_CHARS],
+        "page_count": len(reader.pages),
+        "char_count": min(len(text), MAX_EXTRACTED_CHARS),
+        "truncated": truncated,
+    }
 
 
 @router.post(

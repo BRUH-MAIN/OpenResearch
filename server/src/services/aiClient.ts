@@ -368,6 +368,48 @@ class AIClient {
   /**
    * Add paper to group and generate embeddings
    */
+  /**
+   * Extract the text layer from a PDF (pypdf lives in the AI service).
+   * The extracted text comes back here; the server is what persists it.
+   */
+  async extractPdfText(
+    buffer: Buffer,
+    filename: string
+  ): Promise<{ text: string; page_count: number; char_count: number; truncated: boolean }> {
+    const form = new FormData();
+    form.append('file', new Blob([new Uint8Array(buffer)], { type: 'application/pdf' }), filename);
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
+
+    try {
+      const headers = this.buildHeaders();
+      // Let fetch set the multipart boundary itself.
+      delete headers['Content-Type'];
+
+      const response = await fetch(`${this.baseUrl}/papers/extract-text`, {
+        method: 'POST',
+        body: form,
+        headers,
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => ({}))) as { detail?: string };
+        throw new Error(errorData.detail || `PDF extraction failed (HTTP ${response.status})`);
+      }
+
+      return (await response.json()) as {
+        text: string;
+        page_count: number;
+        char_count: number;
+        truncated: boolean;
+      };
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   async addPaperToGroup(request: AddPaperToGroupRequest): Promise<AddPaperResponse> {
     logger.info(`Adding paper ${request.paper_id} to group ${request.group_id}`);
 

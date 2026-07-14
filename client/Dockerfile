@@ -7,7 +7,7 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 
 # Install ALL dependencies for build (including devDependencies)
-RUN npm install --no-audit
+RUN npm ci
 
 # Copy source files (excluding .next and node_modules via .dockerignore)
 COPY . .

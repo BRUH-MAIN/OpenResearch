@@ -1,33 +1,39 @@
-# Server Dockerfile
-FROM node:20-alpine
+# Server Dockerfile — multi-stage, so the runtime image carries no TypeScript
+# compiler, no dev dependencies, and no source.
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install wget for healthcheck
-RUN apk add --no-cache wget
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Copy package files
-COPY package.json package-lock.json* ./
-
-# Install ALL dependencies first (including devDependencies for build)
-RUN npm install --no-audit
-
-# Copy source files (excluding dist and node_modules via .dockerignore)
 COPY . .
-
-# Build TypeScript
 RUN npm run build
 
-# Remove dev dependencies after build to reduce image size
-RUN npm prune --omit=dev
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# wget backs the compose healthcheck
+RUN apk add --no-cache wget
 
 ENV NODE_ENV=production
 
-# Expose port
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev && npm cache clean --force
+
+# Compiled output, the migrations applied at boot, and the entrypoint.
+COPY --from=builder /app/dist ./dist
+COPY drizzle ./drizzle
+COPY docker-entrypoint.sh ./
+
+RUN sed -i 's/\r$//' docker-entrypoint.sh \
+    && chmod +x docker-entrypoint.sh \
+    && addgroup -S app && adduser -S -G app app \
+    && chown -R app:app /app
+USER app
+
 EXPOSE 3001
 
-# Prepare entrypoint script
-RUN sed -i 's/\r$//' docker-entrypoint.sh && chmod +x docker-entrypoint.sh
-
-# Run the application with migrations
 ENTRYPOINT ["./docker-entrypoint.sh"]

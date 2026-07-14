@@ -18,9 +18,10 @@ asyncpg>=0.29.0
 sqlalchemy[asyncio]>=2.0.25
 pgvector>=0.2.4
 
-# PDF generation / parsing
+# PDF generation / parsing (python-multipart backs the PDF upload endpoint)
 reportlab>=4.0.0
 pypdf>=4.0.0
+python-multipart>=0.0.9
 
 # Utilities
 tenacity>=8.2.0

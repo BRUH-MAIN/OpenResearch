@@ -298,6 +298,41 @@ export class ApiClient {
     });
   }
 
+  /**
+   * Upload a paper PDF. The server extracts its text, saves the paper, and
+   * embeds the full text into the group's vector namespace.
+   *
+   * Uses fetch directly rather than `request()` because the body is multipart:
+   * the browser has to set the boundary itself, so no Content-Type here.
+   */
+  async uploadPaperPdf(token: string, groupId: string, file: File, title?: string) {
+    const form = new FormData();
+    form.append('file', file);
+    if (title) form.append('title', title);
+
+    const response = await fetch(`${this.baseUrl}/api/groups/${groupId}/papers/upload`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+      credentials: 'include',
+    });
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Upload failed' }));
+      throw new Error(error.error || 'Upload failed');
+    }
+
+    return response.json() as Promise<
+      GroupPaper & {
+        paper: Paper;
+        pageCount: number;
+        charCount: number;
+        truncated: boolean;
+        vectorsCreated: number;
+      }
+    >;
+  }
+
   async removePaperFromGroup(token: string, groupId: string, paperId: string) {
     return this.request<{ message: string }>(`/api/groups/${groupId}/papers/${paperId}`, {
       method: 'DELETE',

@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import { MulterError } from 'multer';
 import logger from '../utils/logger.js';
 
 export class AppError extends Error {
@@ -29,6 +30,16 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ): void => {
+  // Upload failures are the caller's fault, not a server fault.
+  if (err instanceof MulterError) {
+    const message =
+      err.code === 'LIMIT_FILE_SIZE'
+        ? 'File is too large (20MB maximum)'
+        : `Upload failed: ${err.message}`;
+    res.status(400).json({ error: message });
+    return;
+  }
+
   // Log error with context
   logger.error({
     error: {

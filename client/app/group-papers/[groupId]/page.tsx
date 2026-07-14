@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
@@ -15,6 +15,7 @@ import {
   Trash2,
   Send,
   Sparkles,
+  Upload,
 } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { api, GroupPaper, Group } from '@/lib/api';
@@ -43,6 +44,30 @@ function GroupPapersPageContent() {
       loadData();
     }
   }, [accessToken, groupId]);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Uploading a PDF gives the RAG index the paper's full text, not just its
+  // abstract — which is what lets the assistant answer at section-level depth.
+  const handleUploadPdf = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = ''; // allow re-selecting the same file
+    if (!file || !accessToken || !groupId) return;
+
+    try {
+      setIsUploading(true);
+      const result = await api.uploadPaperPdf(accessToken, groupId, file);
+      toast.success(
+        `Indexed "${result.paper.title}" — ${result.pageCount} pages, ${result.vectorsCreated} chunks embedded`
+      );
+      await loadData();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to upload PDF');
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const loadData = async () => {
     if (!accessToken || !groupId) return;
@@ -213,12 +238,31 @@ function GroupPapersPageContent() {
               </p>
             </div>
           </div>
-          <Link href="/paper">
-            <Button>
-              <Sparkles className="w-4 h-4 mr-2" />
-              Discover Papers
+          <div className="flex items-center gap-2">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/pdf"
+              onChange={handleUploadPdf}
+              className="hidden"
+              aria-label="Upload a paper PDF"
+            />
+            <Button
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              isLoading={isUploading}
+              disabled={isUploading}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              {isUploading ? 'Indexing…' : 'Upload PDF'}
             </Button>
-          </Link>
+            <Link href="/paper">
+              <Button>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Discover Papers
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* Search */}
