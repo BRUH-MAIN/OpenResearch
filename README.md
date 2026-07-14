@@ -127,7 +127,7 @@ deterministic placeholder vectors and retrieval returns noise.
 ```bash
 docker compose -f docker-compose.test.yml up -d   # ephemeral Postgres (tmpfs)
 npm --prefix server test                          # 32 integration tests
-cd ai-service && python -m pytest                 # 39 tests, every API mocked
+cd ai-service && python -m pytest                 # 60 tests, every API mocked
 npx playwright test                               # hermetic e2e smoke (~7s)
 ```
 
