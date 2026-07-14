@@ -1,15 +1,11 @@
 'use client';
 
 import React, { memo } from 'react';
-import { Bot, Copy, ThumbsUp, ThumbsDown, User, Pin } from 'lucide-react';
+import { Bot, Copy, ThumbsUp, ThumbsDown, User, Pin, FileText, ExternalLink } from 'lucide-react';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import type { RagSource } from '@/lib/api';
 
-export interface Citation {
-  id: string;
-  sourceId: string;
-  sourceTitle: string;
-  excerpt?: string;
-}
+export type Citation = RagSource;
 
 export interface ResearchMessageProps {
   id: string;
@@ -118,18 +114,19 @@ export const ResearchMessage = memo(function ResearchMessage({
                   <MarkdownRenderer content={getMarkdownContent()} isStreaming={isStreaming} onDiagramDetected={onDiagramDetected} />
                 </div>
 
-                {/* Citations */}
+                {/* Citations — the chunks retrieved by hybrid search that grounded this answer */}
                 {citations && citations.length > 0 && (
                   <div className="mt-5 pt-4 research-ai-card-divider">
                     <p className="text-[11px] uppercase tracking-[0.18em] mb-3" style={{ color: 'var(--color-text-muted)' }}>
-                      Sources Referenced
+                      Grounded in {citations.length} source{citations.length !== 1 ? 's' : ''}
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {citations.map((citation, index) => (
                         <button
                           key={citation.id}
                           onClick={() => onCitationClick?.(citation)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] transition-all"
+                          title={citation.title || citation.type}
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[12px] transition-all"
                           style={{
                             background: 'var(--color-bg-tertiary)',
                             border: '1px solid var(--color-border-primary)',
@@ -137,20 +134,32 @@ export const ResearchMessage = memo(function ResearchMessage({
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.borderColor = 'var(--color-border-accent)';
-                            e.currentTarget.style.boxShadow = '0 0 8px rgba(13, 115, 119, 0.2)';
                           }}
                           onMouseLeave={(e) => {
                             e.currentTarget.style.borderColor = 'var(--color-border-primary)';
-                            e.currentTarget.style.boxShadow = 'none';
                           }}
                         >
                           <span className="font-medium">[{index + 1}]</span>
+                          <FileText size={12} />
                           <span
-                            className="truncate max-w-[150px]"
+                            className="truncate max-w-40"
                             style={{ color: 'var(--color-text-tertiary)' }}
                           >
-                            {citation.sourceTitle}
+                            {citation.title || citation.type}
                           </span>
+                          {citation.similarity > 0 && (
+                            <span
+                              className="tabular-nums text-[10px] px-1.5 py-0.5 rounded"
+                              style={{
+                                background: 'var(--color-bg-secondary)',
+                                color: 'var(--color-text-muted)',
+                              }}
+                              title="Retrieval score"
+                            >
+                              {citation.similarity.toFixed(2)}
+                            </span>
+                          )}
+                          {citation.url && <ExternalLink size={11} />}
                         </button>
                       ))}
                     </div>

@@ -79,7 +79,7 @@ export default function ProfilePage() {
       <div className="min-h-screen bg-[var(--color-bg-primary)]">
         <Navbar />
         <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
+          <Loader2 size={48} className="text-[var(--color-brand-secondary)] animate-spin mb-4" />
           <p className="text-[var(--color-text-secondary)]">Loading profile...</p>
         </div>
       </div>
@@ -110,13 +110,13 @@ export default function ProfilePage() {
                       type="text"
                       value={editedUser.name || ''}
                       onChange={(e) => setEditedUser({ ...editedUser, name: e.target.value })}
-                      className="text-3xl font-bold text-[var(--color-text-primary)] border-b-2 border-[#14FFEC] focus:outline-none w-full bg-transparent"
+                      className="text-3xl font-bold text-[var(--color-text-primary)] border-b-2 border-[var(--color-brand-secondary)] focus:outline-none w-full bg-transparent"
                     />
                     <input
                       type="email"
                       value={editedUser.email || ''}
                       onChange={(e) => setEditedUser({ ...editedUser, email: e.target.value })}
-                      className="text-[var(--color-text-secondary)] border-b-2 border-[#14FFEC] focus:outline-none w-full bg-transparent"
+                      className="text-[var(--color-text-secondary)] border-b-2 border-[var(--color-brand-secondary)] focus:outline-none w-full bg-transparent"
                       disabled
                     />
                   </div>
@@ -163,15 +163,15 @@ export default function ProfilePage() {
         {/* Stats */}
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <Loader2 size={32} className="text-[#14FFEC] animate-spin" />
+            <Loader2 size={32} className="text-[var(--color-brand-secondary)] animate-spin" />
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               <Card>
                 <CardBody className="p-6 text-center">
-                  <div className="w-14 h-14 bg-[#0D7377]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <Users size={24} className="text-[#14FFEC]" />
+                  <div className="w-14 h-14 bg-[var(--color-brand-primary)]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <Users size={24} className="text-[var(--color-brand-secondary)]" />
                   </div>
                   <h3 className="text-3xl font-bold text-[var(--color-text-primary)]">{userGroups.length}</h3>
                   <p className="text-[var(--color-text-tertiary)] mt-1">Groups Joined</p>
@@ -179,8 +179,8 @@ export default function ProfilePage() {
               </Card>
               <Card>
                 <CardBody className="p-6 text-center">
-                  <div className="w-14 h-14 bg-[#0D7377]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <BookMarked size={24} className="text-[#14FFEC]" />
+                  <div className="w-14 h-14 bg-[var(--color-brand-primary)]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <BookMarked size={24} className="text-[var(--color-brand-secondary)]" />
                   </div>
                   <h3 className="text-3xl font-bold text-[var(--color-text-primary)]">{savedPapers.length}</h3>
                   <p className="text-[var(--color-text-tertiary)] mt-1">Papers Saved</p>
@@ -206,7 +206,7 @@ export default function ProfilePage() {
                         ...editedUser,
                         interests: e.target.value.split(',').map(i => i.trim()).filter(Boolean)
                       })}
-                      className="w-full px-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] transition-all hover:border-[var(--color-border-hover)]"
+                      className="w-full px-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-secondary)]/40 focus:border-[var(--color-brand-secondary)] bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] transition-all hover:border-[var(--color-border-hover)]"
                     />
                   </div>
                 ) : (
@@ -243,8 +243,8 @@ export default function ProfilePage() {
                     {userGroups.map((group) => (
                       <Link
                         key={group.id}
-                        href={`/group?id=${group.id}`}
-                        className="flex flex-col items-start gap-4 p-4 bg-[var(--color-bg-primary)] rounded-xl hover:bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] hover:border-[#0D7377]/50 transition-all sm:flex-row sm:items-center sm:justify-between"
+                        href={`/group/${group.id}`}
+                        className="flex flex-col items-start gap-4 p-4 bg-[var(--color-bg-primary)] rounded-xl hover:bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] hover:border-[var(--color-brand-primary)]/50 transition-all sm:flex-row sm:items-center sm:justify-between"
                       >
                         <div className="flex items-center gap-4">
                           <Avatar src={group.avatar} alt={group.name} size="md" />
@@ -281,7 +281,7 @@ export default function ProfilePage() {
                     {savedPapers.map((paper) => (
                       <div
                         key={paper.id}
-                        className="p-4 bg-[var(--color-bg-primary)] rounded-xl border border-[var(--color-border-primary)] hover:border-[#0D7377]/50 transition-all"
+                        className="p-4 bg-[var(--color-bg-primary)] rounded-xl border border-[var(--color-border-primary)] hover:border-[var(--color-brand-primary)]/50 transition-all"
                       >
                         <h4 className="font-semibold text-[var(--color-text-primary)] mb-2">{paper.title}</h4>
                         <p className="text-sm text-[var(--color-text-tertiary)] mb-3">

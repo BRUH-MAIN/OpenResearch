@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
 import { Button, Card, CardBody, CardHeader, Avatar, Badge, Input, Modal } from '@/components/ui';
@@ -11,8 +11,8 @@ import { api, Group, Session, GroupMember } from '@/lib/api';
 import { toast } from '@/lib/toast';
 
 function GroupPageContent() {
-  const searchParams = useSearchParams();
-  const groupId = searchParams.get('id');
+  const params = useParams();
+  const groupId = params.id as string;
   const { accessToken, user } = useAuthStore();
 
   const [group, setGroup] = useState<(Group & { memberCount: number; userRole: string }) | null>(null);
@@ -130,7 +130,7 @@ function GroupPageContent() {
       <div className="min-h-screen bg-[var(--color-bg-primary)]">
         <Navbar />
         <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
+          <Loader2 size={48} className="text-[var(--color-brand-secondary)] animate-spin mb-4" />
           <p className="text-[var(--color-text-secondary)]">Loading group...</p>
         </div>
       </div>
@@ -180,13 +180,13 @@ function GroupPageContent() {
               <h1 className="text-3xl font-bold text-[var(--color-text-primary)]">{group.name}</h1>
               <p className="text-[#a1a1aa] mt-2">{group.description}</p>
               <div className="flex flex-wrap items-center gap-3 mt-4 text-sm text-[var(--color-text-tertiary)]">
-                <span className="px-2 py-1 rounded-lg bg-[#0D7377]/20 text-[#14FFEC] text-xs font-medium">
+                <span className="px-2 py-1 rounded-lg bg-[var(--color-brand-primary)]/20 text-[var(--color-brand-secondary)] text-xs font-medium">
                   {isOwner ? 'Owner' : group.userRole}
                 </span>
                 <span>•</span>
                 <button
                   onClick={() => setShowMembersModal(true)}
-                  className="hover:text-[#14FFEC] transition-colors cursor-pointer"
+                  className="hover:text-[var(--color-brand-secondary)] transition-colors cursor-pointer"
                 >
                   {group.memberCount} members
                 </button>
@@ -195,13 +195,13 @@ function GroupPageContent() {
               </div>
             </div>
             <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto">
-              <Link href={`/group-papers?groupId=${groupId}`}>
+              <Link href={`/group-papers/${groupId}`}>
                 <Button variant="outline" className="w-full justify-center">
                   <BookOpen size={18} className="mr-2" />
                   Papers
                 </Button>
               </Link>
-              <Link href={`/reports?groupId=${groupId}`}>
+              <Link href={`/reports/${groupId}`}>
                 <Button variant="outline" className="w-full justify-center">
                   <FileText size={18} className="mr-2" />
                   Reports
@@ -227,14 +227,14 @@ function GroupPageContent() {
             placeholder="Search sessions..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
+            className="w-full pl-12 pr-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-secondary)]/40 focus:border-[var(--color-brand-secondary)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
           />
         </div>
 
         {/* Active Sessions */}
         <section className="mb-10">
           <h2 className="text-2xl font-bold text-[var(--color-text-primary)] mb-6 flex items-center">
-            <MessageSquare size={24} className="mr-3 text-[#14FFEC]" />
+            <MessageSquare size={24} className="mr-3 text-[var(--color-brand-secondary)]" />
             Active Sessions
           </h2>
           {activeSessions.length === 0 ? (
@@ -252,7 +252,7 @@ function GroupPageContent() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {activeSessions.map((session) => (
-                <Link key={session.id} href={`/research?sessionId=${session.id}`}>
+                <Link key={session.id} href={`/research/${session.id}`}>
                   <Card hover>
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -306,7 +306,7 @@ function GroupPageContent() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {archivedSessions.map((session) => (
-                <Link key={session.id} href={`/research?sessionId=${session.id}`}>
+                <Link key={session.id} href={`/research/${session.id}`}>
                   <Card hover>
                     <CardHeader>
                       <div className="flex items-start justify-between">
@@ -419,7 +419,7 @@ function GroupPageContent() {
         )}
       >
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-[#0D7377] to-[#14FFEC] flex items-center justify-center shrink-0">
+          <div className="w-12 h-12 rounded-xl bg-linear-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)] flex items-center justify-center shrink-0">
             <Mail size={24} className="text-white" />
           </div>
           <p className="text-sm text-[var(--color-text-secondary)]">Send an invitation by email</p>
@@ -436,7 +436,7 @@ function GroupPageContent() {
               onChange={(e) => setInviteEmail(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleInviteByEmail()}
               placeholder="colleague@example.com"
-              className="w-full px-4 py-3 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] transition-all"
+              className="w-full px-4 py-3 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-secondary)]/40 focus:border-[var(--color-brand-secondary)] transition-all"
               autoFocus
             />
           </div>
@@ -483,7 +483,7 @@ export default function GroupPage() {
       <div className="min-h-screen bg-[var(--color-bg-primary)]">
         <Navbar />
         <div className="flex flex-col items-center justify-center py-20">
-          <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
+          <Loader2 size={48} className="text-[var(--color-brand-secondary)] animate-spin mb-4" />
           <p className="text-[var(--color-text-secondary)]">Loading...</p>
         </div>
       </div>

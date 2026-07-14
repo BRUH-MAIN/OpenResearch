@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
 import { Button, Card, CardBody, CardHeader, Badge, Input, Modal } from '@/components/ui';
@@ -21,8 +21,8 @@ import { api, GroupPaper, Group } from '@/lib/api';
 import { toast } from '@/lib/toast';
 
 function GroupPapersPageContent() {
-  const searchParams = useSearchParams();
-  const groupId = searchParams.get('groupId');
+  const params = useParams();
+  const groupId = params.groupId as string;
   const { accessToken } = useAuthStore();
 
   const [group, setGroup] = useState<(Group & { memberCount: number; userRole: string }) | null>(null);
@@ -196,7 +196,7 @@ function GroupPapersPageContent() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
           <div className="flex items-center gap-4">
-            <Link href={`/group?id=${groupId}`}>
+            <Link href={`/group/${groupId}`}>
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Group
@@ -230,7 +230,7 @@ function GroupPapersPageContent() {
               placeholder="Search papers..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
+              className="w-full pl-12 pr-4 py-3 bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[var(--color-brand-secondary)] focus:ring-2 focus:ring-[var(--color-brand-secondary)]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
             />
           </div>
         </div>
@@ -373,7 +373,7 @@ function GroupPapersPageContent() {
                           }
                         }}
                         disabled={isAsking}
-                        className="flex-1 px-4 py-2.5 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)] disabled:opacity-50"
+                        className="flex-1 px-4 py-2.5 bg-[var(--color-bg-tertiary)] border border-[var(--color-border-primary)] rounded-xl text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[var(--color-brand-secondary)] focus:ring-2 focus:ring-[var(--color-brand-secondary)]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)] disabled:opacity-50"
                       />
                       <Button
                         onClick={handleAskQuestion}
@@ -401,12 +401,12 @@ function GroupPapersPageContent() {
 
                 {/* Response - AI styled */}
                 {qaResponse && (
-                  <div className="bg-gradient-to-br from-[#0D7377]/10 to-[#14FFEC]/5 border border-[#0D7377]/30 rounded-xl p-5">
+                  <div className="bg-gradient-to-br from-[var(--color-brand-primary)]/10 to-[var(--color-brand-secondary)]/5 border border-[var(--color-brand-primary)]/30 rounded-xl p-5">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="p-1.5 rounded-lg bg-[#0D7377]/20">
-                        <Sparkles className="w-4 h-4 text-[#14FFEC]" />
+                      <div className="p-1.5 rounded-lg bg-[var(--color-brand-primary)]/20">
+                        <Sparkles className="w-4 h-4 text-[var(--color-brand-secondary)]" />
                       </div>
-                      <span className="text-sm font-medium text-[#14FFEC]">AI Response</span>
+                      <span className="text-sm font-medium text-[var(--color-brand-secondary)]">AI Response</span>
                     </div>
 
                     {qaResponse.answer && (
@@ -417,12 +417,12 @@ function GroupPapersPageContent() {
                       <div>
                         <p className="text-[var(--color-text-primary)] whitespace-pre-wrap leading-relaxed mb-4">{qaResponse.summary}</p>
                         {qaResponse.keyPoints && qaResponse.keyPoints.length > 0 && (
-                          <div className="mt-4 pt-4 border-t border-[#0D7377]/30">
-                            <h4 className="text-sm font-medium text-[#14FFEC] mb-3">Key Points:</h4>
+                          <div className="mt-4 pt-4 border-t border-[var(--color-brand-primary)]/30">
+                            <h4 className="text-sm font-medium text-[var(--color-brand-secondary)] mb-3">Key Points:</h4>
                             <ul className="space-y-2">
                               {qaResponse.keyPoints.map((point, i) => (
                                 <li key={i} className="flex items-start gap-2 text-sm text-[var(--color-text-secondary)]">
-                                  <span className="text-[#14FFEC] mt-1">•</span>
+                                  <span className="text-[var(--color-brand-secondary)] mt-1">•</span>
                                   {point}
                                 </li>
                               ))}

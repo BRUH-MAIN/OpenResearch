@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
 import { Button, Card, CardBody, CardHeader, Badge, Modal } from '@/components/ui';
@@ -22,8 +22,8 @@ import { api, Report, Group } from '@/lib/api';
 import { toast } from '@/lib/toast';
 
 function ReportsPageContent() {
-  const searchParams = useSearchParams();
-  const groupId = searchParams.get('groupId');
+  const params = useParams();
+  const groupId = params.groupId as string;
   const { accessToken, user } = useAuthStore();
 
   const [group, setGroup] = useState<(Group & { memberCount: number; userRole: string }) | null>(null);
@@ -151,7 +151,7 @@ function ReportsPageContent() {
       <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
         <Navbar />
         <div className="flex flex-col justify-center items-center h-[60vh]">
-          <Loader2 className="w-10 h-10 animate-spin text-[#14FFEC] mb-4" />
+          <Loader2 className="w-10 h-10 animate-spin text-[var(--color-brand-secondary)] mb-4" />
           <p className="text-[var(--color-text-secondary)] text-sm">Loading reports...</p>
         </div>
       </div>
@@ -165,7 +165,7 @@ function ReportsPageContent() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
           <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:gap-4">
-            <Link href={`/group?id=${groupId}`}>
+            <Link href={`/group/${groupId}`}>
               <Button variant="ghost" size="sm" className="w-full justify-center sm:w-auto">
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Group
@@ -174,7 +174,7 @@ function ReportsPageContent() {
             <div className="hidden h-6 w-px bg-[var(--color-border-primary)] sm:block" />
             <div>
               <h1 className="text-2xl font-bold flex items-center gap-2">
-                <FileText className="w-6 h-6 text-[#14FFEC]" />
+                <FileText className="w-6 h-6 text-[var(--color-brand-secondary)]" />
                 {group?.name} Reports
               </h1>
               <p className="text-sm text-[var(--color-text-tertiary)]">Generate and download PDF research reports</p>
@@ -209,8 +209,8 @@ function ReportsPageContent() {
               <Card key={report.id}>
                 <CardBody className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-[#0D7377]/20 flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-[#14FFEC]" />
+                    <div className="w-12 h-12 rounded-xl bg-[var(--color-brand-primary)]/20 flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-[var(--color-brand-secondary)]" />
                     </div>
                     <div className="min-w-0">
                       <h3 className="font-semibold text-[var(--color-text-primary)]">{report.title}</h3>
@@ -321,7 +321,7 @@ function ReportsPageContent() {
                     key={type}
                     onClick={() => setReportConfig((prev) => ({ ...prev, reportType: type }))}
                     className={`px-4 py-2 rounded-xl capitalize text-sm font-medium transition-all ${reportConfig.reportType === type
-                        ? 'bg-[#0D7377] text-white shadow-lg shadow-[#0D7377]/25'
+                        ? 'bg-[var(--color-brand-primary)] text-white shadow-lg shadow-[var(--color-brand-primary)]/25'
                         : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)] hover:text-white'
                       }`}
                   >
@@ -342,7 +342,7 @@ function ReportsPageContent() {
                   setReportConfig((prev) => ({ ...prev, customTitle: e.target.value }))
                 }
                 placeholder={`${group?.name} Research Report`}
-                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[#14FFEC] focus:ring-2 focus:ring-[#14FFEC]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
+                className="w-full bg-[var(--color-bg-primary)] border border-[var(--color-border-primary)] rounded-xl px-4 py-2.5 text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] focus:border-[var(--color-brand-secondary)] focus:ring-2 focus:ring-[var(--color-brand-secondary)]/20 focus:outline-none transition-all hover:border-[var(--color-border-hover)]"
               />
             </div>
 
@@ -357,7 +357,7 @@ function ReportsPageContent() {
                       key={section}
                       onClick={() => toggleSection(section)}
                       className={`px-3 py-1.5 rounded-full text-sm capitalize font-medium transition-all ${reportConfig.sections.includes(section)
-                          ? 'bg-[#0D7377]/20 text-[#14FFEC] border border-[#0D7377]/40'
+                          ? 'bg-[var(--color-brand-primary)]/20 text-[var(--color-brand-secondary)] border border-[var(--color-brand-primary)]/40'
                           : 'bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)] border border-transparent hover:bg-[var(--color-bg-hover)] hover:text-white'
                         }`}
                     >
@@ -379,7 +379,7 @@ export default function ReportsPage() {
     <Suspense
       fallback={
         <div className="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] flex flex-col items-center justify-center">
-          <Loader2 className="w-10 h-10 animate-spin text-[#14FFEC] mb-4" />
+          <Loader2 className="w-10 h-10 animate-spin text-[var(--color-brand-secondary)] mb-4" />
           <p className="text-[var(--color-text-secondary)] text-sm">Loading...</p>
         </div>
       }

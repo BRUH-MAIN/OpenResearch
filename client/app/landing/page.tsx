@@ -43,7 +43,7 @@ export default function LandingPage() {
       <header className="px-4 py-6 sm:px-6 lg:px-8 sticky top-0 z-50 glass border-b border-[var(--color-border-primary)]">
         <div className="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-[#0D7377] to-[#14FFEC] rounded-xl flex items-center justify-center shadow-lg shadow-[#0D7377]/30">
+            <div className="w-10 h-10 bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)] rounded-xl flex items-center justify-center shadow-lg shadow-[var(--color-brand-primary)]/30">
               <span className="text-white font-bold text-xl">OR</span>
             </div>
             <span className="text-xl sm:text-2xl font-bold text-[var(--color-text-primary)]">OpenResearch</span>
@@ -62,17 +62,17 @@ export default function LandingPage() {
       {/* Hero Section */}
       <section className="px-4 py-20 sm:px-6 lg:px-8 relative overflow-hidden">
         {/* Background Gradient Orbs */}
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[#0D7377]/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[#14FFEC]/10 rounded-full blur-3xl" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-[var(--color-brand-primary)]/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-[var(--color-brand-secondary)]/10 rounded-full blur-3xl" />
 
         <div className="max-w-7xl mx-auto text-center relative z-10">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0D7377]/20 border border-[#0D7377]/40 text-[#14FFEC] text-sm font-medium mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[var(--color-brand-primary)]/20 border border-[var(--color-brand-primary)]/40 text-[var(--color-brand-secondary)] text-sm font-medium mb-8">
             <Sparkles size={16} />
             <span>AI-Powered Research Platform</span>
           </div>
           <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-[var(--color-text-primary)] mb-6 leading-tight">
             Research, Collaborate,
-            <span className="bg-gradient-to-r from-[#0D7377] to-[#14FFEC] bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)] bg-clip-text text-transparent">
               {' '}Innovate
             </span>
           </h1>
@@ -82,7 +82,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link href="/auth/signup">
-              <Button size="lg" className="w-full sm:w-auto shadow-xl shadow-[#0D7377]/30">
+              <Button size="lg" className="w-full sm:w-auto shadow-xl shadow-[var(--color-brand-primary)]/30">
                 Start Researching Free
               </Button>
             </Link>
@@ -121,9 +121,9 @@ export default function LandingPage() {
               return (
                 <div
                   key={index}
-                  className="group p-6 rounded-2xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] hover:border-[#0D7377]/50 hover:shadow-xl hover:shadow-[#0D7377]/10 transition-all duration-300 hover:-translate-y-1"
+                  className="group p-6 rounded-2xl border border-[var(--color-border-primary)] bg-[var(--color-bg-secondary)] hover:border-[var(--color-brand-primary)]/50 hover:shadow-xl hover:shadow-[var(--color-brand-primary)]/10 transition-all duration-300 hover:-translate-y-1"
                 >
-                  <div className="w-12 h-12 bg-gradient-to-br from-[#0D7377] to-[#14FFEC] rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-[#0D7377]/25 group-hover:shadow-[#0D7377]/40 transition-shadow">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)] rounded-xl flex items-center justify-center mb-4 shadow-lg shadow-[var(--color-brand-primary)]/25 group-hover:shadow-[var(--color-brand-primary)]/40 transition-shadow">
                     <Icon className="text-white" size={24} />
                   </div>
                   <h3 className="text-xl font-semibold text-[var(--color-text-primary)] mb-2">
@@ -153,7 +153,7 @@ export default function LandingPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
             {/* Connecting line */}
-            <div className="hidden md:block absolute top-8 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-transparent via-[#0D7377]/50 to-transparent" />
+            <div className="hidden md:block absolute top-8 left-1/6 right-1/6 h-0.5 bg-gradient-to-r from-transparent via-[var(--color-brand-primary)]/50 to-transparent" />
             {[
               {
                 step: '1',
@@ -172,7 +172,7 @@ export default function LandingPage() {
               },
             ].map((item, index) => (
               <div key={index} className="text-center relative z-10">
-                <div className="w-16 h-16 bg-gradient-to-br from-[#0D7377] to-[#14FFEC] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[#0D7377]/30 ring-4 ring-[var(--color-bg-primary)]">
+                <div className="w-16 h-16 bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-[var(--color-brand-primary)]/30 ring-4 ring-[var(--color-bg-primary)]">
                   <span className="text-white text-2xl font-bold">{item.step}</span>
                 </div>
                 <h3 className="text-2xl font-semibold text-[var(--color-text-primary)] mb-3">
@@ -189,7 +189,7 @@ export default function LandingPage() {
 
       {/* CTA Section */}
       <section className="px-4 py-24 sm:px-6 lg:px-8 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-[#0D7377] to-[#14FFEC]" />
+        <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)]" />
         <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg%20width%3D%2260%22%20height%3D%2260%22%20viewBox%3D%220%200%2060%2060%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cg%20fill%3D%22none%22%20fill-rule%3D%22evenodd%22%3E%3Cg%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.05%22%3E%3Cpath%20d%3D%22M36%2034v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6%2034v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6%204V0H4v4H0v2h4v4h2V6h4V4H6z%22%2F%3E%3C%2Fg%3E%3C%2Fg%3E%3C%2Fsvg%3E')] opacity-20" />
         <div className="max-w-4xl mx-auto text-center relative z-10">
           <h2 className="text-4xl sm:text-5xl font-bold text-white mb-6">
@@ -199,7 +199,7 @@ export default function LandingPage() {
             Join researchers worldwide who are already collaborating smarter.
           </p>
           <Link href="/auth/signup">
-            <Button size="lg" className="bg-white text-[#0D7377] hover:bg-gray-100 shadow-xl border-none">
+            <Button size="lg" className="bg-white text-[var(--color-brand-primary)] hover:bg-gray-100 shadow-xl border-none">
               Get Started for Free
             </Button>
           </Link>

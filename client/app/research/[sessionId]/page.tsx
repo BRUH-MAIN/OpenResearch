@@ -1,17 +1,17 @@
 'use client';
 
 import React, { useState, useRef, useEffect, Suspense, useCallback, useMemo } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { Navbar } from '@/components/layout';
 import { Button, Modal } from '@/components/ui';
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton';
 import { Loader2, FileText, PlusCircle, Bot, Copy, Wifi, WifiOff } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
-import { api, Session, GroupPaper } from '@/lib/api';
 import { useSocket } from '@/lib/socket';
 import { useToastStore } from '@/lib/toast';
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
+import { useResearchSession, getMessageCitations } from '@/lib/hooks/useResearchSession';
 
 import {
   SourcesPanel,
@@ -130,17 +130,28 @@ const RESEARCH_CHAT_CONTENT_MAX_WIDTH = '52rem';
 // ==================== Main Component ====================
 
 function ResearchChatContent() {
-  const searchParams = useSearchParams();
-  const sessionId = searchParams.get('sessionId');
+  const params = useParams();
+  const sessionId = params.sessionId as string;
   const { accessToken, user } = useAuthStore();
   const { addToast } = useToastStore();
   const useOverlayPanels = useMediaQuery('(max-width: 1023px)');
 
+  // Session, message history, and group papers (the RAG sources)
+  const {
+    session,
+    initialMessages,
+    isLoading,
+    error,
+    sources,
+    enabledSources,
+    toggleSource,
+    toggleAllSources,
+    removeSource,
+    addSource,
+  } = useResearchSession(sessionId);
+
   // UI State
   const [inputMessage, setInputMessage] = useState('');
-  const [session, setSession] = useState<(Session & { messageCount: number }) | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(() => loadResearchPanelPrefs()?.leftPanelCollapsed ?? false);
   const [rightPanelCollapsed, setRightPanelCollapsed] = useState(() => loadResearchPanelPrefs()?.rightPanelCollapsed ?? true);
   const [showAddSourceModal, setShowAddSourceModal] = useState(false);
@@ -148,9 +159,6 @@ function ResearchChatContent() {
   const [showMobileWorkspacePanel, setShowMobileWorkspacePanel] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  // Sources State
-  const [sources, setSources] = useState<Source[]>([]);
 
   // Diagrams detected from AI responses
   const [detectedDiagrams, setDetectedDiagrams] = useState<{ id: string; code: string; detectedAt: string }[]>([]);
@@ -304,54 +312,12 @@ function ResearchChatContent() {
     setRightPanelCollapsed(false);
   }, [useOverlayPanels]);
 
-  // Fetch session, messages, and group papers
+  // Seed the socket's message list from the fetched history
   useEffect(() => {
-    async function fetchData() {
-      if (!accessToken || !sessionId) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        const [sessionData, messagesData] = await Promise.all([
-          api.getSession(accessToken, sessionId),
-          api.getSessionMessages(accessToken, sessionId),
-        ]);
-        setSession(sessionData);
-        initMessages(messagesData);
-
-        // Fetch group papers as sources
-        if (sessionData.groupId) {
-          try {
-            const papers = await api.getGroupPapers(accessToken, sessionData.groupId);
-            const sourcesFromPapers: Source[] = papers.map((paper: GroupPaper) => ({
-              id: paper.paperId,
-              type: 'paper' as const,
-              title: paper.title,
-              authors: paper.authors,
-              abstract: paper.abstract,
-              url: paper.url,
-              enabled: true,
-              addedAt: paper.addedAt,
-              tags: paper.tags,
-              publishedDate: paper.publishedDate,
-            }));
-            setSources(sourcesFromPapers);
-          } catch {
-            // Papers might not be available, continue without them
-          }
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load session');
-      } finally {
-        setIsLoading(false);
-      }
+    if (initialMessages.length > 0) {
+      initMessages(initialMessages);
     }
-
-    fetchData();
-  }, [accessToken, sessionId, initMessages]);
+  }, [initialMessages, initMessages]);
 
   // Auto-scroll to bottom
   useEffect(() => {
@@ -415,42 +381,13 @@ function ResearchChatContent() {
     }
   };
 
-  // Source handlers
-  const handleToggleSource = useCallback((id: string) => {
-    setSources((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s))
-    );
-  }, []);
-
-  const handleToggleAll = useCallback((enabled: boolean) => {
-    setSources((prev) => prev.map((s) => ({ ...s, enabled })));
-  }, []);
-
-  const handleDeleteSource = useCallback((id: string) => {
-    setSources((prev) => prev.filter((s) => s.id !== id));
-  }, []);
-
   const handleAddPaperToSources = useCallback((url: string, title: string) => {
-    // Avoid duplicate sources by URL
-    setSources((prev) => {
-      if (prev.some((s) => s.url === url)) {
-        addToast('Source already added', 'info');
-        return prev;
-      }
+    if (addSource(url, title)) {
       addToast(`Added: ${title.slice(0, 40)}…`, 'success');
-      return [
-        ...prev,
-        {
-          id: `ctx-${Date.now()}`,
-          type: 'paper' as const,
-          title,
-          url,
-          enabled: true,
-          addedAt: new Date().toISOString(),
-        },
-      ];
-    });
-  }, [addToast]);
+    } else {
+      addToast('Source already added', 'info');
+    }
+  }, [addSource, addToast]);
 
   // Pin handlers
   const handlePinMessage = useCallback(
@@ -510,10 +447,14 @@ function ResearchChatContent() {
   );
 
   const handleCitationClick = useCallback((citation: Citation) => {
-    const sourceElement = document.getElementById(`source-${citation.sourceId}`);
-    if (sourceElement) {
-      sourceElement.scrollIntoView({ behavior: 'smooth' });
+    // Prefer opening the paper itself; otherwise reveal it in the sources panel.
+    if (citation.url) {
+      window.open(citation.url, '_blank', 'noopener,noreferrer');
+      return;
     }
+    document
+      .getElementById(`source-${citation.id}`)
+      ?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   const handleSelectPrompt = useCallback(
@@ -543,7 +484,9 @@ function ResearchChatContent() {
                 border: '1px solid rgba(239, 68, 68, 0.3)',
               }}
             >
-              <p style={{ color: 'var(--color-error)' }}>{error}</p>
+              <p style={{ color: 'var(--color-error)' }}>
+                {error instanceof Error ? error.message : 'Failed to load session'}
+              </p>
             </div>
           )}
           <h2
@@ -560,7 +503,6 @@ function ResearchChatContent() {
     );
   }
 
-  const enabledSources = sources.filter((s) => s.enabled);
   const showEmptyState = messages.length === 0;
 
   return (
@@ -574,9 +516,9 @@ function ResearchChatContent() {
         {!useOverlayPanels && (
           <SourcesPanel
             sources={sources}
-            onToggleSource={handleToggleSource}
-            onDeleteSource={handleDeleteSource}
-            onToggleAll={handleToggleAll}
+            onToggleSource={toggleSource}
+            onDeleteSource={removeSource}
+            onToggleAll={toggleAllSources}
             onAddSource={() => setShowAddSourceModal(true)}
             isCollapsed={leftPanelCollapsed}
             onToggleCollapse={() => setLeftPanelCollapsed(!leftPanelCollapsed)}
@@ -742,6 +684,7 @@ function ResearchChatContent() {
                       onFeedback={isAI ? handleFeedback : undefined}
                       onCopy={handleCopy}
                       onPin={isAI ? handlePinMessage : undefined}
+                      citations={isAI ? getMessageCitations(msg) : undefined}
                       onCitationClick={handleCitationClick}
                       onDiagramDetected={isAI ? handleDiagramDetected : undefined}
                     />
@@ -904,9 +847,9 @@ function ResearchChatContent() {
           >
             <SourcesPanel
               sources={sources}
-              onToggleSource={handleToggleSource}
-              onDeleteSource={handleDeleteSource}
-              onToggleAll={handleToggleAll}
+              onToggleSource={toggleSource}
+              onDeleteSource={removeSource}
+              onToggleAll={toggleAllSources}
               onAddSource={() => {
                 setShowMobileSourcesPanel(false);
                 setShowAddSourceModal(true);
@@ -947,7 +890,7 @@ function ResearchChatContent() {
             Add papers from your group collection or import new sources.
           </p>
           <div className="flex flex-col gap-2">
-            <Link href={`/group-papers?groupId=${session.groupId}`}>
+            <Link href={`/group-papers/${session.groupId}`}>
               <Button variant="secondary" className="w-full justify-start">
                 <FileText size={16} className="mr-2" />
                 Browse Group Papers

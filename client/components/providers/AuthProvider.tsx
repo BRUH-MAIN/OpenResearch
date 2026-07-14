@@ -86,10 +86,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <AuthContext.Provider value={{ isLoading, isAuthenticated }}>
       {isLoading && !publicRoutes.includes(pathname) ? (
-        <div className="min-h-screen bg-[#212121] flex items-center justify-center">
+        <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center">
           <div className="flex flex-col items-center space-y-4">
-            <div className="w-12 h-12 border-4 border-[#0D7377] border-t-[#14FFEC] rounded-full animate-spin" />
-            <p className="text-gray-400">Loading...</p>
+            <div className="w-12 h-12 border-4 border-[var(--color-brand-primary)] border-t-[var(--color-brand-secondary)] rounded-full animate-spin" />
+            <p className="text-[var(--color-text-secondary)]">Loading...</p>
           </div>
         </div>
       ) : (

@@ -59,7 +59,7 @@ export function Avatar({
   // These gradient colors are decorative and stay consistent across themes
   const getAvatarColor = (name: string) => {
     const colors = [
-      'from-[#0D7377] to-[#14FFEC]',
+      'from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)]',
       'from-[#8b5cf6] to-[#a78bfa]',
       'from-[#ec4899] to-[#f472b6]',
       'from-[#f59e0b] to-[#fbbf24]',

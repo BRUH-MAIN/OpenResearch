@@ -61,14 +61,14 @@ export default function SignInPage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center px-4 relative overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#0D7377]/10 rounded-full blur-3xl opacity-50 dark:opacity-100" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#14FFEC]/5 rounded-full blur-3xl opacity-50 dark:opacity-100" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--color-brand-primary)]/10 rounded-full blur-3xl opacity-50 dark:opacity-100" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[var(--color-brand-secondary)]/5 rounded-full blur-3xl opacity-50 dark:opacity-100" />
 
       <div className="max-w-md w-full relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/landing" className="inline-flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#0D7377] to-[#14FFEC] rounded-xl flex items-center justify-center shadow-lg shadow-[#0D7377]/30">
+            <div className="w-12 h-12 bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)] rounded-xl flex items-center justify-center shadow-lg shadow-[var(--color-brand-primary)]/30">
               <span className="text-white font-bold text-xl">OR</span>
             </div>
             <span className="text-2xl font-bold text-[var(--color-text-primary)]">OpenResearch</span>
@@ -105,10 +105,10 @@ export default function SignInPage() {
 
             <div className="flex items-center justify-between">
               <label className="flex items-center cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded border-[var(--color-border-primary)] text-[#0D7377] focus:ring-[#14FFEC] focus:ring-offset-0 bg-[var(--color-bg-tertiary)]" />
+                <input type="checkbox" className="w-4 h-4 rounded border-[var(--color-border-primary)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-secondary)] focus:ring-offset-0 bg-[var(--color-bg-tertiary)]" />
                 <span className="ml-2 text-sm text-[var(--color-text-secondary)]">Remember me</span>
               </label>
-              <a href="#" className="text-sm text-[var(--color-accent-primary)] hover:text-[#0D7377] transition-colors">
+              <a href="#" className="text-sm text-[var(--color-accent-primary)] hover:text-[var(--color-brand-primary)] transition-colors">
                 Forgot password?
               </a>
             </div>
@@ -163,7 +163,7 @@ export default function SignInPage() {
           {/* Sign Up Link */}
           <p className="mt-8 text-center text-sm text-[var(--color-text-tertiary)]">
             Don&apos;t have an account?{' '}
-            <Link href="/auth/signup" className="text-[var(--color-accent-primary)] hover:text-[#0D7377] font-medium transition-colors">
+            <Link href="/auth/signup" className="text-[var(--color-accent-primary)] hover:text-[var(--color-brand-primary)] font-medium transition-colors">
               Sign up
             </Link>
           </p>

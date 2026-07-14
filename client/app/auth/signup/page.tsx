@@ -73,14 +73,14 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen bg-[var(--color-bg-primary)] flex items-center justify-center px-4 py-8 relative overflow-hidden">
       {/* Background Effects */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[#0D7377]/10 rounded-full blur-3xl opacity-50 dark:opacity-100" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[#14FFEC]/5 rounded-full blur-3xl opacity-50 dark:opacity-100" />
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-[var(--color-brand-primary)]/10 rounded-full blur-3xl opacity-50 dark:opacity-100" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-[var(--color-brand-secondary)]/5 rounded-full blur-3xl opacity-50 dark:opacity-100" />
 
       <div className="max-w-md w-full relative z-10">
         {/* Logo */}
         <div className="text-center mb-8">
           <Link href="/landing" className="inline-flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-[#0D7377] to-[#14FFEC] rounded-xl flex items-center justify-center shadow-lg shadow-[#0D7377]/30">
+            <div className="w-12 h-12 bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)] rounded-xl flex items-center justify-center shadow-lg shadow-[var(--color-brand-primary)]/30">
               <span className="text-white font-bold text-xl">OR</span>
             </div>
             <span className="text-2xl font-bold text-[var(--color-text-primary)]">OpenResearch</span>
@@ -136,14 +136,14 @@ export default function SignUpPage() {
             <div className="flex items-start">
               <input
                 type="checkbox"
-                className="mt-1 w-4 h-4 rounded border-[var(--color-border-primary)] text-[#0D7377] focus:ring-[#14FFEC] focus:ring-offset-0 bg-[var(--color-bg-tertiary)]"
+                className="mt-1 w-4 h-4 rounded border-[var(--color-border-primary)] text-[var(--color-brand-primary)] focus:ring-[var(--color-brand-secondary)] focus:ring-offset-0 bg-[var(--color-bg-tertiary)]"
                 required
               />
               <span className="ml-3 text-sm text-[var(--color-text-secondary)]">
                 I agree to the{' '}
-                <a href="#" className="text-[var(--color-accent-primary)] hover:text-[#0D7377] transition-colors">Terms of Service</a>
+                <a href="#" className="text-[var(--color-accent-primary)] hover:text-[var(--color-brand-primary)] transition-colors">Terms of Service</a>
                 {' '}and{' '}
-                <a href="#" className="text-[var(--color-accent-primary)] hover:text-[#0D7377] transition-colors">Privacy Policy</a>
+                <a href="#" className="text-[var(--color-accent-primary)] hover:text-[var(--color-brand-primary)] transition-colors">Privacy Policy</a>
               </span>
             </div>
 
@@ -197,7 +197,7 @@ export default function SignUpPage() {
           {/* Sign In Link */}
           <p className="mt-8 text-center text-sm text-[var(--color-text-tertiary)]">
             Already have an account?{' '}
-            <Link href="/auth/signin" className="text-[var(--color-accent-primary)] hover:text-[#0D7377] font-medium transition-colors">
+            <Link href="/auth/signin" className="text-[var(--color-accent-primary)] hover:text-[var(--color-brand-primary)] font-medium transition-colors">
               Sign in
             </Link>
           </p>

@@ -1,52 +1,33 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Navbar } from '@/components/layout';
 import { Button, Card, CardBody, Avatar } from '@/components/ui';
 import { Mail, Users, Check, X, Loader2, Clock, ArrowLeft } from 'lucide-react';
-import { useAuthStore } from '@/lib/auth';
-import { api, GroupInvitation } from '@/lib/api';
+import {
+  usePendingInvitations,
+  useAcceptInvitation,
+  useDeclineInvitation,
+} from '@/lib/hooks/useInvitations';
 import { toast } from '@/lib/toast';
 import Link from 'next/link';
 
 export default function InvitationsPage() {
   const router = useRouter();
-  const { accessToken } = useAuthStore();
-  const [invitations, setInvitations] = useState<GroupInvitation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function fetchInvitations() {
-      if (!accessToken) {
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        const data = await api.getPendingInvitations(accessToken);
-        setInvitations(data);
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : 'Failed to load invitations');
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    fetchInvitations();
-  }, [accessToken]);
+  // React Query owns the fetch, the 30s poll, and cache invalidation on accept.
+  const { data: invitations = [], isLoading } = usePendingInvitations();
+  const acceptInvitation = useAcceptInvitation();
+  const declineInvitation = useDeclineInvitation();
 
   const handleAccept = async (invitationId: string) => {
-    if (!accessToken) return;
-
     try {
       setProcessingId(invitationId);
-      const result = await api.acceptGroupInvitation(accessToken, invitationId);
-      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
+      const result = await acceptInvitation.mutateAsync(invitationId);
       toast.success(`Joined ${result.group.name}!`);
-      router.push(`/group?id=${result.group.id}`);
+      router.push(`/group/${result.group.id}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to accept invitation');
     } finally {
@@ -55,12 +36,9 @@ export default function InvitationsPage() {
   };
 
   const handleDecline = async (invitationId: string) => {
-    if (!accessToken) return;
-
     try {
       setProcessingId(invitationId);
-      await api.declineGroupInvitation(accessToken, invitationId);
-      setInvitations((prev) => prev.filter((inv) => inv.id !== invitationId));
+      await declineInvitation.mutateAsync(invitationId);
       toast.success('Invitation declined');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to decline invitation');
@@ -95,7 +73,7 @@ export default function InvitationsPage() {
             <ArrowLeft size={20} />
           </Link>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#0D7377] to-[#14FFEC] flex items-center justify-center">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)] flex items-center justify-center">
               <Mail size={24} className="text-white" />
             </div>
             <div>
@@ -110,7 +88,7 @@ export default function InvitationsPage() {
         {/* Loading State */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
+            <Loader2 size={48} className="text-[var(--color-brand-secondary)] animate-spin mb-4" />
             <p className="text-[var(--color-text-secondary)]">Loading invitations...</p>
           </div>
         ) : invitations.length === 0 ? (

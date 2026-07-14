@@ -68,7 +68,7 @@ export default function HomePage() {
             placeholder="Search groups..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-12 pr-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
+            className="w-full pl-12 pr-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-secondary)]/40 focus:border-[var(--color-brand-secondary)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
           />
         </div>
 
@@ -82,7 +82,7 @@ export default function HomePage() {
         {/* Loading State */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
+            <Loader2 size={48} className="text-[var(--color-brand-secondary)] animate-spin mb-4" />
             <p className="text-[var(--color-text-secondary)]">Loading your groups...</p>
           </div>
         ) : filteredGroups.length === 0 ? (
@@ -110,7 +110,7 @@ export default function HomePage() {
             {filteredGroups.map((group: any) => {
               const isOwner = group.ownerId === user?.id;
               return (
-                <Link key={group.id} href={`/group?id=${group.id}`}>
+                <Link key={group.id} href={`/group/${group.id}`}>
                   <Card hover>
                     <CardHeader className="flex flex-row items-start justify-between">
                       <div className="flex items-start space-x-3">
@@ -192,7 +192,7 @@ export default function HomePage() {
               placeholder="What's this group about?"
               value={newGroup.description}
               onChange={(e) => setNewGroup({ ...newGroup, description: e.target.value })}
-              className="w-full px-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] resize-none bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
+              className="w-full px-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-secondary)]/40 focus:border-[var(--color-brand-secondary)] resize-none bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
               rows={4}
             />
           </div>

@@ -194,7 +194,7 @@ export default function PaperPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && searchSource !== 'local' && handleExternalSearch()}
-                className="w-full pl-12 pr-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#14FFEC]/40 focus:border-[#14FFEC] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
+                className="w-full pl-12 pr-4 py-3 border border-[var(--color-border-primary)] rounded-xl focus:outline-none focus:ring-2 focus:ring-[var(--color-brand-secondary)]/40 focus:border-[var(--color-brand-secondary)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] placeholder-[var(--color-text-tertiary)] transition-all hover:border-[var(--color-border-hover)]"
               />
             </div>
             {searchSource !== 'local' && (
@@ -258,7 +258,7 @@ export default function PaperPage() {
         {/* Loading State */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-20">
-            <Loader2 size={48} className="text-[#14FFEC] animate-spin mb-4" />
+            <Loader2 size={48} className="text-[var(--color-brand-secondary)] animate-spin mb-4" />
             <p className="text-[var(--color-text-secondary)]">Loading papers...</p>
           </div>
         ) : (
@@ -267,12 +267,12 @@ export default function PaperPage() {
             {searchSource !== 'local' && externalResults.length > 0 && (
               <div className="mb-8">
                 <h2 className="text-xl font-bold text-[var(--color-text-primary)] mb-4 flex items-center">
-                  <Globe size={20} className="mr-2 text-[#14FFEC]" />
+                  <Globe size={20} className="mr-2 text-[var(--color-brand-secondary)]" />
                   External Results ({externalResults.length})
                 </h2>
                 <div className="space-y-4">
                   {externalResults.map((paper) => (
-                    <Card key={paper.id} className="border-[#14FFEC]/30">
+                    <Card key={paper.id} className="border-[var(--color-brand-secondary)]/30">
                       <CardHeader>
                         <div className="flex flex-col gap-4 sm:flex-row sm:justify-between sm:items-start">
                           <div className="min-w-0 flex-1 sm:pr-4">
