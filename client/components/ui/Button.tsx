@@ -1,94 +1,95 @@
-import React from 'react';
+'use client';
+
+import * as React from 'react';
+import { Slot } from '@radix-ui/react-slot';
+import { cva, type VariantProps } from 'class-variance-authority';
 import { Loader2 } from 'lucide-react';
 
-interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
-  size?: 'sm' | 'md' | 'lg';
+import { cn } from '@/lib/utils';
+
+/**
+ * shadcn-style button: variants declared once with `cva`, and `asChild` so a
+ * Button can *be* a Link rather than wrapping one (no <a> inside a <button>).
+ *
+ * The variant and size names are the ones the app already used, so this changes
+ * the internals, not the call sites.
+ */
+const buttonVariants = cva(
+  [
+    'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl',
+    'text-sm font-medium transition-all cursor-pointer',
+    'disabled:pointer-events-none disabled:opacity-50',
+    // A visible focus ring, not a removed outline: keyboard users need to see
+    // where they are.
+    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-secondary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--color-bg-primary)]',
+    '[&_svg]:pointer-events-none [&_svg]:shrink-0',
+  ],
+  {
+    variants: {
+      variant: {
+        primary:
+          'bg-gradient-to-r from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)] text-[var(--color-bg-primary)] font-semibold shadow-lg hover:brightness-110 active:brightness-95',
+        secondary:
+          'bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)] border border-[var(--color-border-primary)] hover:bg-[var(--color-bg-hover)]',
+        outline:
+          'border border-[var(--color-border-secondary)] bg-transparent text-[var(--color-text-primary)] hover:border-[var(--color-brand-secondary)] hover:bg-[var(--color-bg-tertiary)]',
+        ghost:
+          'bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)] hover:text-[var(--color-text-primary)]',
+        danger: 'bg-[var(--color-error)] text-white hover:brightness-110',
+      },
+      size: {
+        sm: 'h-8 px-3 text-xs',
+        md: 'h-10 px-4',
+        lg: 'h-12 px-6 text-base',
+        icon: 'h-10 w-10',
+      },
+    },
+    defaultVariants: {
+      variant: 'primary',
+      size: 'md',
+    },
+  }
+);
+
+export interface ButtonProps
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    VariantProps<typeof buttonVariants> {
   isLoading?: boolean;
+  asChild?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
-  children: React.ReactNode;
 }
 
 export function Button({
-  variant = 'primary',
-  size = 'md',
+  className,
+  variant,
+  size,
   isLoading = false,
+  asChild = false,
   leftIcon,
   rightIcon,
-  className = '',
-  children,
   disabled,
+  children,
   ...props
 }: ButtonProps) {
-  const sizes = {
-    sm: 'px-3 py-1.5 text-sm gap-1.5',
-    md: 'px-4 py-2.5 text-sm gap-2',
-    lg: 'px-6 py-3 text-base gap-2.5',
-  };
-
-  const iconSizes = {
-    sm: 14,
-    md: 16,
-    lg: 18,
-  };
-
-  const isDisabled = disabled || isLoading;
-
-  // Use inline styles to reference CSS vars (Tailwind can't resolve CSS vars at build time)
-  const variantStyles: Record<string, React.CSSProperties> = {
-    primary: {
-      background: 'linear-gradient(135deg, var(--color-brand-primary), var(--color-brand-secondary))',
-      color: '#fff',
-      boxShadow: 'var(--shadow-glow)',
-    },
-    secondary: {
-      background: 'var(--color-bg-tertiary)',
-      color: 'var(--color-text-primary)',
-      border: '1px solid var(--color-border-secondary)',
-    },
-    outline: {
-      background: 'transparent',
-      color: 'var(--color-brand-secondary)',
-      border: '2px solid var(--color-brand-primary)',
-    },
-    ghost: {
-      background: 'transparent',
-      color: 'var(--color-text-secondary)',
-    },
-    danger: {
-      background: 'linear-gradient(135deg, #dc2626, #b91c1c)',
-      color: '#fff',
-      boxShadow: '0 4px 6px -1px rgba(220, 38, 38, 0.25)',
-    },
-  };
+  const Comp = asChild ? Slot : 'button';
 
   return (
-    <button
-      className={`
-        relative inline-flex items-center justify-center
-        font-semibold rounded-xl
-        transition-all duration-200 ease-out
-        disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-        active:scale-[0.98]
-        ${sizes[size]} ${className}
-      `}
-      style={variantStyles[variant]}
-      disabled={isDisabled}
+    <Comp
+      className={cn(buttonVariants({ variant, size }), className)}
+      disabled={disabled || isLoading}
+      aria-busy={isLoading || undefined}
       {...props}
     >
       {isLoading ? (
-        <>
-          <Loader2 size={iconSizes[size]} className="animate-spin" />
-          <span className="ml-1">Loading...</span>
-        </>
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
       ) : (
-        <>
-          {leftIcon && <span className="flex-shrink-0">{leftIcon}</span>}
-          {children}
-          {rightIcon && <span className="flex-shrink-0">{rightIcon}</span>}
-        </>
+        leftIcon
       )}
-    </button>
+      {children}
+      {rightIcon}
+    </Comp>
   );
 }
+
+export { buttonVariants };

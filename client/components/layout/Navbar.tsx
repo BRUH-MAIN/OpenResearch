@@ -43,9 +43,14 @@ export function Navbar() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  useEffect(() => {
+  // Close the dropdown when the route changes. Done during render rather than in
+  // an effect: React's documented way to adjust state in response to a change,
+  // and it avoids the extra render pass an effect would cost.
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (lastPathname !== pathname) {
+    setLastPathname(pathname);
     setShowNotifications(false);
-  }, [pathname]);
+  }
 
   const handleLogout = async () => {
     await logout();

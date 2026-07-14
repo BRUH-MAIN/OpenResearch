@@ -22,11 +22,16 @@ describe('Button', () => {
         expect(screen.getByRole('button')).toBeDisabled();
     });
 
-    it('is disabled when isLoading is true', () => {
-        render(<Button isLoading>Loading</Button>);
+    it('is disabled and marked busy when isLoading is true', () => {
+        render(<Button isLoading>Save</Button>);
         const btn = screen.getByRole('button');
+
         expect(btn).toBeDisabled();
-        expect(screen.getByText('Loading...')).toBeInTheDocument();
+        expect(btn).toHaveAttribute('aria-busy', 'true');
+        // The label stays put and a spinner joins it, rather than the label being
+        // swapped for "Loading..." — the button keeps its width, so it does not
+        // jump out from under the cursor mid-click.
+        expect(screen.getByText('Save')).toBeInTheDocument();
     });
 
     it('does not fire onClick when disabled', async () => {

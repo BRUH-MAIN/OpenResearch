@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { api, GroupPaper, Message, Session, RagSource } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth';
@@ -33,45 +33,63 @@ export function useResearchSession(sessionId: string | null) {
     enabled: !!token && !!groupId,
   });
 
-  // Group papers are the source list; `enabled` is local UI state layered on top.
-  const [sources, setSources] = useState<Source[]>([]);
+  /**
+   * The source list is *derived* from the group's papers, not copied into state.
+   *
+   * Copying it would mean a background refetch silently resets whatever the user
+   * had toggled off — the paper list is server state, and only the overlay on top
+   * of it (what is disabled, what was removed, what was added ad hoc) belongs in
+   * local state.
+   */
+  const [disabledIds, setDisabledIds] = useState<Set<string>>(new Set());
+  const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
+  const [extraSources, setExtraSources] = useState<Source[]>([]);
 
-  useEffect(() => {
-    if (!papersQuery.data) return;
-    setSources(
-      papersQuery.data.map((paper: GroupPaper) => ({
-        id: paper.paperId,
-        type: 'paper' as const,
-        title: paper.title,
-        authors: paper.authors,
-        abstract: paper.abstract,
-        url: paper.url,
-        enabled: true,
-        addedAt: paper.addedAt,
-        tags: paper.tags,
-        publishedDate: paper.publishedDate,
-      }))
-    );
-  }, [papersQuery.data]);
+  const sources = useMemo<Source[]>(() => {
+    const fromPapers = (papersQuery.data ?? []).map((paper: GroupPaper) => ({
+      id: paper.paperId,
+      type: 'paper' as const,
+      title: paper.title,
+      authors: paper.authors,
+      abstract: paper.abstract,
+      url: paper.url,
+      enabled: !disabledIds.has(paper.paperId),
+      addedAt: paper.addedAt,
+      tags: paper.tags,
+      publishedDate: paper.publishedDate,
+    }));
+
+    return [...fromPapers, ...extraSources].filter((s) => !removedIds.has(s.id));
+  }, [papersQuery.data, disabledIds, removedIds, extraSources]);
 
   const toggleSource = useCallback((id: string) => {
-    setSources((prev) => prev.map((s) => (s.id === id ? { ...s, enabled: !s.enabled } : s)));
+    setDisabledIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
   }, []);
 
-  const toggleAllSources = useCallback((enabled: boolean) => {
-    setSources((prev) => prev.map((s) => ({ ...s, enabled })));
-  }, []);
+  const toggleAllSources = useCallback(
+    (enabled: boolean) => {
+      setDisabledIds(enabled ? new Set() : new Set(sources.map((s) => s.id)));
+    },
+    [sources]
+  );
 
   const removeSource = useCallback((id: string) => {
-    setSources((prev) => prev.filter((s) => s.id !== id));
+    setRemovedIds((prev) => new Set(prev).add(id));
   }, []);
 
-  const addSource = useCallback((url: string, title: string) => {
-    let added = false;
-    setSources((prev) => {
-      if (prev.some((s) => s.url === url)) return prev;
-      added = true;
-      return [
+  const addSource = useCallback(
+    (url: string, title: string) => {
+      if (sources.some((s) => s.url === url)) return false;
+
+      setExtraSources((prev) => [
         ...prev,
         {
           id: `ctx-${Date.now()}`,
@@ -81,10 +99,11 @@ export function useResearchSession(sessionId: string | null) {
           enabled: true,
           addedAt: new Date().toISOString(),
         },
-      ];
-    });
-    return added;
-  }, []);
+      ]);
+      return true;
+    },
+    [sources]
+  );
 
   const enabledSources = useMemo(() => sources.filter((s) => s.enabled), [sources]);
 

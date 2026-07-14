@@ -1,173 +1,123 @@
 'use client';
 
-import React, { useState } from 'react';
-import Image from 'next/image';
+import * as React from 'react';
+import * as AvatarPrimitive from '@radix-ui/react-avatar';
 
-interface AvatarProps {
+import { cn } from '@/lib/utils';
+
+/**
+ * Avatar, on Radix.
+ *
+ * The point of the primitive is the fallback: Radix tracks the image's load
+ * state, so a broken or slow avatar URL shows initials instead of a broken-image
+ * icon or an empty box.
+ */
+
+const SIZES = {
+  xs: 'h-6 w-6 text-[10px]',
+  sm: 'h-8 w-8 text-xs',
+  md: 'h-10 w-10 text-sm',
+  lg: 'h-12 w-12 text-base',
+  xl: 'h-16 w-16 text-lg',
+  '2xl': 'h-20 w-20 text-xl',
+} as const;
+
+const STATUS_COLOR = {
+  online: 'bg-[var(--color-success)]',
+  offline: 'bg-[var(--color-text-muted)]',
+  busy: 'bg-[var(--color-error)]',
+  away: 'bg-[var(--color-warning)]',
+} as const;
+
+function initials(name: string): string {
+  return name
+    .split(' ')
+    .map((part) => part[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+export interface AvatarProps {
   src?: string;
   alt: string;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
-  status?: 'online' | 'offline' | 'busy' | 'away';
+  size?: keyof typeof SIZES;
+  status?: keyof typeof STATUS_COLOR;
   className?: string;
 }
 
-export function Avatar({
-  src,
-  alt,
-  size = 'md',
-  status,
-  className = ''
-}: AvatarProps) {
-  const [imageError, setImageError] = useState(false);
-
-  const sizes = {
-    xs: 'w-6 h-6',
-    sm: 'w-8 h-8',
-    md: 'w-10 h-10',
-    lg: 'w-12 h-12',
-    xl: 'w-16 h-16',
-    '2xl': 'w-20 h-20',
-  };
-
-  const imageSizes = {
-    xs: 24,
-    sm: 32,
-    md: 40,
-    lg: 48,
-    xl: 64,
-    '2xl': 80,
-  };
-
-  const fontSizes = {
-    xs: 'text-xs',
-    sm: 'text-sm',
-    md: 'text-base',
-    lg: 'text-lg',
-    xl: 'text-2xl',
-    '2xl': 'text-3xl',
-  };
-
-  const statusSizes = {
-    xs: 'w-1.5 h-1.5 border',
-    sm: 'w-2 h-2 border',
-    md: 'w-2.5 h-2.5 border-2',
-    lg: 'w-3 h-3 border-2',
-    xl: 'w-4 h-4 border-2',
-    '2xl': 'w-5 h-5 border-2',
-  };
-
-  // These gradient colors are decorative and stay consistent across themes
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      'from-[var(--color-brand-primary)] to-[var(--color-brand-secondary)]',
-      'from-[#8b5cf6] to-[#a78bfa]',
-      'from-[#ec4899] to-[#f472b6]',
-      'from-[#f59e0b] to-[#fbbf24]',
-      'from-[#22c55e] to-[#4ade80]',
-      'from-[#3b82f6] to-[#60a5fa]',
-    ];
-    const index = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0) % colors.length;
-    return colors[index];
-  };
-
-  const statusColors: Record<string, string> = {
-    online: 'var(--color-success)',
-    offline: 'var(--color-text-tertiary)',
-    busy: 'var(--color-error)',
-    away: 'var(--color-warning)',
-  };
-
-  const fallbackInitial = alt.charAt(0).toUpperCase();
-
+export function Avatar({ src, alt, size = 'md', status, className }: AvatarProps) {
   return (
-    <div className={`relative inline-flex ${className}`}>
-      <div
-        className={`
-          ${sizes[size]} 
-          rounded-full overflow-hidden 
-          bg-gradient-to-br ${getAvatarColor(alt)}
-          flex items-center justify-center 
-          text-white font-semibold
-          transition-all duration-200
-        `}
-        style={{
-          boxShadow: `0 0 0 2px var(--color-border-primary), 0 0 0 4px var(--color-bg-primary)`,
-        }}
+    <span className={cn('relative inline-flex shrink-0', className)}>
+      <AvatarPrimitive.Root
+        className={cn(
+          'inline-flex select-none items-center justify-center overflow-hidden rounded-full',
+          'border border-[var(--color-border-primary)] bg-[var(--color-bg-tertiary)]',
+          SIZES[size]
+        )}
       >
-        {src && !imageError ? (
-          <Image
+        {src && (
+          <AvatarPrimitive.Image
             src={src}
             alt={alt}
-            width={imageSizes[size]}
-            height={imageSizes[size]}
-            className="object-cover w-full h-full"
-            onError={() => setImageError(true)}
-            unoptimized
+            className="h-full w-full object-cover"
           />
-        ) : (
-          <span className={fontSizes[size]}>
-            {fallbackInitial}
-          </span>
         )}
-      </div>
+        <AvatarPrimitive.Fallback
+          delayMs={src ? 300 : 0}
+          className="flex h-full w-full items-center justify-center font-medium text-[var(--color-text-secondary)]"
+        >
+          {initials(alt)}
+        </AvatarPrimitive.Fallback>
+      </AvatarPrimitive.Root>
+
       {status && (
         <span
-          className={`absolute bottom-0 right-0 ${statusSizes[size]} rounded-full`}
-          style={{
-            background: statusColors[status],
-            borderColor: 'var(--color-bg-primary)',
-          }}
+          className={cn(
+            'absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full ring-2 ring-[var(--color-bg-primary)]',
+            STATUS_COLOR[status]
+          )}
+          aria-label={status}
         />
       )}
-    </div>
+    </span>
   );
 }
 
-interface AvatarGroupProps {
+export interface AvatarGroupProps {
   avatars: { src?: string; alt: string }[];
   max?: number;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
 }
 
-export function AvatarGroup({
-  avatars,
-  max = 4,
-  size = 'md',
-  className = ''
-}: AvatarGroupProps) {
-  const displayAvatars = avatars.slice(0, max);
+export function AvatarGroup({ avatars, max = 4, size = 'md', className }: AvatarGroupProps) {
+  const shown = avatars.slice(0, max);
   const remaining = avatars.length - max;
 
-  const overlapSizes = {
-    sm: '-ml-2',
-    md: '-ml-3',
-    lg: '-ml-4',
-  };
+  const overlap = { sm: '-ml-2', md: '-ml-3', lg: '-ml-4' }[size];
 
   return (
-    <div className={`flex items-center ${className}`}>
-      {displayAvatars.map((avatar, index) => (
+    <div className={cn('flex items-center', className)}>
+      {shown.map((avatar, index) => (
         <div
-          key={index}
-          className={`${index > 0 ? overlapSizes[size] : ''} relative`}
-          style={{ zIndex: displayAvatars.length - index }}
+          key={`${avatar.alt}-${index}`}
+          className={cn('ring-2 ring-[var(--color-bg-primary)] rounded-full', index > 0 && overlap)}
         >
           <Avatar src={avatar.src} alt={avatar.alt} size={size} />
         </div>
       ))}
+
       {remaining > 0 && (
         <div
-          className={`
-            ${overlapSizes[size]}
-            ${size === 'sm' ? 'w-8 h-8 text-xs' : size === 'md' ? 'w-10 h-10 text-sm' : 'w-12 h-12 text-base'}
-            rounded-full flex items-center justify-center font-medium
-          `}
-          style={{
-            background: 'var(--color-bg-tertiary)',
-            border: '2px solid var(--color-bg-primary)',
-            color: 'var(--color-text-secondary)',
-          }}
+          className={cn(
+            'flex items-center justify-center rounded-full ring-2 ring-[var(--color-bg-primary)]',
+            'border border-[var(--color-border-primary)] bg-[var(--color-bg-tertiary)]',
+            'text-xs font-medium text-[var(--color-text-secondary)]',
+            SIZES[size],
+            overlap
+          )}
         >
           +{remaining}
         </div>

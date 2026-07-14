@@ -34,6 +34,10 @@ export function WorkspacePinnedNotes({
     useEffect(() => {
         try {
             const saved = localStorage.getItem(SCRATCHPAD_KEY);
+            // Reading localStorage must happen after hydration: doing it during
+            // render would produce markup that differs from the server's, which is
+            // a worse problem than the extra render pass this costs.
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             if (saved) setScratchpad(saved);
         } catch { /* ignore */ }
     }, []);

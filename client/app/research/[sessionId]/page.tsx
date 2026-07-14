@@ -198,6 +198,9 @@ function ResearchChatContent() {
   // Load pinned notes from localStorage
   useEffect(() => {
     if (sessionId) {
+      // Reading localStorage must happen after hydration: doing it during render
+      // would produce markup that differs from the server's.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPinnedNotes(loadPinnedNotes(sessionId));
     }
   }, [sessionId]);
@@ -213,12 +216,17 @@ function ResearchChatContent() {
     });
   }, [leftPanelCollapsed, rightPanelCollapsed, rightPanelWidth, useOverlayPanels]);
 
-  useEffect(() => {
-    if (useOverlayPanels) return;
-
-    setShowMobileSourcesPanel(false);
-    setShowMobileWorkspacePanel(false);
-  }, [useOverlayPanels]);
+  // Leaving the mobile breakpoint dismisses the overlay panels, since they only
+  // exist there. Adjusted during render — React's documented pattern — rather
+  // than in an effect, which would render the stale state once first.
+  const [wasOverlay, setWasOverlay] = useState(useOverlayPanels);
+  if (wasOverlay !== useOverlayPanels) {
+    setWasOverlay(useOverlayPanels);
+    if (!useOverlayPanels) {
+      setShowMobileSourcesPanel(false);
+      setShowMobileWorkspacePanel(false);
+    }
+  }
 
   // Keyboard shortcuts for panel toggles.
   useEffect(() => {

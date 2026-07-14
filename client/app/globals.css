@@ -1,4 +1,51 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+
+/* shadcn/ui reads the `.dark` class; the app has always driven theming from a
+   `data-theme` attribute. Rather than migrate every existing selector, teach
+   Tailwind that `.dark` and `[data-theme="dark"]` mean the same thing. */
+@custom-variant dark (&:is(.dark *, [data-theme="dark"] *));
+
+/* ── shadcn token layer ──────────────────────────────────────────────────────
+   shadcn components are written against semantic names (background, foreground,
+   primary, muted, border, ring…). Rather than run a second, parallel palette,
+   these are *aliases* onto the design tokens the app already had — so the two
+   systems cannot drift apart, and switching a brand colour still changes
+   everything at once. */
+@theme inline {
+  --color-background: var(--color-bg-primary);
+  --color-foreground: var(--color-text-primary);
+
+  --color-card: var(--color-bg-secondary);
+  --color-card-foreground: var(--color-text-primary);
+
+  --color-popover: var(--color-bg-elevated);
+  --color-popover-foreground: var(--color-text-primary);
+
+  --color-primary: var(--color-brand-primary);
+  --color-primary-foreground: var(--color-text-primary);
+
+  --color-secondary: var(--color-bg-tertiary);
+  --color-secondary-foreground: var(--color-text-primary);
+
+  --color-muted: var(--color-bg-tertiary);
+  --color-muted-foreground: var(--color-text-tertiary);
+
+  --color-accent: var(--color-brand-secondary);
+  --color-accent-foreground: var(--color-bg-primary);
+
+  --color-destructive: var(--color-error);
+  --color-destructive-foreground: var(--color-text-primary);
+
+  --color-border: var(--color-border-primary);
+  --color-input: var(--color-border-primary);
+  --color-ring: var(--color-brand-secondary);
+
+  --radius: var(--radius-lg);
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
 
 /* ========================================
    OpenResearch Design System
@@ -147,12 +194,6 @@
   --glass-bg-strong: rgba(255, 255, 255, 0.92);
 }
 
-@theme inline {
-  --color-background: var(--color-bg-primary);
-  --color-foreground: var(--color-text-primary);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
 
 /* Base Styles */
 body {
@@ -1393,5 +1434,42 @@ tbody .markdown-table-row:hover {
 
   .research-composer-pill--muted {
     display: none;
+  }
+}
+/* ========================================
+   Aurora (landing page only)
+   A drifting gradient, animated via background-position so it stays on the
+   compositor rather than the main thread.
+   ======================================== */
+
+.aurora-layer {
+  --aurora: repeating-linear-gradient(
+    100deg,
+    var(--color-brand-primary) 10%,
+    var(--color-brand-secondary) 20%,
+    #3b82f6 30%,
+    var(--color-brand-primary) 40%
+  );
+  background-image: var(--aurora);
+  background-size: 300% 200%;
+  background-position: 50% 50%;
+  filter: blur(60px) saturate(1.2);
+  animation: aurora-drift 40s linear infinite;
+}
+
+@keyframes aurora-drift {
+  from {
+    background-position: 50% 50%, 50% 50%;
+  }
+  to {
+    background-position: 350% 50%, 350% 50%;
+  }
+}
+
+/* An animated gradient is a migraine trigger for some people. If the system says
+   reduce motion, it stops moving — it does not simply move more slowly. */
+@media (prefers-reduced-motion: reduce) {
+  .aurora-layer {
+    animation: none;
   }
 }

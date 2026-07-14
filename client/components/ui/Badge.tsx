@@ -1,98 +1,54 @@
 'use client';
 
-import React from 'react';
+import * as React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-interface BadgeProps {
-  children: React.ReactNode;
-  variant?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
+import { cn } from '@/lib/utils';
+
+const badgeVariants = cva(
+  'inline-flex items-center gap-1 rounded-full border font-medium whitespace-nowrap',
+  {
+    variants: {
+      variant: {
+        primary:
+          'border-[var(--color-brand-primary)]/40 bg-[var(--color-brand-primary)]/15 text-[var(--color-brand-secondary)]',
+        secondary:
+          'border-[var(--color-border-primary)] bg-[var(--color-bg-tertiary)] text-[var(--color-text-secondary)]',
+        success:
+          'border-[var(--color-success)]/40 bg-[var(--color-success-bg)] text-[var(--color-success)]',
+        warning:
+          'border-[var(--color-warning)]/40 bg-[var(--color-warning-bg)] text-[var(--color-warning)]',
+        danger:
+          'border-[var(--color-error)]/40 bg-[var(--color-error-bg)] text-[var(--color-error)]',
+        info: 'border-[var(--color-info)]/40 bg-[var(--color-info-bg)] text-[var(--color-info)]',
+        outline:
+          'border-[var(--color-border-secondary)] bg-transparent text-[var(--color-text-secondary)]',
+      },
+      size: {
+        sm: 'px-2 py-0.5 text-[10px]',
+        md: 'px-2.5 py-0.5 text-xs',
+        lg: 'px-3 py-1 text-sm',
+      },
+    },
+    defaultVariants: { variant: 'secondary', size: 'md' },
+  }
+);
+
+export interface BadgeProps
+  extends React.HTMLAttributes<HTMLSpanElement>,
+    VariantProps<typeof badgeVariants> {
+  /** A small leading dot, for status-style badges. */
   dot?: boolean;
-  className?: string;
 }
 
-export function Badge({
-  children,
-  variant = 'primary',
-  size = 'md',
-  dot = false,
-  className = ''
-}: BadgeProps) {
-  const sizes = {
-    sm: 'px-2 py-0.5 text-xs gap-1',
-    md: 'px-2.5 py-1 text-xs gap-1.5',
-    lg: 'px-3 py-1.5 text-sm gap-2',
-  };
-
-  const getVariantStyles = (variant: string) => {
-    switch (variant) {
-      case 'primary':
-        return {
-          background: 'rgba(13, 115, 119, 0.15)',
-          color: 'var(--color-brand-secondary)',
-          border: '1px solid rgba(13, 115, 119, 0.3)',
-        };
-      case 'secondary':
-        return {
-          background: 'var(--color-bg-tertiary)',
-          color: 'var(--color-text-secondary)',
-          border: '1px solid var(--color-border-secondary)',
-        };
-      case 'success':
-        return {
-          background: 'var(--color-success-bg)',
-          color: 'var(--color-success)',
-          border: '1px solid rgba(34, 197, 94, 0.2)',
-        };
-      case 'warning':
-        return {
-          background: 'var(--color-warning-bg)',
-          color: 'var(--color-warning)',
-          border: '1px solid rgba(245, 158, 11, 0.2)',
-        };
-      case 'danger':
-        return {
-          background: 'var(--color-error-bg)',
-          color: 'var(--color-error)',
-          border: '1px solid rgba(239, 68, 68, 0.2)',
-        };
-      case 'info':
-        return {
-          background: 'var(--color-info-bg)',
-          color: 'var(--color-info)',
-          border: '1px solid rgba(59, 130, 246, 0.2)',
-        };
-      case 'outline':
-        return {
-          background: 'transparent',
-          color: 'var(--color-text-secondary)',
-          border: '1px solid var(--color-border-secondary)',
-        };
-      default:
-        return {};
-    }
-  };
-
-  const getDotColor = (variant: string) => {
-    switch (variant) {
-      case 'primary': return 'var(--color-brand-secondary)';
-      case 'secondary': return 'var(--color-text-muted)';
-      case 'success': return 'var(--color-success)';
-      case 'warning': return 'var(--color-warning)';
-      case 'danger': return 'var(--color-error)';
-      case 'info': return 'var(--color-info)';
-      default: return 'var(--color-text-muted)';
-    }
-  };
-
+export function Badge({ className, variant, size, dot = false, children, ...props }: BadgeProps) {
   return (
-    <span
-      className={`inline-flex items-center font-medium rounded-full transition-colors ${sizes[size]} ${className}`}
-      style={getVariantStyles(variant)}
-    >
+    <span className={cn(badgeVariants({ variant, size }), className)} {...props}>
       {dot && (
         <span
-          className="w-1.5 h-1.5 rounded-full animate-pulse"
-          style={{ background: getDotColor(variant) }}
+          className="h-1.5 w-1.5 rounded-full bg-current animate-pulse"
+          data-testid="badge-dot"
+          aria-hidden
         />
       )}
       {children}
@@ -100,25 +56,27 @@ export function Badge({
   );
 }
 
-interface StatusBadgeProps {
-  status: 'online' | 'offline' | 'busy' | 'away';
+type Status = 'online' | 'offline' | 'busy' | 'away';
+
+const STATUS_CONFIG: Record<Status, { label: string; variant: BadgeProps['variant'] }> = {
+  online: { label: 'Online', variant: 'success' },
+  offline: { label: 'Offline', variant: 'secondary' },
+  busy: { label: 'Busy', variant: 'danger' },
+  away: { label: 'Away', variant: 'warning' },
+};
+
+export interface StatusBadgeProps {
+  status: Status;
   showLabel?: boolean;
   className?: string;
 }
 
-export function StatusBadge({ status, showLabel = true, className = '' }: StatusBadgeProps) {
-  const statusConfig = {
-    online: { label: 'Online', variant: 'success' as const },
-    offline: { label: 'Offline', variant: 'secondary' as const },
-    busy: { label: 'Busy', variant: 'danger' as const },
-    away: { label: 'Away', variant: 'warning' as const },
-  };
-
-  const config = statusConfig[status];
+export function StatusBadge({ status, showLabel = true, className }: StatusBadgeProps) {
+  const { label, variant } = STATUS_CONFIG[status];
 
   return (
-    <Badge variant={config.variant} size="sm" dot className={className}>
-      {showLabel && config.label}
+    <Badge variant={variant} size="sm" dot className={className}>
+      {showLabel ? label : null}
     </Badge>
   );
 }

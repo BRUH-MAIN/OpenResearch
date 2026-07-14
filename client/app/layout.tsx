@@ -15,7 +15,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // Dark is the default; ThemeProvider swaps both of these on the client.
+    <html lang="en" className="dark" data-theme="dark" suppressHydrationWarning>
       <body className="antialiased">
         <ErrorBoundary>
           <ThemeProvider>

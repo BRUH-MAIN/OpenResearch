@@ -26,16 +26,27 @@ interface MarkdownRendererProps {
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /* ─── Component overrides ─── */
-const markdownComponents: Record<string, React.ComponentType<any>> = {
+/**
+ * react-markdown renders each node with the standard HTML props for that
+ * element, plus a couple of its own. Typing them as such (rather than `any`)
+ * means a typo in a prop name is caught here rather than at runtime.
+ */
+type MarkdownProps<T = HTMLElement> = React.HTMLAttributes<T> & {
+  children?: React.ReactNode;
+  node?: unknown;
+  depth?: number;
+};
+
+const markdownComponents: Record<string, React.ComponentType<MarkdownProps & Record<string, unknown>>> = {
   // ── Paragraphs ──
-  p: ({ children, ...props }: any) => (
+  p: ({ children, ...props }: MarkdownProps) => (
     <p className="text-[14px] leading-[1.75] mb-3 last:mb-0" {...props}>
       {children}
     </p>
   ),
 
   // ── Links ──
-  a: ({ children, href, ...props }: any) => {
+  a: ({ children, href, ...props }: MarkdownProps<HTMLAnchorElement> & { href?: string }) => {
     // Detect IEEE citation links like [[1]](url)
     const childText = typeof children === 'string' ? children : '';
     const isCitationLink = /^\[\d+\]$/.test(childText);
@@ -94,7 +105,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
   },
 
   // ── Code (inline + fenced) ──
-  code: ({ children, className, ...props }: any) => {
+  code: ({ children, className, ...props }: MarkdownProps & { className?: string }) => {
     // react-markdown sets className="language-xxx" on fenced blocks
     const match = /language-(\w+)/.exec(className || '');
     const lang = match ? match[1] : '';
@@ -113,10 +124,10 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
   },
 
   // ── Pre — just pass through; CodeBlock provides its own wrapper ──
-  pre: ({ children }: any) => <>{children}</>,
+  pre: ({ children }: MarkdownProps) => <>{children}</>,
 
   // ── Lists (with nested depth handling) ──
-  ul: ({ children, depth, ...props }: any) => {
+  ul: ({ children, depth, ...props }: MarkdownProps) => {
     const listStyle = depth && depth > 0 ? 'list-[circle]' : 'list-disc';
     const padding = depth && depth > 0 ? 'pl-4' : 'pl-5';
     return (
@@ -125,7 +136,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
       </ul>
     );
   },
-  ol: ({ children, depth, ...props }: any) => {
+  ol: ({ children, depth, ...props }: MarkdownProps) => {
     const padding = depth && depth > 0 ? 'pl-4' : 'pl-5';
     return (
       <ol className={`list-decimal ${padding} space-y-1.5 my-2`} {...props}>
@@ -133,14 +144,14 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
       </ol>
     );
   },
-  li: ({ children, ...props }: any) => (
+  li: ({ children, ...props }: MarkdownProps) => (
     <li className="text-[14px] leading-[1.75] pl-1" {...props}>
       {children}
     </li>
   ),
 
   // ── Blockquotes ──
-  blockquote: ({ children, ...props }: any) => (
+  blockquote: ({ children, ...props }: MarkdownProps) => (
     <blockquote
       className="pl-4 my-4 italic"
       style={{
@@ -154,7 +165,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
   ),
 
   // ── Headings ──
-  h1: ({ children, ...props }: any) => (
+  h1: ({ children, ...props }: MarkdownProps) => (
     <h1
       className="text-[22px] font-semibold mt-6 mb-3 pb-2"
       style={{
@@ -166,7 +177,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
       {children}
     </h1>
   ),
-  h2: ({ children, ...props }: any) => (
+  h2: ({ children, ...props }: MarkdownProps) => (
     <h2
       className="text-[19px] font-semibold mt-5 mb-2 pb-1.5"
       style={{
@@ -178,7 +189,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
       {children}
     </h2>
   ),
-  h3: ({ children, ...props }: any) => (
+  h3: ({ children, ...props }: MarkdownProps) => (
     <h3
       className="text-[16px] font-semibold mt-4 mb-1.5"
       style={{ color: 'var(--color-text-primary)' }}
@@ -187,7 +198,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
       {children}
     </h3>
   ),
-  h4: ({ children, ...props }: any) => (
+  h4: ({ children, ...props }: MarkdownProps) => (
     <h4
       className="text-[15px] font-medium mt-3 mb-1"
       style={{ color: 'var(--color-text-primary)' }}
@@ -201,7 +212,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
   hr: () => <hr className="divider my-5" />,
 
   // ── Tables (GFM) ──
-  table: ({ children, ...props }: any) => (
+  table: ({ children, ...props }: MarkdownProps) => (
     <div className="markdown-table-wrapper my-4 overflow-x-auto rounded-lg" style={{
       border: '1px solid var(--color-border-primary)',
     }}>
@@ -210,15 +221,15 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
       </table>
     </div>
   ),
-  thead: ({ children, ...props }: any) => (
+  thead: ({ children, ...props }: MarkdownProps) => (
     <thead style={{ background: 'var(--color-bg-tertiary)' }} {...props}>
       {children}
     </thead>
   ),
-  tbody: ({ children, ...props }: any) => (
+  tbody: ({ children, ...props }: MarkdownProps) => (
     <tbody {...props}>{children}</tbody>
   ),
-  tr: ({ children, ...props }: any) => (
+  tr: ({ children, ...props }: MarkdownProps) => (
     <tr
       className="markdown-table-row border-b transition-colors"
       style={{ borderColor: 'var(--color-border-primary)' }}
@@ -227,7 +238,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
       {children}
     </tr>
   ),
-  th: ({ children, ...props }: any) => (
+  th: ({ children, ...props }: MarkdownProps) => (
     <th
       className="px-4 py-2.5 text-left font-semibold text-[12px] uppercase tracking-wide"
       style={{ color: 'var(--color-text-secondary)' }}
@@ -236,7 +247,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
       {children}
     </th>
   ),
-  td: ({ children, ...props }: any) => (
+  td: ({ children, ...props }: MarkdownProps) => (
     <td
       className="px-4 py-2.5"
       style={{ color: 'var(--color-text-secondary)' }}
@@ -247,7 +258,7 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
   ),
 
   // ── Images ──
-  img: ({ src, alt, ...props }: any) => (
+  img: ({ src, alt, ...props }: MarkdownProps<HTMLImageElement> & { src?: string; alt?: string }) => (
     <img
       src={src}
       alt={alt || ''}
@@ -258,24 +269,24 @@ const markdownComponents: Record<string, React.ComponentType<any>> = {
   ),
 
   // ── Strong / Em ──
-  strong: ({ children, ...props }: any) => (
+  strong: ({ children, ...props }: MarkdownProps) => (
     <strong className="font-semibold" style={{ color: 'var(--color-text-primary)' }} {...props}>
       {children}
     </strong>
   ),
-  em: ({ children, ...props }: any) => (
+  em: ({ children, ...props }: MarkdownProps) => (
     <em className="italic" style={{ color: 'var(--color-text-primary)', opacity: 0.85 }} {...props}>
       {children}
     </em>
   ),
 
   // ── Superscript / Subscript for footnotes ──
-  sup: ({ children, ...props }: any) => (
+  sup: ({ children, ...props }: MarkdownProps) => (
     <sup className="text-[0.75em] align-super" style={{ color: 'var(--color-brand-secondary)' }} {...props}>
       {children}
     </sup>
   ),
-  sub: ({ children, ...props }: any) => (
+  sub: ({ children, ...props }: MarkdownProps) => (
     <sub className="text-[0.75em] align-sub" {...props}>
       {children}
     </sub>
@@ -303,7 +314,7 @@ export const MarkdownRenderer = memo(function MarkdownRenderer({
     if (!onDiagramDetected) return markdownComponents;
     return {
       ...markdownComponents,
-      code: ({ children, className, ...props }: any) => {
+      code: ({ children, className, ...props }: MarkdownProps & { className?: string }) => {
         const match = /language-(\w+)/.exec(className || '');
         const lang = match ? match[1] : '';
         const codeString = String(children).replace(/\n$/, '');

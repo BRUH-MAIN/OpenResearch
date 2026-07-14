@@ -68,7 +68,7 @@ export function AIResponseCard({
 
     let result = summary;
     const parts: React.ReactNode[] = [];
-    let lastIndex = 0;
+    const lastIndex = 0;
 
     // Simple highlighting - in production you'd want a more robust solution
     highlightedTerms.forEach((term) => {

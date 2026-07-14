@@ -29,8 +29,7 @@ describe('Modal', () => {
     it('calls onClose when backdrop is clicked', () => {
         const onClose = vi.fn();
         render(<Modal {...defaultProps} onClose={onClose} />);
-        // The backdrop is the element with aria-hidden="true"
-        const backdrop = document.querySelector('[aria-hidden="true"]') as HTMLElement;
+        const backdrop = document.querySelector('[data-slot="modal-backdrop"]') as HTMLElement;
         fireEvent.click(backdrop);
         expect(onClose).toHaveBeenCalledOnce();
     });
@@ -38,7 +37,7 @@ describe('Modal', () => {
     it('does not call onClose on backdrop click when closeOnBackdropClick is false', () => {
         const onClose = vi.fn();
         render(<Modal {...defaultProps} onClose={onClose} closeOnBackdropClick={false} />);
-        const backdrop = document.querySelector('[aria-hidden="true"]') as HTMLElement;
+        const backdrop = document.querySelector('[data-slot="modal-backdrop"]') as HTMLElement;
         fireEvent.click(backdrop);
         expect(onClose).not.toHaveBeenCalled();
     });
@@ -75,6 +74,8 @@ describe('Modal', () => {
         render(<Modal {...defaultProps} />);
         const dialog = screen.getByRole('dialog');
         expect(dialog).toHaveAttribute('aria-modal', 'true');
-        expect(dialog).toHaveAttribute('aria-labelledby', 'modal-title');
+        // Assert the accessible NAME, not a hardcoded aria-labelledby id: Radix
+        // generates the id, and what matters is what a screen reader announces.
+        expect(dialog).toHaveAccessibleName('Test Modal');
     });
 });

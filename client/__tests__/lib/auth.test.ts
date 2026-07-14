@@ -13,7 +13,18 @@ vi.mock('@/lib/api', () => ({
 }));
 
 import { useAuthStore } from '@/lib/auth';
+import type { User } from '@/lib/api';
 import { api } from '@/lib/api';
+
+const makeUser = (overrides: Partial<User> = {}): User => ({
+    id: '1',
+    name: 'Test',
+    email: 'test@test.com',
+    avatar: null,
+    interests: [],
+    createdAt: new Date().toISOString(),
+    ...overrides,
+} as User);
 
 const mockedApi = vi.mocked(api);
 
@@ -37,9 +48,9 @@ describe('useAuthStore', () => {
     });
 
     it('login sets authenticated state', async () => {
-        const mockUser = { id: '1', name: 'Test', email: 'test@test.com' };
+        const mockUser = makeUser();
         mockedApi.login.mockResolvedValue({
-            user: mockUser as any,
+            user: mockUser,
             accessToken: 'access-123',
         });
 
@@ -56,7 +67,7 @@ describe('useAuthStore', () => {
     });
 
     it('login sets isLoading during request', async () => {
-        let resolveLogin: (value: any) => void;
+        let resolveLogin: (value: { user: User; accessToken: string }) => void;
         mockedApi.login.mockReturnValue(new Promise(r => { resolveLogin = r; }));
 
         const { result } = renderHook(() => useAuthStore());
@@ -71,7 +82,7 @@ describe('useAuthStore', () => {
 
         // Resolve
         await act(async () => {
-            resolveLogin!({ user: { id: '1' }, accessToken: 'a' });
+            resolveLogin!({ user: makeUser(), accessToken: 'a' });
             await loginPromise!;
         });
 
@@ -98,12 +109,12 @@ describe('useAuthStore', () => {
     it('logout clears auth state', async () => {
         // Set up authenticated state
         useAuthStore.setState({
-            user: { id: '1', name: 'Test', email: 'test@test.com' } as any,
+            user: makeUser(),
             accessToken: 'access-123',
             isAuthenticated: true,
         });
 
-        mockedApi.logout.mockResolvedValue(undefined as any);
+        mockedApi.logout.mockResolvedValue({ message: 'ok' });
 
         const { result } = renderHook(() => useAuthStore());
 
@@ -118,7 +129,7 @@ describe('useAuthStore', () => {
 
     it('logout clears state even if API call fails', async () => {
         useAuthStore.setState({
-            user: { id: '1' } as any,
+            user: makeUser(),
             accessToken: 'a',
             isAuthenticated: true,
         });
@@ -137,7 +148,7 @@ describe('useAuthStore', () => {
 
     it('setUser updates user directly', () => {
         const { result } = renderHook(() => useAuthStore());
-        const newUser = { id: '2', name: 'Updated', email: 'new@test.com' } as any;
+        const newUser = makeUser({ id: '2', name: 'Updated', email: 'new@test.com' });
 
         act(() => {
             result.current.setUser(newUser);

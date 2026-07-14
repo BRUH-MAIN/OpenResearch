@@ -1,140 +1,111 @@
-import React from 'react';
+'use client';
 
-interface CardProps {
-  children: React.ReactNode;
-  className?: string;
-  variant?: 'default' | 'elevated' | 'outlined' | 'glass';
-  hover?: boolean;
-  onClick?: () => void;
-}
+import * as React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
 
-export function Card({
-  children,
-  className = '',
-  variant = 'default',
-  hover = false,
-  onClick
-}: CardProps) {
-  const baseStyles: React.CSSProperties = {
-    borderRadius: 'var(--radius-xl)',
-    transition: 'all var(--transition-base)',
-  };
+import { cn } from '@/lib/utils';
 
-  const variantStyles: Record<string, React.CSSProperties> = {
-    default: {
-      background: 'var(--color-bg-secondary)',
-      border: '1px solid var(--color-border-primary)',
+const cardVariants = cva('rounded-2xl transition-all', {
+  variants: {
+    variant: {
+      default:
+        'bg-[var(--color-bg-secondary)] border border-[var(--color-border-primary)]',
+      elevated:
+        'bg-[var(--color-bg-elevated)] border border-[var(--color-border-primary)] shadow-lg',
+      outlined: 'bg-transparent border border-[var(--color-border-secondary)]',
+      glass:
+        'bg-[var(--glass-bg)] border border-[var(--color-border-primary)] backdrop-blur-xl',
     },
-    elevated: {
-      background: 'var(--color-bg-tertiary)',
-      border: '1px solid var(--color-border-secondary)',
-      boxShadow: 'var(--shadow-lg)',
+    hover: {
+      true: 'cursor-pointer hover:border-[var(--color-border-accent)] hover:-translate-y-0.5 hover:shadow-xl',
+      false: '',
     },
-    outlined: {
-      background: 'transparent',
-      border: '2px solid var(--color-border-accent)',
-    },
-    glass: {
-      background: 'var(--glass-bg)',
-      backdropFilter: 'blur(20px)',
-      WebkitBackdropFilter: 'blur(20px)',
-      border: '1px solid var(--color-border-primary)',
-    },
-  };
+  },
+  defaultVariants: { variant: 'default', hover: false },
+});
+
+export interface CardProps
+  extends React.HTMLAttributes<HTMLDivElement>,
+    VariantProps<typeof cardVariants> {}
+
+export function Card({ className, variant, hover, onClick, ...props }: CardProps) {
+  // A clickable card must be reachable and operable by keyboard, not just by
+  // mouse — so when it takes an onClick it announces itself as a button.
+  const interactive = !!onClick;
 
   return (
     <div
-      className={`${hover ? 'cursor-pointer card-interactive' : ''} ${className}`}
-      style={{ ...baseStyles, ...variantStyles[variant] }}
+      className={cn(cardVariants({ variant, hover: hover ?? interactive }), className)}
       onClick={onClick}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-    >
-      {children}
-    </div>
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      onKeyDown={
+        interactive
+          ? (event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                (event.currentTarget as HTMLElement).click();
+              }
+            }
+          : undefined
+      }
+      {...props}
+    />
   );
 }
 
-interface CardHeaderProps {
-  children: React.ReactNode;
-  className?: string;
+export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
+  /** Rendered on the right of the header — usually a button or menu. */
   action?: React.ReactNode;
 }
 
-export function CardHeader({ children, className = '', action }: CardHeaderProps) {
+export function CardHeader({ className, action, children, ...props }: CardHeaderProps) {
   return (
     <div
-      className={`px-5 py-4 border-b ${action ? 'flex items-center justify-between' : ''} ${className}`}
-      style={{ borderColor: 'var(--color-border-primary)' }}
+      className={cn(
+        'p-5 border-b border-[var(--color-border-primary)]',
+        action && 'flex items-center justify-between',
+        className
+      )}
+      {...props}
     >
-      <div className="flex-1">{children}</div>
+      <div className="flex-1 flex flex-col gap-1.5">{children}</div>
       {action && <div className="ml-4">{action}</div>}
     </div>
   );
 }
 
-interface CardBodyProps {
-  children: React.ReactNode;
-  className?: string;
+/** Named CardBody, not CardContent: it is what the app already calls it. */
+export function CardBody({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cn('p-5 pt-0', className)} {...props} />;
 }
 
-export function CardBody({ children, className = '' }: CardBodyProps) {
-  return (
-    <div className={`px-5 py-4 ${className}`}>
-      {children}
-    </div>
-  );
-}
-
-interface CardFooterProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export function CardFooter({ children, className = '' }: CardFooterProps) {
+export function CardFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`px-5 py-4 border-t ${className}`}
-      style={{
-        borderColor: 'var(--color-border-primary)',
-        background: 'var(--color-bg-tertiary)',
-        borderBottomLeftRadius: 'var(--radius-xl)',
-        borderBottomRightRadius: 'var(--radius-xl)',
-      }}
-    >
-      {children}
-    </div>
+      className={cn(
+        'flex items-center gap-2 p-5 pt-0 border-t border-[var(--color-border-primary)]',
+        className
+      )}
+      {...props}
+    />
   );
 }
 
-interface CardTitleProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export function CardTitle({ children, className = '' }: CardTitleProps) {
+export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={`text-lg font-semibold ${className}`}
-      style={{ color: 'var(--color-text-primary)' }}
-    >
-      {children}
-    </h3>
+      className={cn(
+        'text-lg font-semibold leading-none text-[var(--color-text-primary)]',
+        className
+      )}
+      {...props}
+    />
   );
 }
 
-interface CardDescriptionProps {
-  children: React.ReactNode;
-  className?: string;
-}
-
-export function CardDescription({ children, className = '' }: CardDescriptionProps) {
+export function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p
-      className={`text-sm mt-1 ${className}`}
-      style={{ color: 'var(--color-text-secondary)' }}
-    >
-      {children}
-    </p>
+    <p className={cn('text-sm text-[var(--color-text-secondary)]', className)} {...props} />
   );
 }
