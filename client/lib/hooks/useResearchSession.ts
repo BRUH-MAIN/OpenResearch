@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { api, GroupPaper, Message, Session, RagSource } from '@/lib/api';
 import { useAuthStore } from '@/lib/auth';
 import type { Source } from '@/components/research';
+import type { AgentStep } from '@/lib/socket';
 
 /**
  * Loads everything the research workspace needs for a session: the session
@@ -99,6 +100,18 @@ export function useResearchSession(sessionId: string | null) {
     removeSource,
     addSource,
   };
+}
+
+/**
+ * An agent message carries its reasoning trace in metadata, so reopening a
+ * session still shows how the answer was reached — not just the answer.
+ */
+export function getMessageAgentSteps(message: Message): AgentStep[] {
+  const steps = message.metadata?.steps;
+  if (!Array.isArray(steps)) return [];
+  return steps.filter(
+    (s): s is AgentStep => !!s && typeof s === 'object' && 'tool' in s
+  );
 }
 
 /**

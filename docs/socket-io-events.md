@@ -21,6 +21,7 @@ is accepted. An invalid token fails the connection outright.
 | `join:session` | `sessionId` (uuid) | Verifies group membership, then joins the `session:<id>` room |
 | `leave:session` | `sessionId` (uuid) | |
 | `message:send` | `{ sessionId, content }` | If `content` contains `@ai`, the RAG answer is triggered |
+| `agent:run` | `{ sessionId, content }` | Runs the research agent — a tool-using loop, not a single retrieval |
 | `typing:start` | `sessionId` (uuid) | Relayed to the rest of the room |
 | `typing:stop` | `sessionId` (uuid) | |
 
@@ -34,6 +35,8 @@ exactly the way an HTTP body is; the original code destructured it directly.
 | `joined:session` | `{ sessionId }` | Acknowledges the join |
 | `user:joined` / `user:left` | `{ userId, userName }` | To others in the room |
 | `message:new` | the message row | Broadcast to the room, sender included |
+| `agent:step` | `{ messageId, n, tool, args }` | The agent is about to call a tool |
+| `agent:observation` | `{ messageId, n, tool, summary }` | The tool came back |
 | `ai:token` | `{ messageId, token }` | One per token, as the LLM produces it |
 | `ai:token:done` | `{ messageId, content, metadata }` | `metadata.sources` becomes the citation chips |
 | `ai:error` | `{ message, code, recoverable }` | e.g. `AI_NOT_CONFIGURED`, `AI_TIMEOUT` |

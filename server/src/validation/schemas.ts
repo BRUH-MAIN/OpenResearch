@@ -172,6 +172,13 @@ export const socketSendMessageSchema = z.object({
     .max(10000, 'Message must be less than 10000 characters'),
 });
 
+export const socketAgentRunSchema = z.object({
+  sessionId: z.string().uuid('Invalid session ID'),
+  content: z.string()
+    .min(10, 'Give the agent something to investigate (at least 10 characters)')
+    .max(2000),
+});
+
 export const socketPaperQuestionSchema = z.object({
   paperId: z.string().uuid('Invalid paper ID'),
   question: z.string().min(1).max(2000),

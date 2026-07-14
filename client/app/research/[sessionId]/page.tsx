@@ -6,12 +6,12 @@ import Link from 'next/link';
 import { Navbar } from '@/components/layout';
 import { Button, Modal } from '@/components/ui';
 import { Skeleton, SkeletonText } from '@/components/ui/Skeleton';
-import { Loader2, FileText, PlusCircle, Bot, Copy, Wifi, WifiOff } from 'lucide-react';
+import { Loader2, FileText, PlusCircle, Bot, Copy, Wifi, WifiOff, Telescope } from 'lucide-react';
 import { useAuthStore } from '@/lib/auth';
 import { useSocket } from '@/lib/socket';
 import { useToastStore } from '@/lib/toast';
 import { useMediaQuery } from '@/lib/hooks/useMediaQuery';
-import { useResearchSession, getMessageCitations } from '@/lib/hooks/useResearchSession';
+import { useResearchSession, getMessageCitations, getMessageAgentSteps } from '@/lib/hooks/useResearchSession';
 
 import {
   SourcesPanel,
@@ -20,6 +20,7 @@ import {
   Source,
   Citation,
 } from '@/components/research';
+import { AgentTrace } from '@/components/research/AgentTrace';
 import { PaperContextMenuProvider, PaperLinkContextMenu } from '@/components/research/PaperLinkContextMenu';
 import type { PinnedNote } from '@/components/research';
 
@@ -175,7 +176,9 @@ function ResearchChatContent() {
     messages,
     typingUsers,
     streamingMessageIds,
+    agentSteps,
     sendMessage,
+    runAgent,
     startTyping,
     stopTyping,
     initMessages,
@@ -373,6 +376,21 @@ function ResearchChatContent() {
       clearTimeout(typingTimeoutRef.current);
     }
   }, [inputMessage, isConnected, sendMessage, stopTyping]);
+
+  // The agent investigates with tools over several round-trips, so it is a
+  // deliberate act, not something a plain message should trigger by accident.
+  const handleDeepResearch = useCallback(() => {
+    const question = inputMessage.trim();
+    if (question.length < 10) {
+      addToast('Give the agent something to investigate (at least 10 characters)', 'error');
+      return;
+    }
+    if (!isConnected) return;
+
+    runAgent(question);
+    setInputMessage('');
+    stopTyping();
+  }, [inputMessage, isConnected, runAgent, stopTyping, addToast]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -670,8 +688,16 @@ function ResearchChatContent() {
                 const isCurrentUser = msg.userId === user?.id;
                 const isAI = msg.type === 'ai';
 
+                // Live steps while it runs; the persisted trace once it is done.
+                const liveSteps = agentSteps[msg.id];
+                const steps = liveSteps?.length ? liveSteps : getMessageAgentSteps(msg);
+                const isAgentRunning = !!liveSteps?.length && (streamingMessageIds.has(msg.id) || !msg.content);
+
                 return (
                   <div key={msg.id} data-message-id={msg.id}>
+                    {isAI && steps && steps.length > 0 && (
+                      <AgentTrace steps={steps} isRunning={isAgentRunning} />
+                    )}
                     <ResearchMessage
                       id={msg.id}
                       content={msg.content}
@@ -780,6 +806,17 @@ function ResearchChatContent() {
                   <span className="research-composer-pill">
                     {enabledSources.length} sources
                   </span>
+
+                  <button
+                    onClick={handleDeepResearch}
+                    disabled={!inputMessage.trim() || !isConnected}
+                    title="Deep research — the agent searches your papers and arXiv, reads what it finds, and answers with citations"
+                    className="research-composer-pill disabled:opacity-30 disabled:cursor-not-allowed shrink-0 inline-flex items-center gap-1.5"
+                    style={{ color: 'var(--color-brand-secondary)' }}
+                  >
+                    <Telescope size={14} />
+                    <span>Deep research</span>
+                  </button>
 
                   <button
                     onClick={handleSendMessage}

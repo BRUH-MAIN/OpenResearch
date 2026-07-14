@@ -10,6 +10,14 @@ interface TypingUser {
   userName: string;
 }
 
+export interface AgentStep {
+  n: number;
+  tool: string;
+  args?: Record<string, unknown>;
+  summary?: string;
+  done?: boolean;
+}
+
 interface AIError {
   message: string;
   code?: string;
@@ -24,6 +32,8 @@ export function useSocket(sessionId: string | null) {
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [aiError, setAIError] = useState<AIError | null>(null);
   const [streamingMessageIds, setStreamingMessageIds] = useState<Set<string>>(new Set());
+  // The agent's live reasoning trace, keyed by the message it belongs to.
+  const [agentSteps, setAgentSteps] = useState<Record<string, AgentStep[]>>({});
 
   // ── rAF-batched token buffer for smooth streaming ──
   const tokenBufferRef = useRef<Map<string, string>>(new Map());
@@ -89,6 +99,32 @@ export function useSocket(sessionId: string | null) {
 
     socket.on('message:new', (message: Message) => {
       setMessages((prev) => [...prev, message]);
+    });
+
+    // ── the research agent's reasoning, as it happens ──
+    socket.on('agent:step', (data: { messageId: string; n: number; tool: string; args: Record<string, unknown> }) => {
+      setAgentSteps((prev) => {
+        const steps = prev[data.messageId] ?? [];
+        return {
+          ...prev,
+          [data.messageId]: [...steps, { n: data.n, tool: data.tool, args: data.args }],
+        };
+      });
+    });
+
+    socket.on('agent:observation', (data: { messageId: string; tool: string; summary: string }) => {
+      setAgentSteps((prev) => {
+        const steps = prev[data.messageId] ?? [];
+        if (steps.length === 0) return prev;
+        // Attach the observation to the step that produced it.
+        const updated = [...steps];
+        updated[updated.length - 1] = {
+          ...updated[updated.length - 1],
+          summary: data.summary,
+          done: true,
+        };
+        return { ...prev, [data.messageId]: updated };
+      });
     });
 
     // Streaming: buffer tokens and flush via rAF for smooth rendering
@@ -193,6 +229,12 @@ export function useSocket(sessionId: string | null) {
     socketRef.current.emit('message:send', { sessionId, content });
   }, [sessionId]);
 
+  /** Ask the research agent to investigate — a tool-using loop, not a single shot. */
+  const runAgent = useCallback((content: string) => {
+    if (!socketRef.current || !sessionId) return;
+    socketRef.current.emit('agent:run', { sessionId, content });
+  }, [sessionId]);
+
   // Typing indicators
   const startTyping = useCallback(() => {
     if (!socketRef.current || !sessionId) return;
@@ -236,7 +278,9 @@ export function useSocket(sessionId: string | null) {
     typingUsers,
     aiError,
     streamingMessageIds,
+    agentSteps,
     sendMessage,
+    runAgent,
     startTyping,
     stopTyping,
     initMessages,

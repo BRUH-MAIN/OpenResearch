@@ -156,6 +156,19 @@ class LLMClient:
             )
             return await self._fallback_llm.ainvoke(messages)
 
+    def bind_tools(self, tools: list[dict]) -> Any:
+        """Return the model with tools attached, for the agent's ReAct loop.
+
+        Both DeepSeek and Groq accept OpenAI-style tool schemas. Tool calling is
+        bound to the primary provider only: replaying a half-finished tool
+        conversation against a different model mid-loop is not worth the
+        complexity, so if the primary is down the agent surfaces the failure
+        rather than silently switching underneath itself.
+        """
+        if not self.is_configured:
+            raise RuntimeError("LLM client not initialized.")
+        return self._llm.bind_tools(tools)
+
     @staticmethod
     def _build_messages(prompt: str, system_instruction: Optional[str]) -> list:
         messages = []

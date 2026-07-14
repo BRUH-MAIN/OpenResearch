@@ -87,6 +87,9 @@ one user action can be traced through every log.
 - **Groups** — create, invite by email, owner/member roles
 - **Realtime chat** — Socket.IO sessions with typing indicators
 - **`@ai` RAG chat** — streamed answers grounded in the group's papers, with citations
+- **Research agent** — a tool-using ReAct loop that searches the group's papers,
+  goes to arXiv for what they don't cover, reads a paper in full when it needs to,
+  and answers with citations. Its reasoning streams live, step by step.
 - **Paper library** — arXiv search, save, tag
 - **PDF upload** — extracts the text layer (pypdf), chunks it, and embeds it, so
   answers can reach section-level detail instead of stopping at the abstract
@@ -159,6 +162,7 @@ reasoning is written down:
 | [0003](docs/adr/0003-hosted-embeddings.md) | Hosted embeddings over local models — a 2.81 GB image became 480 MB |
 | [0004](docs/adr/0004-hybrid-retrieval.md) | Vector + BM25 with Reciprocal Rank Fusion |
 | [0005](docs/adr/0005-scope-cut.md) | Deleting six half-built features to finish one |
+| [0006](docs/adr/0006-research-agent.md) | Rebuilding one agent properly — and hand-writing the ReAct loop rather than calling a framework |
 
 ---
 

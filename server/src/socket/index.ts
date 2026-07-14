@@ -5,12 +5,14 @@ import { db, messages, sessions, groupMembers, users } from '../db/index.js';
 import { eq, and } from 'drizzle-orm';
 import { aiClient } from '../services/aiClient.js';
 import { streamAiChatToSession } from '../services/aiChatService.js';
+import { runResearchAgentInSession } from '../services/agentService.js';
 import { corsOriginHandler } from '../config/cors.js';
 import { getEnv } from '../config/env.js';
 import { withCorrelationId } from '../middleware/correlationId.js';
 import {
   socketJoinSessionSchema,
   socketSendMessageSchema,
+  socketAgentRunSchema,
   socketPaperQuestionSchema,
   socketPaperSummarizeSchema,
 } from '../validation/schemas.js';
@@ -268,6 +270,101 @@ export function initializeSocket(httpServer: HttpServer) {
       } catch (error) {
         socketLogger.error({ err: error }, 'Error sending message');
         socket.emit('error', { message: 'Failed to send message' });
+      }
+    });
+
+    /**
+     * Run the research agent. Distinct from `message:send` because it is a
+     * different kind of act: the agent investigates with tools over several
+     * LLM round-trips, and streams its reasoning as it goes.
+     */
+    socket.on('agent:run', async (rawData: unknown) => {
+      try {
+        const data = parsePayload(socket, socketAgentRunSchema, rawData);
+        if (!data) return;
+        const { sessionId, content } = data;
+
+        const [session] = await db
+          .select()
+          .from(sessions)
+          .where(eq(sessions.id, sessionId))
+          .limit(1);
+
+        if (!session) {
+          socket.emit('error', { message: 'Session not found' });
+          return;
+        }
+
+        const [membership] = await db
+          .select()
+          .from(groupMembers)
+          .where(
+            and(
+              eq(groupMembers.groupId, session.groupId),
+              eq(groupMembers.userId, socket.userId!)
+            )
+          )
+          .limit(1);
+
+        if (!membership) {
+          socket.emit('error', { message: 'Access denied' });
+          return;
+        }
+
+        const isAvailable = await aiClient.isAvailable();
+        if (!isAvailable) {
+          socket.emit('ai:error', {
+            message: 'AI service is not available. Please check the AI service configuration.',
+            code: 'AI_NOT_CONFIGURED',
+            recoverable: true,
+          });
+          return;
+        }
+
+        // The user's request is an ordinary message: everyone in the session
+        // should see what the agent was asked, not just its answer.
+        const [userMessage] = await db
+          .insert(messages)
+          .values({
+            sessionId,
+            userId: socket.userId,
+            content: content.trim(),
+            type: 'user',
+          })
+          .returning();
+
+        const [user] = await db
+          .select({ name: users.name, avatar: users.avatar })
+          .from(users)
+          .where(eq(users.id, socket.userId!))
+          .limit(1);
+
+        io.to(`session:${sessionId}`).emit('message:new', {
+          ...userMessage,
+          userName: user?.name,
+          userAvatar: user?.avatar,
+        });
+
+        await db
+          .update(sessions)
+          .set({ lastActivityAt: new Date() })
+          .where(eq(sessions.id, sessionId));
+
+        await withCorrelationId(randomUUID(), () =>
+          runResearchAgentInSession(io, {
+            sessionId,
+            groupId: session.groupId,
+            userId: socket.userId!,
+            content,
+          })
+        );
+      } catch (error) {
+        socketLogger.error({ err: error }, 'Agent run error');
+        socket.emit('ai:error', {
+          message: 'The research agent failed to start.',
+          code: 'AGENT_ERROR',
+          recoverable: true,
+        });
       }
     });
 

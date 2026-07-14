@@ -23,7 +23,7 @@ from .config import get_settings
 from .database import database
 from .embeddings import embedding_service
 from .llm_client import llm_client
-from .routers import chat, health, papers, reports, vectors
+from .routers import agent, chat, health, papers, reports, vectors
 from .vector_store import vector_store
 
 logging.basicConfig(
@@ -127,6 +127,7 @@ async def global_exception_handler(request: Request, exc: Exception) -> JSONResp
 
 app.include_router(health.router)
 app.include_router(chat.router)
+app.include_router(agent.router)
 app.include_router(papers.router)
 app.include_router(vectors.router)
 app.include_router(reports.router)

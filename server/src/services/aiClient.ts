@@ -157,6 +157,62 @@ export function validateAiTrigger(content: string, fieldName: string = 'prompt')
 // (chat, Q&A, summaries, reports) which can legitimately take a while.
 const QUICK_TIMEOUT_MS = 15_000;
 const LLM_TIMEOUT_MS = 120_000;
+// The agent makes several LLM round-trips, so it gets a longer leash.
+const AGENT_TIMEOUT_MS = 300_000;
+
+/** A frame of the streamed chat answer. */
+export interface ChatStreamEvent {
+  token?: string;
+  done?: boolean;
+  latency_ms?: number;
+  sources?: Array<{ id: string; type: string; title?: string; url?: string; similarity?: number }>;
+  model?: string;
+  error?: string;
+}
+
+/** An event from the research agent's ReAct loop. */
+export interface AgentEvent extends ChatStreamEvent {
+  step?: { n: number; tool: string; args: Record<string, unknown> };
+  observation?: { n: number; tool: string; summary: string; sources_so_far: number };
+  iterations?: number;
+}
+
+/**
+ * Parse an NDJSON body into a stream of objects. Shared by the chat stream and
+ * the agent stream; this loop was duplicated three times before the cut.
+ */
+async function* parseNdjsonStream<T>(body: ReadableStream<Uint8Array>): AsyncGenerator<T> {
+  const reader = body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    // The final element may be a partial line; hold it back for the next chunk.
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      if (!line.trim()) continue;
+      try {
+        yield JSON.parse(line) as T;
+      } catch {
+        // A malformed frame is not worth aborting the stream for.
+      }
+    }
+  }
+
+  if (buffer.trim()) {
+    try {
+      yield JSON.parse(buffer) as T;
+    } catch {
+      // ignore a trailing partial frame
+    }
+  }
+}
 
 /**
  * AI Service Client class
@@ -262,9 +318,7 @@ class AIClient {
    * Stream Group AI Chat tokens via NDJSON
    * Yields objects: { token: string } or { done: true, latency_ms, sources, ... }
    */
-  async *groupAIChatStream(
-    request: GroupAIChatRequest
-  ): AsyncGenerator<{ token?: string; done?: boolean; latency_ms?: number; sources?: Array<{ id: string; type: string; similarity?: number }>; model?: string; error?: string }> {
+  async *groupAIChatStream(request: GroupAIChatRequest): AsyncGenerator<ChatStreamEvent> {
     logger.info(`Group AI chat stream for group: ${request.group_id}, session: ${request.session_id || 'none'}`);
 
     const controller = new AbortController();
@@ -287,42 +341,9 @@ class AIClient {
         throw new Error('No response body');
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          try {
-            const data = JSON.parse(line);
-            yield data;
-          } catch {
-            // Ignore malformed chunks
-          }
-        }
-      }
-
-      // Process remaining buffer
-      if (buffer.trim()) {
-        try {
-          yield JSON.parse(buffer);
-        } catch {
-          // Ignore
-        }
-      }
-
+      yield* parseNdjsonStream<ChatStreamEvent>(response.body);
+    } finally {
       clearTimeout(timeoutId);
-    } catch (error) {
-      clearTimeout(timeoutId);
-      throw error;
     }
   }
 
@@ -368,6 +389,42 @@ class AIClient {
   /**
    * Add paper to group and generate embeddings
    */
+  /**
+   * Run the research agent. Unlike the chat stream, this also emits the agent's
+   * reasoning — each tool it calls and what came back — so the UI can show the
+   * investigation as it happens rather than a spinner.
+   */
+  async *runResearchAgentStream(
+    request: GroupAIChatRequest
+  ): AsyncGenerator<AgentEvent> {
+    logger.info(`Research agent for group: ${request.group_id}`);
+
+    const controller = new AbortController();
+    // An agent makes several LLM round-trips, so it gets a longer leash.
+    const timeoutId = setTimeout(() => controller.abort(), AGENT_TIMEOUT_MS);
+
+    try {
+      const response = await fetch(`${this.baseUrl}/groups/${request.group_id}/agent/stream`, {
+        method: 'POST',
+        headers: this.buildHeaders(),
+        body: JSON.stringify(request),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: 'Request failed' })) as { detail?: string };
+        throw new Error(errorData.detail || `HTTP ${response.status}`);
+      }
+      if (!response.body) {
+        throw new Error('No response body');
+      }
+
+      yield* parseNdjsonStream<AgentEvent>(response.body);
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   /**
    * Extract the text layer from a PDF (pypdf lives in the AI service).
    * The extracted text comes back here; the server is what persists it.
