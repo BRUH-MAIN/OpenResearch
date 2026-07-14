@@ -64,6 +64,12 @@ The agent is a *deliberate* act — a separate button and a separate socket even
 not something a stray `@ai` triggers. The RAG chat remains the fast path; the
 agent is the slow, thorough one. Both are honest about which they are.
 
+It therefore does **not** require an `@ai` mention, and reusing the chat's request
+model (which validates one) was a bug: it rejected every agent run with a 422.
+The invariant the `@ai` gate protects is *no AI activity without explicit user
+intent*, and pressing a button labelled "Deep research" satisfies that as squarely
+as typing `@ai` does. Demanding both would be theatre rather than a safeguard.
+
 What it is good for: multi-hop questions over the group's corpus, comparisons
 across papers, and finding relevant work the team does not yet have.
 

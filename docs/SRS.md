@@ -263,13 +263,14 @@ request across all three tiers.
 
 | ID | Requirement |
 |---|---|
-| FR-AI1 | The assistant shall respond **only** to messages containing `@ai`. Absence of the trigger shall produce no AI activity whatsoever. |
+| FR-AI1 | No AI activity shall occur without explicit user intent. In chat, that intent is the `@ai` mention: a message without it produces no AI activity whatsoever. Invoking the research agent is itself an explicit act (a dedicated control), so it does not additionally require the mention — requiring both would be theatre, not a safeguard. |
 | FR-AI2 | On an `@ai` message, the system shall retrieve relevant passages **from that group's papers only**. |
 | FR-AI3 | Retrieval shall be hybrid: vector similarity and BM25 keyword ranking, combined by Reciprocal Rank Fusion ([ADR 0004](adr/0004-hybrid-retrieval.md)). |
 | FR-AI4 | The answer shall be streamed to the browser token by token. |
 | FR-AI5 | On completion the system shall return the passages that grounded the answer, and the interface shall display them as citations with their retrieval scores. |
 | FR-AI6 | The answer and its metadata shall be persisted as a message, so that reopening the session shows it and its citations. |
 | FR-AI7 | A member may ask a question about, or request a summary of, an individual paper (both `@ai`-gated). |
+| FR-AI9 | A member may invoke a **research agent** that investigates with tools — searching the group's papers, searching arXiv for what they do not cover, and reading a paper in full — over several iterations, then answers with citations. Its reasoning shall be streamed and persisted, so the user can see and later inspect how the answer was reached. |
 | FR-AI8 | If no AI provider is configured or reachable, the system shall report this to the user and continue to function as a chat platform. |
 
 #### Reports

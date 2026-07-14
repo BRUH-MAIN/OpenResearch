@@ -178,6 +178,31 @@ export interface AgentEvent extends ChatStreamEvent {
 }
 
 /**
+ * Turn an error body from the AI service into something readable.
+ *
+ * FastAPI sends a *string* `detail` for an HTTPException but a *list of objects*
+ * for a validation error. Interpolating the latter yields "[object Object]",
+ * which is how a 422 telling us exactly what was wrong got turned into noise.
+ */
+function describeAiError(body: unknown, status: number): string {
+  const detail = (body as { detail?: unknown })?.detail;
+
+  if (typeof detail === 'string') return detail;
+
+  if (Array.isArray(detail)) {
+    return detail
+      .map((issue) => {
+        const { loc, msg } = issue as { loc?: unknown[]; msg?: string };
+        const field = Array.isArray(loc) ? loc.join('.') : '';
+        return field ? `${field}: ${msg}` : String(msg);
+      })
+      .join('; ');
+  }
+
+  return `AI service returned HTTP ${status}`;
+}
+
+/**
  * Parse an NDJSON body into a stream of objects. Shared by the chat stream and
  * the agent stream; this loop was duplicated three times before the cut.
  */
@@ -255,8 +280,8 @@ class AIClient {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Request failed' })) as { detail?: string };
-        throw new Error(errorData.detail || `HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(describeAiError(errorData, response.status));
       }
 
       return response.json() as Promise<T>;
@@ -333,8 +358,8 @@ class AIClient {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Request failed' })) as { detail?: string };
-        throw new Error(errorData.detail || `HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(describeAiError(errorData, response.status));
       }
 
       if (!response.body) {
@@ -412,8 +437,8 @@ class AIClient {
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Request failed' })) as { detail?: string };
-        throw new Error(errorData.detail || `HTTP ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(describeAiError(errorData, response.status));
       }
       if (!response.body) {
         throw new Error('No response body');
@@ -452,8 +477,8 @@ class AIClient {
       });
 
       if (!response.ok) {
-        const errorData = (await response.json().catch(() => ({}))) as { detail?: string };
-        throw new Error(errorData.detail || `PDF extraction failed (HTTP ${response.status})`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(describeAiError(errorData, response.status));
       }
 
       return (await response.json()) as {

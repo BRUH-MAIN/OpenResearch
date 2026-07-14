@@ -20,6 +20,21 @@ class GroupAIChatRequest(BaseModel):
         return v
 
 
+class AgentRunRequest(BaseModel):
+    """Request for the research agent.
+
+    Deliberately has no @ai validator. The trigger for the agent is the explicit
+    act of invoking it — a dedicated button and a dedicated endpoint — not a
+    mention inside a chat message. The invariant the @ai gate protects is "no AI
+    activity without explicit user intent", and pressing "Deep research" satisfies
+    that as squarely as typing @ai does. Requiring both would be theatre.
+    """
+    prompt: str = Field(..., min_length=10, max_length=2000, description="What to investigate")
+    group_id: Optional[str] = Field(None, description="Group ID for context isolation")
+    session_id: Optional[str] = Field(None, description="Session ID for context")
+    user_id: Optional[str] = Field(None, description="User ID")
+
+
 class PaperQuestionRequest(BaseModel):
     """Request for paper Q&A - requires @ai trigger."""
     paper_id: str = Field(..., description="Paper ID to query")

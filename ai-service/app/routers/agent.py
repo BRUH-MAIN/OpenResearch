@@ -21,7 +21,7 @@ from ..deps import (
     validate_uuid,
 )
 from ..llm_client import llm_client
-from ..models import ErrorResponse, GroupAIChatRequest
+from ..models import AgentRunRequest, ErrorResponse
 
 logger = logging.getLogger(__name__)
 
@@ -31,12 +31,12 @@ router = APIRouter(prefix="/groups", tags=["Agent"])
 @router.post(
     "/{group_id}/agent/stream",
     responses={
-        400: {"model": ErrorResponse, "description": "Missing @ai trigger or bad group"},
+        400: {"model": ErrorResponse, "description": "Bad group id"},
         503: {"model": ErrorResponse, "description": "AI service not configured"},
     },
     summary="Run the research agent (streamed)",
 )
-async def run_research_agent(group_id: str, request: GroupAIChatRequest) -> StreamingResponse:
+async def run_research_agent(group_id: str, request: AgentRunRequest) -> StreamingResponse:
     """Investigate a question with tools, then answer with citations.
 
     Emits NDJSON:
