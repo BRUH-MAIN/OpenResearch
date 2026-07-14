@@ -1,4 +1,4 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey, boolean, customType } from 'drizzle-orm/pg-core';
+import { pgTable, uuid, varchar, text, timestamp, integer, jsonb, primaryKey, boolean, customType, index } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
 // Custom vector type for pgvector (768-dimensional embeddings)
@@ -50,6 +50,7 @@ export const groupMembers = pgTable('group_members', {
   joinedAt: timestamp('joined_at').defaultNow().notNull(),
 }, (table) => ({
   pk: primaryKey({ columns: [table.groupId, table.userId] }),
+  userIdx: index('group_members_user_id_idx').on(table.userId),
 }));
 
 // Sessions table
@@ -60,7 +61,9 @@ export const sessions = pgTable('sessions', {
   status: varchar('status', { length: 50 }).notNull().default('active'), // 'active' | 'archived'
   createdAt: timestamp('created_at').defaultNow().notNull(),
   lastActivityAt: timestamp('last_activity_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  groupIdx: index('sessions_group_id_idx').on(table.groupId),
+}));
 
 // Messages table
 export const messages = pgTable('messages', {
@@ -71,7 +74,9 @@ export const messages = pgTable('messages', {
   type: varchar('type', { length: 50 }).notNull().default('user'), // 'user' | 'ai'
   metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  sessionIdx: index('messages_session_id_idx').on(table.sessionId),
+}));
 
 // Papers table
 export const papers = pgTable('papers', {
@@ -95,6 +100,7 @@ export const savedPapers = pgTable('saved_papers', {
   savedAt: timestamp('saved_at').defaultNow().notNull(),
 }, (table) => ({
   pk: primaryKey({ columns: [table.userId, table.paperId] }),
+  paperIdx: index('saved_papers_paper_id_idx').on(table.paperId),
 }));
 
 // Refresh tokens table (for JWT refresh token rotation)
@@ -104,7 +110,9 @@ export const refreshTokens = pgTable('refresh_tokens', {
   token: text('token').notNull().unique(),
   expiresAt: timestamp('expires_at').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdx: index('refresh_tokens_user_id_idx').on(table.userId),
+}));
 
 // Group invitations table
 export const groupInvitations = pgTable('group_invitations', {
@@ -116,7 +124,9 @@ export const groupInvitations = pgTable('group_invitations', {
   message: text('message'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   expiresAt: timestamp('expires_at'),
-});
+}, (table) => ({
+  invitedUserIdx: index('group_invitations_invited_user_id_idx').on(table.invitedUserId),
+}));
 
 // ============ Group Context Isolation Tables ============
 
@@ -129,7 +139,9 @@ export const groupPapers = pgTable('group_papers', {
   fullText: text('full_text'),
   notes: text('notes'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => ({
+  groupIdx: index('group_papers_group_id_idx').on(table.groupId),
+}));
 
 // Group Paper Vectors - vector embeddings for group-isolated RAG
 export const groupPaperVectors = pgTable('group_paper_vectors', {
@@ -157,7 +169,9 @@ export const aiArtifacts = pgTable('ai_artifacts', {
   content: text('content').notNull(),
   metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => ({
+  groupIdx: index('ai_artifacts_group_id_idx').on(table.groupId),
+}));
 
 // Group Reports - generated report metadata
 export const groupReports = pgTable('group_reports', {
@@ -174,7 +188,9 @@ export const groupReports = pgTable('group_reports', {
   includeSummaries: boolean('include_summaries').default(true),
   metadata: jsonb('metadata').$type<Record<string, unknown>>(),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-});
+}, (table) => ({
+  groupIdx: index('group_reports_group_id_idx').on(table.groupId),
+}));
 
 // ============ Relations ============
 

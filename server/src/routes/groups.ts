@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { db, groups, groupMembers, users, groupInvitations } from '../db/index.js';
 import { eq, and, count, desc, lt } from 'drizzle-orm';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { requireGroupMember, requireGroupOwner, GroupRequest } from '../middleware/groupAccess.js';
+import { validate } from '../middleware/validate.js';
+import { createGroupSchema, updateGroupSchema, addMemberSchema, sendGroupInviteSchema } from '../validation/schemas.js';
 import { createError } from '../middleware/error.js';
 import { isSoftDbErrorForUi } from '../utils/dbErrors.js';
 import { parseLimit, decodeCursor, buildPaginatedResponse } from '../utils/pagination.js';
@@ -50,20 +53,9 @@ router.get('/', async (req: AuthRequest, res, next) => {
 });
 
 // Get single group
-router.get('/:groupId', async (req: AuthRequest, res, next) => {
+router.get('/:groupId', requireGroupMember, async (req: GroupRequest, res, next) => {
   try {
     const { groupId } = req.params;
-    const userId = req.user!.id;
-
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
 
     const [group] = await db
       .select({
@@ -93,7 +85,7 @@ router.get('/:groupId', async (req: AuthRequest, res, next) => {
     res.json({
       ...group,
       memberCount,
-      userRole: membership.role,
+      userRole: req.membership!.role,
     });
   } catch (error) {
     next(error);
@@ -101,14 +93,10 @@ router.get('/:groupId', async (req: AuthRequest, res, next) => {
 });
 
 // Create group
-router.post('/', async (req: AuthRequest, res, next) => {
+router.post('/', validate(createGroupSchema), async (req: AuthRequest, res, next) => {
   try {
     const { name, description, avatar } = req.body;
     const userId = req.user!.id;
-
-    if (!name || !description) {
-      throw createError('Name and description are required', 400);
-    }
 
     const [newGroup] = await db
       .insert(groups)
@@ -136,22 +124,11 @@ router.post('/', async (req: AuthRequest, res, next) => {
   }
 });
 
-// Update group
-router.patch('/:groupId', async (req: AuthRequest, res, next) => {
+// Update group (owner only)
+router.patch('/:groupId', requireGroupOwner, validate(updateGroupSchema), async (req: GroupRequest, res, next) => {
   try {
     const { groupId } = req.params;
-    const userId = req.user!.id;
     const { name, description, avatar } = req.body;
-
-    const [group] = await db
-      .select()
-      .from(groups)
-      .where(and(eq(groups.id, groupId), eq(groups.ownerId, userId)))
-      .limit(1);
-
-    if (!group) {
-      throw createError('Group not found or you are not the owner', 403);
-    }
 
     const updateData: Record<string, unknown> = { updatedAt: new Date() };
     if (name) updateData.name = name;
@@ -170,21 +147,10 @@ router.patch('/:groupId', async (req: AuthRequest, res, next) => {
   }
 });
 
-// Delete group
-router.delete('/:groupId', async (req: AuthRequest, res, next) => {
+// Delete group (owner only)
+router.delete('/:groupId', requireGroupOwner, async (req: GroupRequest, res, next) => {
   try {
     const { groupId } = req.params;
-    const userId = req.user!.id;
-
-    const [group] = await db
-      .select()
-      .from(groups)
-      .where(and(eq(groups.id, groupId), eq(groups.ownerId, userId)))
-      .limit(1);
-
-    if (!group) {
-      throw createError('Group not found or you are not the owner', 403);
-    }
 
     await db.delete(groups).where(eq(groups.id, groupId));
 
@@ -195,20 +161,9 @@ router.delete('/:groupId', async (req: AuthRequest, res, next) => {
 });
 
 // Get group members
-router.get('/:groupId/members', async (req: AuthRequest, res, next) => {
+router.get('/:groupId/members', requireGroupMember, async (req: GroupRequest, res, next) => {
   try {
     const { groupId } = req.params;
-    const userId = req.user!.id;
-
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
 
     const members = await db
       .select({
@@ -229,26 +184,11 @@ router.get('/:groupId/members', async (req: AuthRequest, res, next) => {
   }
 });
 
-// Add member to group
-router.post('/:groupId/members', async (req: AuthRequest, res, next) => {
+// Add member to group (owner only)
+router.post('/:groupId/members', requireGroupOwner, validate(addMemberSchema), async (req: GroupRequest, res, next) => {
   try {
     const { groupId } = req.params;
-    const userId = req.user!.id;
     const { email } = req.body;
-
-    if (!email) {
-      throw createError('Email is required', 400);
-    }
-
-    const [group] = await db
-      .select()
-      .from(groups)
-      .where(and(eq(groups.id, groupId), eq(groups.ownerId, userId)))
-      .limit(1);
-
-    if (!group) {
-      throw createError('Group not found or you are not the owner', 403);
-    }
 
     const [userToAdd] = await db
       .select()
@@ -360,20 +300,9 @@ router.get('/invitations/pending', async (req: AuthRequest, res, next) => {
 });
 
 // Get group's pending invitations
-router.get('/:groupId/invitations', async (req: AuthRequest, res, next) => {
+router.get('/:groupId/invitations', requireGroupMember, async (req: GroupRequest, res, next) => {
   try {
     const { groupId } = req.params;
-    const userId = req.user!.id;
-
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
 
     const invitations = await db
       .select({
@@ -398,21 +327,11 @@ router.get('/:groupId/invitations', async (req: AuthRequest, res, next) => {
 });
 
 // Invite user to group
-router.post('/:groupId/invitations', async (req: AuthRequest, res, next) => {
+router.post('/:groupId/invitations', requireGroupMember, validate(sendGroupInviteSchema), async (req: GroupRequest, res, next) => {
   try {
     const { groupId } = req.params;
     const userId = req.user!.id;
     const { invitedUserId, email, message } = req.body;
-
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
 
     let targetUserId = invitedUserId;
 

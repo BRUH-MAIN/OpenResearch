@@ -1,6 +1,6 @@
 import { Router, Response } from 'express';
 import { db, papers, savedPapers, users } from '../db/index.js';
-import { eq, and, or, ilike, desc } from 'drizzle-orm';
+import { eq, and, or, ilike, desc, sql } from 'drizzle-orm';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
 import { createError } from '../middleware/error.js';
 import { validateQuery } from '../middleware/validate.js';
@@ -213,11 +213,11 @@ router.get('/', async (req: AuthRequest, res: Response, next) => {
     const limitNum = parseInt(limit as string);
     const offsetNum = parseInt(offset as string);
 
-    let query = db.select().from(papers).$dynamic();
+    const conditions = [];
 
     if (search) {
       const searchTerm = `%${search}%`;
-      query = query.where(
+      conditions.push(
         or(
           ilike(papers.title, searchTerm),
           ilike(papers.abstract, searchTerm)
@@ -225,20 +225,22 @@ router.get('/', async (req: AuthRequest, res: Response, next) => {
       );
     }
 
-    const allPapers = await query
+    if (tag) {
+      // JSONB containment — filters in SQL so LIMIT applies after the filter
+      conditions.push(sql`${papers.tags} @> ${JSON.stringify([tag])}::jsonb`);
+    }
+
+    let query = db.select().from(papers).$dynamic();
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    const results = await query
       .orderBy(desc(papers.citations))
       .limit(limitNum)
       .offset(offsetNum);
 
-    // Filter by tag if provided (done in JS since tags is JSONB)
-    let filteredPapers = allPapers;
-    if (tag) {
-      filteredPapers = allPapers.filter(p =>
-        (p.tags as string[] | null)?.includes(tag as string)
-      );
-    }
-
-    res.json(filteredPapers);
+    res.json(results);
   } catch (error) {
     next(error);
   }
@@ -417,17 +419,17 @@ router.delete('/:paperId/save', async (req: AuthRequest, res: Response, next) =>
   }
 });
 
-// Get all unique tags
+// Get all unique tags (aggregated in SQL — avoids loading every paper into memory)
 router.get('/meta/tags', async (req: AuthRequest, res: Response, next) => {
   try {
-    const allPapers = await db.select({ tags: papers.tags }).from(papers);
+    const result = await db.execute<{ tag: string }>(sql`
+      SELECT DISTINCT jsonb_array_elements_text(tags) AS tag
+      FROM papers
+      WHERE tags IS NOT NULL
+      ORDER BY tag
+    `);
 
-    const allTags = new Set<string>();
-    allPapers.forEach(p => {
-      (p.tags as string[] | null)?.forEach(tag => allTags.add(tag));
-    });
-
-    res.json(Array.from(allTags).sort());
+    res.json(result.rows.map((r) => r.tag));
   } catch (error) {
     next(error);
   }

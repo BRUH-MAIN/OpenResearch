@@ -2,8 +2,20 @@ import { Server as SocketServer, Socket } from 'socket.io';
 import { Server as HttpServer } from 'http';
 import jwt from 'jsonwebtoken';
 import { db, messages, sessions, groupMembers, users } from '../db/index.js';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { aiClient } from '../services/aiClient.js';
+import { streamAiChatToSession } from '../services/aiChatService.js';
+import { corsOriginHandler } from '../config/cors.js';
+import { getEnv } from '../config/env.js';
+import { withCorrelationId } from '../middleware/correlationId.js';
+import {
+  socketJoinSessionSchema,
+  socketSendMessageSchema,
+  socketPaperQuestionSchema,
+  socketPaperSummarizeSchema,
+} from '../validation/schemas.js';
+import { randomUUID } from 'crypto';
+import { z } from 'zod';
 import logger from '../utils/logger.js';
 
 const socketLogger = logger.child({ context: 'socket' });
@@ -18,43 +30,30 @@ interface JWTPayload {
   email: string;
 }
 
-interface PaperQuestionPayload {
-  paperId: string;
-  question: string;
-  groupId: string;
-  sessionId: string;
-  userId?: string;
-}
-
-interface PaperSummarizePayload {
-  paperId: string;
-  groupId: string;
-  sessionId: string;
-  userId?: string;
+/**
+ * Validates a socket payload, emitting an `error` event and returning null on failure.
+ * Socket payloads are untrusted client input just like HTTP bodies.
+ */
+function parsePayload<T extends z.ZodType>(
+  socket: Socket,
+  schema: T,
+  payload: unknown
+): z.infer<T> | null {
+  const result = schema.safeParse(payload);
+  if (!result.success) {
+    socket.emit('error', {
+      message: 'Invalid payload',
+      details: result.error.issues.map((i) => i.message),
+    });
+    return null;
+  }
+  return result.data;
 }
 
 export function initializeSocket(httpServer: HttpServer) {
-  const allowedOrigins = [
-    'http://localhost:3000',
-    'http://localhost:3002',
-    'http://localhost:3003',
-    process.env.CLIENT_URL || 'http://localhost:3000',
-  ].filter(Boolean);
-
   const io = new SocketServer(httpServer, {
     cors: {
-      origin: (origin, callback) => {
-        // Allow requests with no origin (mobile apps, curl, etc.)
-        if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) return callback(null, true);
-        // Allow any origin on the same CLIENT_URL host (different ports)
-        try {
-          const clientHost = new URL(process.env.CLIENT_URL || 'http://localhost:3000').hostname;
-          const reqHost = new URL(origin).hostname;
-          if (reqHost === clientHost) return callback(null, true);
-        } catch { /* invalid URL, fall through */ }
-        callback(new Error(`CORS origin not allowed: ${origin}`));
-      },
+      origin: corsOriginHandler,
       methods: ['GET', 'POST'],
       credentials: true,
     },
@@ -72,7 +71,7 @@ export function initializeSocket(httpServer: HttpServer) {
         return next(new Error('Authentication required'));
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JWTPayload;
+      const decoded = jwt.verify(token, getEnv().JWT_SECRET) as JWTPayload;
 
       const [user] = await db
         .select({ id: users.id, name: users.name })
@@ -96,8 +95,11 @@ export function initializeSocket(httpServer: HttpServer) {
     socketLogger.info({ userId: socket.userId }, 'User connected');
 
     // Join session room
-    socket.on('join:session', async (sessionId: string) => {
+    socket.on('join:session', async (rawSessionId: unknown) => {
       try {
+        const sessionId = parsePayload(socket, socketJoinSessionSchema, rawSessionId);
+        if (!sessionId) return;
+
         // Verify user has access to session
         const [session] = await db
           .select()
@@ -141,7 +143,9 @@ export function initializeSocket(httpServer: HttpServer) {
     });
 
     // Leave session room
-    socket.on('leave:session', (sessionId: string) => {
+    socket.on('leave:session', (rawSessionId: unknown) => {
+      const sessionId = parsePayload(socket, socketJoinSessionSchema, rawSessionId);
+      if (!sessionId) return;
       socket.leave(`session:${sessionId}`);
       socket.to(`session:${sessionId}`).emit('user:left', {
         userId: socket.userId,
@@ -150,14 +154,11 @@ export function initializeSocket(httpServer: HttpServer) {
     });
 
     // Send message
-    socket.on('message:send', async (data: { sessionId: string; content: string }) => {
+    socket.on('message:send', async (rawData: unknown) => {
       try {
+        const data = parsePayload(socket, socketSendMessageSchema, rawData);
+        if (!data) return;
         const { sessionId, content } = data;
-
-        if (!content?.trim()) {
-          socket.emit('error', { message: 'Message content is required' });
-          return;
-        }
 
         // Verify access
         const [session] = await db
@@ -243,89 +244,16 @@ export function initializeSocket(httpServer: HttpServer) {
               return;
             }
 
-            // Create placeholder AI message in DB with empty content
-            const [aiMessagePlaceholder] = await db
-              .insert(messages)
-              .values({
+            // Socket handlers bypass HTTP middleware, so establish the
+            // correlation-ID context here for downstream AI-service calls.
+            await withCorrelationId(randomUUID(), () =>
+              streamAiChatToSession(io, {
                 sessionId,
-                userId: null,
-                content: '',
-                type: 'ai',
-                metadata: { streaming: true },
+                groupId: session.groupId,
+                userId: socket.userId!,
+                content,
               })
-              .returning();
-
-            const placeholderWithMeta = {
-              ...aiMessagePlaceholder,
-              userName: 'AI Assistant',
-              userAvatar: null,
-            };
-
-            // Emit placeholder so UI shows the message bubble immediately
-            io.to(`session:${sessionId}`).emit('message:new', placeholderWithMeta);
-
-            // Stream tokens from AI service
-            let accumulated = '';
-            let streamMeta: Record<string, unknown> = {};
-
-            try {
-                // ── Simple chat stream ──
-                for await (const chunk of aiClient.groupAIChatStream({
-                  prompt: content,
-                  group_id: session.groupId,
-                  session_id: sessionId,
-                  user_id: socket.userId!,
-                })) {
-                  if (chunk.error) {
-                    socketLogger.error({ err: chunk.error }, 'AI stream error chunk');
-                    break;
-                  }
-
-                  if (chunk.token) {
-                    accumulated += chunk.token;
-                    io.to(`session:${sessionId}`).emit('ai:token', {
-                      messageId: aiMessagePlaceholder.id,
-                      token: chunk.token,
-                    });
-                  }
-
-                  if (chunk.done) {
-                    streamMeta = {
-                      sources: chunk.sources || [],
-                      model: chunk.model || 'groq',
-                      latency_ms: chunk.latency_ms || 0,
-                      context_items_used: (chunk as Record<string, unknown>).context_items_used || 0,
-                      vector_ids_used: (chunk as Record<string, unknown>).vector_ids_used || [],
-                    };
-                  }
-                }
-            } catch (streamErr) {
-              socketLogger.error({ err: streamErr }, 'AI token stream error');
-              // If we accumulated some text, keep it; otherwise provide error message
-              if (!accumulated) {
-                accumulated = 'I encountered an error while generating a response. Please try again.';
-              }
-            }
-
-            // Update DB message with final content
-            await db
-              .update(messages)
-              .set({
-                content: accumulated,
-                metadata: {
-                  ...streamMeta,
-                  streaming: false,
-                },
-              })
-              .where(eq(messages.id, aiMessagePlaceholder.id));
-
-            // Notify clients that streaming is done
-            io.to(`session:${sessionId}`).emit('ai:token:done', {
-              messageId: aiMessagePlaceholder.id,
-              content: accumulated,
-              metadata: streamMeta,
-            });
-
+            );
           } catch (aiError) {
             socketLogger.error({ err: aiError }, 'AI response error');
             const errorMessage = aiError instanceof Error ? aiError.message : 'AI service unavailable';
@@ -344,8 +272,10 @@ export function initializeSocket(httpServer: HttpServer) {
     });
 
     // Paper Question - requires @ai trigger
-    socket.on('paper:question', async (data: PaperQuestionPayload) => {
+    socket.on('paper:question', async (rawData: unknown) => {
       try {
+        const data = parsePayload(socket, socketPaperQuestionSchema, rawData);
+        if (!data) return;
         const { paperId, question, groupId, sessionId } = data;
 
         // Validate @ai trigger - CRITICAL
@@ -442,8 +372,10 @@ export function initializeSocket(httpServer: HttpServer) {
     });
 
     // Paper Summarize - requires @ai trigger
-    socket.on('paper:summarize', async (data: PaperSummarizePayload) => {
+    socket.on('paper:summarize', async (rawData: unknown) => {
       try {
+        const data = parsePayload(socket, socketPaperSummarizeSchema, rawData);
+        if (!data) return;
         const { paperId, groupId, sessionId } = data;
 
         // Pre-check AI service availability
@@ -530,14 +462,18 @@ export function initializeSocket(httpServer: HttpServer) {
     });
 
     // Typing indicators
-    socket.on('typing:start', (sessionId: string) => {
+    socket.on('typing:start', (rawSessionId: unknown) => {
+      const sessionId = parsePayload(socket, socketJoinSessionSchema, rawSessionId);
+      if (!sessionId) return;
       socket.to(`session:${sessionId}`).emit('user:typing', {
         userId: socket.userId,
         userName: socket.userName,
       });
     });
 
-    socket.on('typing:stop', (sessionId: string) => {
+    socket.on('typing:stop', (rawSessionId: unknown) => {
+      const sessionId = parsePayload(socket, socketJoinSessionSchema, rawSessionId);
+      if (!sessionId) return;
       socket.to(`session:${sessionId}`).emit('user:stopped-typing', {
         userId: socket.userId,
       });

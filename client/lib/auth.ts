@@ -8,10 +8,9 @@ let refreshPromise: Promise<boolean> | null = null;
 interface AuthState {
   user: User | null;
   accessToken: string | null;
-  refreshToken: string | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  
+
   // Actions
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, interests?: string[]) => Promise<void>;
@@ -21,12 +20,13 @@ interface AuthState {
   setUser: (user: User) => void;
 }
 
+// The refresh token is an httpOnly cookie managed entirely by the server —
+// only the short-lived access token and user profile are kept client-side.
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       user: null,
       accessToken: null,
-      refreshToken: null,
       isLoading: false,
       isAuthenticated: false,
 
@@ -37,7 +37,6 @@ export const useAuthStore = create<AuthState>()(
           set({
             user: result.user,
             accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -54,7 +53,6 @@ export const useAuthStore = create<AuthState>()(
           set({
             user: result.user,
             accessToken: result.accessToken,
-            refreshToken: result.refreshToken,
             isAuthenticated: true,
             isLoading: false,
           });
@@ -65,10 +63,10 @@ export const useAuthStore = create<AuthState>()(
       },
 
       logout: async () => {
-        const { accessToken, refreshToken } = get();
+        const { accessToken } = get();
         try {
-          if (accessToken && refreshToken) {
-            await api.logout(accessToken, refreshToken);
+          if (accessToken) {
+            await api.logout(accessToken);
           }
         } catch {
           // Ignore logout errors
@@ -76,36 +74,28 @@ export const useAuthStore = create<AuthState>()(
           set({
             user: null,
             accessToken: null,
-            refreshToken: null,
             isAuthenticated: false,
           });
         }
       },
 
       refreshAuth: async () => {
-        const { refreshToken } = get();
-        if (!refreshToken) return false;
-
         // If a refresh is already in progress, wait for it
         if (refreshPromise) {
           return refreshPromise;
         }
 
-        // Start a new refresh
+        // Start a new refresh; the httpOnly cookie is sent automatically
         refreshPromise = (async () => {
           try {
-            const result = await api.refreshToken(refreshToken);
-            set({
-              accessToken: result.accessToken,
-              refreshToken: result.refreshToken,
-            });
+            const result = await api.refreshToken();
+            set({ accessToken: result.accessToken, isAuthenticated: true });
             return true;
           } catch {
             // Refresh failed, clear auth state
             set({
               user: null,
               accessToken: null,
-              refreshToken: null,
               isAuthenticated: false,
             });
             return false;
@@ -134,7 +124,6 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }
@@ -168,7 +157,7 @@ export const hasHydrated = () => useAuthStore.persist.hasHydrated();
 // Helper hook to get token with auto-refresh
 export function useToken() {
   const { accessToken, refreshAuth } = useAuthStore();
-  
+
   const getToken = async (): Promise<string | null> => {
     if (accessToken) return accessToken;
     const refreshed = await refreshAuth();

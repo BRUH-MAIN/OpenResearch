@@ -24,10 +24,6 @@ export const loginSchema = z.object({
   password: z.string().min(1, 'Password is required'),
 });
 
-export const refreshTokenSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required'),
-});
-
 export const updateProfileSchema = z.object({
   name: z.string()
     .min(2, 'Name must be at least 2 characters')
@@ -118,13 +114,76 @@ export const savePaperSchema = z.object({
 
 // Group invitation validation schemas
 export const sendGroupInviteSchema = z.object({
-  userId: z.string().uuid('Invalid user ID').optional(),
+  invitedUserId: z.string().uuid('Invalid user ID').optional(),
   email: z.string().email('Invalid email address').optional(),
   message: z.string().max(500, 'Message must be less than 500 characters').optional(),
 }).refine(
-  (data) => data.userId || data.email,
-  'Either userId or email is required'
+  (data) => data.invitedUserId || data.email,
+  'Either invitedUserId or email is required'
 );
+
+export const addMemberSchema = z.object({
+  email: z.string().email('Invalid email address'),
+});
+
+// Group papers
+export const addGroupPaperSchema = z.object({
+  paperId: z.string().uuid('Invalid paper ID'),
+  notes: z.string().max(5000).optional(),
+});
+
+export const paperQuestionSchema = z.object({
+  question: z.string().min(1, 'Question is required').max(2000),
+  sessionId: z.string().uuid().optional(),
+});
+
+export const paperSummarizeSchema = z.object({
+  sessionId: z.string().uuid().optional(),
+  trigger: z.string().max(200).optional(),
+});
+
+export const vectorSearchSchema = z.object({
+  query: z.string().min(1, 'Search query is required').max(1000),
+  limit: z.number().int().min(1).max(50).optional(),
+  contentTypes: z.array(z.string()).optional(),
+  paperId: z.string().optional(),
+});
+
+// Reports
+export const generateReportSchema = z.object({
+  reportType: z.enum(['weekly', 'monthly', 'custom']).optional(),
+  dateRange: z.object({
+    start: z.string().optional(),
+    end: z.string().optional(),
+  }).optional(),
+  sections: z.array(z.string()).optional(),
+  customTitle: z.string().max(500).optional(),
+  paperIds: z.array(z.string().uuid()).optional(),
+});
+
+// ============ Socket.IO payload schemas ============
+
+export const socketJoinSessionSchema = z.string().uuid('Invalid session ID');
+
+export const socketSendMessageSchema = z.object({
+  sessionId: z.string().uuid('Invalid session ID'),
+  content: z.string()
+    .min(1, 'Message content is required')
+    .max(10000, 'Message must be less than 10000 characters'),
+});
+
+export const socketPaperQuestionSchema = z.object({
+  paperId: z.string().uuid('Invalid paper ID'),
+  question: z.string().min(1).max(2000),
+  groupId: z.string().uuid('Invalid group ID'),
+  sessionId: z.string().uuid('Invalid session ID'),
+});
+
+export const socketPaperSummarizeSchema = z.object({
+  paperId: z.string().uuid('Invalid paper ID'),
+  groupId: z.string().uuid('Invalid group ID'),
+  sessionId: z.string().uuid('Invalid session ID'),
+});
 
 // Common param schemas
 export const uuidParamSchema = z.object({

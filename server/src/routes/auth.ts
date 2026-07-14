@@ -2,10 +2,18 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { db, users, refreshTokens } from '../db/index.js';
 import { eq, and, gt } from 'drizzle-orm';
-import { generateTokens, verifyRefreshToken, authenticate, AuthRequest } from '../middleware/auth.js';
+import {
+  generateTokens,
+  verifyRefreshToken,
+  authenticate,
+  AuthRequest,
+  REFRESH_COOKIE_NAME,
+  REFRESH_TOKEN_TTL_MS,
+  refreshCookieOptions,
+} from '../middleware/auth.js';
 import { createError } from '../middleware/error.js';
 import { validate } from '../middleware/validate.js';
-import { registerSchema, loginSchema, refreshTokenSchema, updateProfileSchema } from '../validation/schemas.js';
+import { registerSchema, loginSchema, updateProfileSchema } from '../validation/schemas.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 import { authLogger } from '../utils/logger.js';
 
@@ -57,7 +65,7 @@ router.post('/register', validate(registerSchema), async (req, res, next) => {
     const { accessToken, refreshToken } = generateTokens(newUser.id, newUser.email);
 
     // Store refresh token
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
     await db.insert(refreshTokens).values({
       userId: newUser.id,
       token: refreshToken,
@@ -66,10 +74,11 @@ router.post('/register', validate(registerSchema), async (req, res, next) => {
 
     authLogger.info({ userId: newUser.id, email: newUser.email }, 'User registered successfully');
 
+    // Refresh token travels only in an httpOnly cookie, never the JSON body
+    res.cookie(REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions());
     res.status(201).json({
       user: newUser,
       accessToken,
-      refreshToken,
     });
   } catch (error) {
     next(error);
@@ -102,7 +111,7 @@ router.post('/login', validate(loginSchema), async (req, res, next) => {
     const { accessToken, refreshToken } = generateTokens(user.id, user.email);
 
     // Store refresh token
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
     await db.insert(refreshTokens).values({
       userId: user.id,
       token: refreshToken,
@@ -114,23 +123,31 @@ router.post('/login', validate(loginSchema), async (req, res, next) => {
 
     authLogger.info({ userId: user.id, email: user.email }, 'User logged in successfully');
 
+    res.cookie(REFRESH_COOKIE_NAME, refreshToken, refreshCookieOptions());
     res.json({
       user: userWithoutPassword,
       accessToken,
-      refreshToken,
     });
   } catch (error) {
     next(error);
   }
 });
 
-// Refresh token
-router.post('/refresh', validate(refreshTokenSchema), async (req, res, next) => {
+// Refresh token — rotates the httpOnly cookie; access token returned in body
+router.post('/refresh', async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken: string | undefined = req.cookies?.[REFRESH_COOKIE_NAME];
+    if (!refreshToken) {
+      throw createError('Refresh token required', 401);
+    }
 
-    // Verify token
-    const decoded = verifyRefreshToken(refreshToken);
+    // Verify signature + type
+    let decoded;
+    try {
+      decoded = verifyRefreshToken(refreshToken);
+    } catch {
+      throw createError('Invalid or expired refresh token', 401);
+    }
     if (decoded.type !== 'refresh') {
       throw createError('Invalid token type', 401);
     }
@@ -152,30 +169,29 @@ router.post('/refresh', validate(refreshTokenSchema), async (req, res, next) => 
       throw createError('Invalid or expired refresh token', 401);
     }
 
-    // Delete old token
+    // Rotate: delete old token, issue + store a new pair
     await db.delete(refreshTokens).where(eq(refreshTokens.id, storedToken.id));
 
-    // Generate new tokens
     const tokens = generateTokens(decoded.userId, decoded.email);
 
-    // Store new refresh token
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
     await db.insert(refreshTokens).values({
       userId: decoded.userId,
       token: tokens.refreshToken,
       expiresAt,
     });
 
-    res.json(tokens);
+    res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, refreshCookieOptions());
+    res.json({ accessToken: tokens.accessToken });
   } catch (error) {
     next(error);
   }
 });
 
-// Logout
+// Logout — revokes the stored refresh token and clears the cookie
 router.post('/logout', authenticate, async (req: AuthRequest, res: Response, next) => {
   try {
-    const { refreshToken } = req.body;
+    const refreshToken: string | undefined = req.cookies?.[REFRESH_COOKIE_NAME];
 
     if (refreshToken) {
       await db.delete(refreshTokens).where(eq(refreshTokens.token, refreshToken));
@@ -183,6 +199,7 @@ router.post('/logout', authenticate, async (req: AuthRequest, res: Response, nex
 
     authLogger.info({ userId: req.user!.id }, 'User logged out');
 
+    res.clearCookie(REFRESH_COOKIE_NAME, { path: '/api/auth' });
     res.json({ message: 'Logged out successfully' });
   } catch (error) {
     next(error);

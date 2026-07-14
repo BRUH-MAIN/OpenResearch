@@ -8,6 +8,7 @@ import 'dotenv/config';
 
 // Config
 import { loadEnv, getEnv } from './config/env.js';
+import { corsOriginHandler } from './config/cors.js';
 
 // Validate environment variables before anything else
 loadEnv();
@@ -49,31 +50,15 @@ app.use(helmet({
       styleSrc: ["'self'", "'unsafe-inline'"],
       scriptSrc: ["'self'"],
       imgSrc: ["'self'", "data:", "https:"],
-      connectSrc: ["'self'", process.env.CLIENT_URL || 'http://localhost:3000'],
+      connectSrc: ["'self'", env.CLIENT_URL],
     },
   },
   crossOriginResourcePolicy: { policy: "cross-origin" },
 }));
 
-// CORS configuration
-const allowedHttpOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3002',
-  'http://localhost:3003',
-  process.env.CLIENT_URL || 'http://localhost:3000',
-].filter(Boolean);
-
+// CORS configuration (shared origin check with Socket.IO)
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-    if (allowedHttpOrigins.includes(origin)) return callback(null, true);
-    try {
-      const clientHost = new URL(process.env.CLIENT_URL || 'http://localhost:3000').hostname;
-      const reqHost = new URL(origin).hostname;
-      if (reqHost === clientHost) return callback(null, true);
-    } catch { /* invalid URL, fall through */ }
-    callback(new Error(`CORS origin not allowed: ${origin}`));
-  },
+  origin: corsOriginHandler,
   credentials: true,
 }));
 

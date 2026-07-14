@@ -1,42 +1,33 @@
 /**
  * Group Papers Routes
- * 
+ *
  * API endpoints for managing papers within groups and group-isolated RAG.
  */
 
 import { Router, Response } from 'express';
-import { db, groupPapers, papers, groupMembers } from '../db/index.js';
+import { db, groupPapers, papers } from '../db/index.js';
 import { eq, and, desc } from 'drizzle-orm';
-import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { authenticate } from '../middleware/auth.js';
+import { requireGroupMember, GroupRequest } from '../middleware/groupAccess.js';
+import { validate } from '../middleware/validate.js';
+import { addGroupPaperSchema, paperQuestionSchema, paperSummarizeSchema, vectorSearchSchema } from '../validation/schemas.js';
 import { createError } from '../middleware/error.js';
 import { aiClient } from '../services/aiClient.js';
 import logger from '../utils/logger.js';
 
 const router = Router();
 
-// All routes require authentication
+// All routes require authentication + group membership
 router.use(authenticate);
+router.use('/:groupId', requireGroupMember);
 
 /**
  * Get all papers in a group
  */
-router.get('/:groupId/papers', async (req: AuthRequest, res: Response, next) => {
+router.get('/:groupId/papers', async (req: GroupRequest, res: Response, next) => {
   try {
     const { groupId } = req.params;
-    const userId = req.user!.id;
 
-    // Verify membership
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
-
-    // Get group papers with paper details
     const groupPapersData = await db
       .select({
         id: groupPapers.id,
@@ -64,26 +55,11 @@ router.get('/:groupId/papers', async (req: AuthRequest, res: Response, next) => 
 /**
  * Add paper to group (and generate embeddings)
  */
-router.post('/:groupId/papers', async (req: AuthRequest, res: Response, next) => {
+router.post('/:groupId/papers', validate(addGroupPaperSchema), async (req: GroupRequest, res: Response, next) => {
   try {
     const { groupId } = req.params;
     const { paperId, notes } = req.body;
     const userId = req.user!.id;
-
-    if (!paperId) {
-      throw createError('Paper ID is required', 400);
-    }
-
-    // Verify membership
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
 
     // Get paper details
     const [paper] = await db
@@ -151,23 +127,10 @@ router.post('/:groupId/papers', async (req: AuthRequest, res: Response, next) =>
 /**
  * Remove paper from group
  */
-router.delete('/:groupId/papers/:paperId', async (req: AuthRequest, res: Response, next) => {
+router.delete('/:groupId/papers/:paperId', async (req: GroupRequest, res: Response, next) => {
   try {
     const { groupId, paperId } = req.params;
-    const userId = req.user!.id;
 
-    // Verify membership (only owner/admin can remove)
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
-
-    // Delete from group
     const deleted = await db
       .delete(groupPapers)
       .where(and(eq(groupPapers.groupId, groupId), eq(groupPapers.paperId, paperId)))
@@ -186,15 +149,10 @@ router.delete('/:groupId/papers/:paperId', async (req: AuthRequest, res: Respons
 /**
  * Ask question about paper (requires @ai trigger)
  */
-router.post('/:groupId/papers/:paperId/question', async (req: AuthRequest, res: Response, next) => {
+router.post('/:groupId/papers/:paperId/question', validate(paperQuestionSchema), async (req: GroupRequest, res: Response, next) => {
   try {
     const { groupId, paperId } = req.params;
     const { question, sessionId } = req.body;
-    const userId = req.user!.id;
-
-    if (!question) {
-      throw createError('Question is required', 400);
-    }
 
     // Validate @ai trigger
     if (!question.toLowerCase().includes('@ai')) {
@@ -204,27 +162,15 @@ router.post('/:groupId/papers/:paperId/question', async (req: AuthRequest, res: 
     // Pre-check AI service availability
     const isAvailable = await aiClient.isAvailable();
     if (!isAvailable) {
-      throw createError('AI service is not available. Please ensure GROQ_API_KEY is configured.', 503);
+      throw createError('AI service is not available. Please check the AI service configuration.', 503);
     }
 
-    // Verify membership
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
-
-    // Call AI service
     const response = await aiClient.paperQuestion({
       paper_id: paperId,
       question,
       group_id: groupId,
       session_id: sessionId,
-      user_id: userId,
+      user_id: req.user!.id,
     });
 
     res.json(response);
@@ -236,35 +182,22 @@ router.post('/:groupId/papers/:paperId/question', async (req: AuthRequest, res: 
 /**
  * Summarize paper (requires @ai trigger)
  */
-router.post('/:groupId/papers/:paperId/summarize', async (req: AuthRequest, res: Response, next) => {
+router.post('/:groupId/papers/:paperId/summarize', validate(paperSummarizeSchema), async (req: GroupRequest, res: Response, next) => {
   try {
     const { groupId, paperId } = req.params;
     const { sessionId, trigger } = req.body;
-    const userId = req.user!.id;
 
     // Pre-check AI service availability
     const isAvailable = await aiClient.isAvailable();
     if (!isAvailable) {
-      throw createError('AI service is not available. Please ensure GROQ_API_KEY is configured.', 503);
+      throw createError('AI service is not available. Please check the AI service configuration.', 503);
     }
 
-    // Verify membership
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
-
-    // Call AI service (trigger is defaulted if not provided)
     const response = await aiClient.paperSummarize({
       paper_id: paperId,
       group_id: groupId,
       session_id: sessionId,
-      user_id: userId,
+      user_id: req.user!.id,
       trigger: trigger || '@ai summarize',
     });
 
@@ -277,28 +210,11 @@ router.post('/:groupId/papers/:paperId/summarize', async (req: AuthRequest, res:
 /**
  * Search group vectors
  */
-router.post('/:groupId/search', async (req: AuthRequest, res: Response, next) => {
+router.post('/:groupId/search', validate(vectorSearchSchema), async (req: GroupRequest, res: Response, next) => {
   try {
     const { groupId } = req.params;
     const { query, limit = 10, contentTypes, paperId } = req.body;
-    const userId = req.user!.id;
 
-    if (!query) {
-      throw createError('Search query is required', 400);
-    }
-
-    // Verify membership
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
-
-    // Call AI service for vector search
     const response = await aiClient.searchVectors({
       group_id: groupId,
       query,

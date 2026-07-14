@@ -40,12 +40,12 @@ class ApiClient {
     return response.json();
   }
 
-  // Auth
+  // Auth — the refresh token lives in an httpOnly cookie set by the server;
+  // it never appears in response bodies or client storage.
   async register(data: { name: string; email: string; password: string; interests?: string[] }) {
     return this.request<{
       user: User;
       accessToken: string;
-      refreshToken: string;
     }>('/api/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -56,28 +56,24 @@ class ApiClient {
     return this.request<{
       user: User;
       accessToken: string;
-      refreshToken: string;
     }>('/api/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
   }
 
-  async logout(token: string, refreshToken: string) {
+  async logout(token: string) {
     return this.request<{ message: string }>('/api/auth/logout', {
       method: 'POST',
       token,
-      body: JSON.stringify({ refreshToken }),
     });
   }
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken() {
     return this.request<{
       accessToken: string;
-      refreshToken: string;
     }>('/api/auth/refresh', {
       method: 'POST',
-      body: JSON.stringify({ refreshToken }),
     });
   }
 

@@ -23,7 +23,6 @@ describe('useAuthStore', () => {
         useAuthStore.setState({
             user: null,
             accessToken: null,
-            refreshToken: null,
             isLoading: false,
             isAuthenticated: false,
         });
@@ -42,7 +41,6 @@ describe('useAuthStore', () => {
         mockedApi.login.mockResolvedValue({
             user: mockUser as any,
             accessToken: 'access-123',
-            refreshToken: 'refresh-456',
         });
 
         const { result } = renderHook(() => useAuthStore());
@@ -54,7 +52,6 @@ describe('useAuthStore', () => {
         expect(result.current.isAuthenticated).toBe(true);
         expect(result.current.user).toEqual(mockUser);
         expect(result.current.accessToken).toBe('access-123');
-        expect(result.current.refreshToken).toBe('refresh-456');
         expect(result.current.isLoading).toBe(false);
     });
 
@@ -74,7 +71,7 @@ describe('useAuthStore', () => {
 
         // Resolve
         await act(async () => {
-            resolveLogin!({ user: { id: '1' }, accessToken: 'a', refreshToken: 'r' });
+            resolveLogin!({ user: { id: '1' }, accessToken: 'a' });
             await loginPromise!;
         });
 
@@ -103,7 +100,6 @@ describe('useAuthStore', () => {
         useAuthStore.setState({
             user: { id: '1', name: 'Test', email: 'test@test.com' } as any,
             accessToken: 'access-123',
-            refreshToken: 'refresh-456',
             isAuthenticated: true,
         });
 
@@ -118,14 +114,12 @@ describe('useAuthStore', () => {
         expect(result.current.isAuthenticated).toBe(false);
         expect(result.current.user).toBeNull();
         expect(result.current.accessToken).toBeNull();
-        expect(result.current.refreshToken).toBeNull();
     });
 
     it('logout clears state even if API call fails', async () => {
         useAuthStore.setState({
             user: { id: '1' } as any,
             accessToken: 'a',
-            refreshToken: 'r',
             isAuthenticated: true,
         });
 

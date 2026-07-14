@@ -8,13 +8,13 @@
  */
 
 import logger from '../utils/logger.js';
-import { createError } from '../middleware/error.js';
 import { setTimeout, clearTimeout } from 'timers';
 import { TextDecoder } from 'util';
+import { getEnv } from '../config/env.js';
+import { getCorrelationId } from '../middleware/correlationId.js';
 
-// Get AI service URL from environment (with fallback)
 function getAiServiceUrl(): string {
-  return process.env.AI_SERVICE_URL || 'http://localhost:8000';
+  return getEnv().AI_SERVICE_URL;
 }
 
 export interface GroupAIChatRequest {
@@ -137,7 +137,7 @@ export interface VectorSearchResponse {
 
 export interface HealthResponse {
   status: string;
-  groq_configured: boolean;
+  llm_configured: boolean;
   database_connected: boolean;
   vector_store_connected: boolean;
   timestamp: string;
@@ -147,26 +147,35 @@ export interface AIServiceError {
   detail: string;
 }
 
-// ============ Workflow Types ============
-
 export function validateAiTrigger(content: string, fieldName: string = 'prompt'): void {
   if (!content || !content.toLowerCase().includes('@ai')) {
     throw new Error(`${fieldName} must contain @ai trigger. AI only responds when triggered by @ai.`);
   }
 }
 
+// Per-call timeouts: quick calls (health, vector search) vs LLM-backed calls
+// (chat, Q&A, summaries, reports) which can legitimately take a while.
+const QUICK_TIMEOUT_MS = 15_000;
+const LLM_TIMEOUT_MS = 120_000;
+
 /**
  * AI Service Client class
  */
 class AIClient {
-  private timeout: number;
-
-  constructor(timeout: number = 300000) {
-    this.timeout = timeout;
-  }
-
   private get baseUrl(): string {
     return getAiServiceUrl();
+  }
+
+  private buildHeaders(extra?: RequestInit['headers']): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(extra as Record<string, string> | undefined),
+    };
+    const correlationId = getCorrelationId();
+    if (correlationId) {
+      headers['X-Correlation-Id'] = correlationId;
+    }
+    return headers;
   }
 
   /**
@@ -174,19 +183,17 @@ class AIClient {
    */
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    timeoutMs: number = LLM_TIMEOUT_MS
   ): Promise<T> {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
     try {
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         ...options,
         signal: controller.signal,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(options.headers || {}),
-        },
+        headers: this.buildHeaders(options.headers),
       });
 
       clearTimeout(timeoutId);
@@ -212,7 +219,7 @@ class AIClient {
    * Check AI service health
    */
   async health(): Promise<HealthResponse> {
-    return this.request<HealthResponse>('/health');
+    return this.request<HealthResponse>('/health', {}, QUICK_TIMEOUT_MS);
   }
 
   /**
@@ -221,7 +228,7 @@ class AIClient {
   async isAvailable(): Promise<boolean> {
     try {
       const health = await this.health();
-      return health.status === 'healthy' && health.groq_configured;
+      return health.status === 'healthy' && health.llm_configured;
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       logger.warn(`AI service not available: ${errorMessage}`);
@@ -258,17 +265,15 @@ class AIClient {
   async *groupAIChatStream(
     request: GroupAIChatRequest
   ): AsyncGenerator<{ token?: string; done?: boolean; latency_ms?: number; sources?: Array<{ id: string; type: string; similarity?: number }>; model?: string; error?: string }> {
-    // Note: @ai trigger validation removed — explicit agent selection bypasses @ai requirement
-
     logger.info(`Group AI chat stream for group: ${request.group_id}, session: ${request.session_id || 'none'}`);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+    const timeoutId = setTimeout(() => controller.abort(), LLM_TIMEOUT_MS);
 
     try {
       const response = await fetch(`${this.baseUrl}/groups/${request.group_id}/ai-chat/stream`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: this.buildHeaders(),
         body: JSON.stringify(request),
         signal: controller.signal,
       });
@@ -388,7 +393,7 @@ class AIClient {
     const response = await this.request<VectorSearchResponse>('/vectors/search', {
       method: 'POST',
       body: JSON.stringify(request),
-    });
+    }, QUICK_TIMEOUT_MS);
 
     logger.info(`Vector search returned ${response.total} results in ${response.latency_ms}ms`);
 
@@ -396,7 +401,7 @@ class AIClient {
   }
 
   /**
-   * Run an agentic research task (LangGraph orchestration)
+   * Generate a group activity report (PDF)
    */
   async generateReport(request: GenerateReportRequest): Promise<ReportResponse> {
     if (request.prompt) {
@@ -418,9 +423,6 @@ class AIClient {
     return response;
   }
 
-  /**
-   * Build a citation relationship graph
-   */
   /**
    * Process an @ai message and return the AI response
    */

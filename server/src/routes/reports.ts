@@ -1,6 +1,6 @@
 /**
  * Reports Routes
- * 
+ *
  * API endpoints for generating and retrieving group reports.
  */
 
@@ -8,19 +8,52 @@ import { Router, Response } from 'express';
 import { db, groupReports, groupMembers, groups } from '../db/index.js';
 import { eq, and, desc } from 'drizzle-orm';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { requireGroupMember, GroupRequest } from '../middleware/groupAccess.js';
+import { validate } from '../middleware/validate.js';
+import { generateReportSchema } from '../validation/schemas.js';
 import { createError } from '../middleware/error.js';
 import { aiClient } from '../services/aiClient.js';
 import { reportLimiter } from '../middleware/rateLimiter.js';
+import { getEnv } from '../config/env.js';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
+router.use('/group/:groupId', requireGroupMember);
+
+/**
+ * Loads a report and verifies the requester is a member of its group.
+ * Needed because /:reportId routes don't carry groupId in the path.
+ */
+async function loadReportForMember(reportId: string, userId: string) {
+  const [report] = await db
+    .select()
+    .from(groupReports)
+    .where(eq(groupReports.id, reportId))
+    .limit(1);
+
+  if (!report) {
+    throw createError('Report not found', 404);
+  }
+
+  const [membership] = await db
+    .select()
+    .from(groupMembers)
+    .where(and(eq(groupMembers.groupId, report.groupId), eq(groupMembers.userId, userId)))
+    .limit(1);
+
+  if (!membership) {
+    throw createError('Report not found or access denied', 404);
+  }
+
+  return report;
+}
 
 /**
  * Generate a new group report
  */
-router.post('/group/:groupId/generate', reportLimiter, async (req: AuthRequest, res: Response, next) => {
+router.post('/group/:groupId/generate', reportLimiter, validate(generateReportSchema), async (req: GroupRequest, res: Response, next) => {
   try {
     const { groupId } = req.params;
     const { reportType, dateRange, sections, customTitle, paperIds } = req.body;
@@ -29,18 +62,7 @@ router.post('/group/:groupId/generate', reportLimiter, async (req: AuthRequest, 
     // Pre-check AI service availability
     const isAvailable = await aiClient.isAvailable();
     if (!isAvailable) {
-      throw createError('AI service is not available. Please ensure GROQ_API_KEY is configured.', 503);
-    }
-
-    // Verify membership
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
+      throw createError('AI service is not available. Please check the AI service configuration.', 503);
     }
 
     // Get group details
@@ -107,7 +129,8 @@ router.post('/group/:groupId/generate', reportLimiter, async (req: AuthRequest, 
         summary: reportResponse.summary,
         createdAt: updatedReport.createdAt,
       });
-    } catch (aiError: any) {
+    } catch (aiError) {
+      const message = aiError instanceof Error ? aiError.message : 'AI service error';
       // Update record with error
       await db
         .update(groupReports)
@@ -115,12 +138,12 @@ router.post('/group/:groupId/generate', reportLimiter, async (req: AuthRequest, 
           status: 'failed',
           metadata: {
             ...reportRecord.metadata,
-            error: aiError.message,
+            error: message,
           },
         })
         .where(eq(groupReports.id, reportRecord.id));
 
-      throw createError('Failed to generate report: ' + aiError.message, 500);
+      throw createError('Failed to generate report: ' + message, 500);
     }
   } catch (error) {
     next(error);
@@ -130,21 +153,9 @@ router.post('/group/:groupId/generate', reportLimiter, async (req: AuthRequest, 
 /**
  * List reports for a group
  */
-router.get('/group/:groupId', async (req: AuthRequest, res: Response, next) => {
+router.get('/group/:groupId', async (req: GroupRequest, res: Response, next) => {
   try {
     const { groupId } = req.params;
-    const userId = req.user!.id;
-
-    // Verify membership
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Group not found or access denied', 404);
-    }
 
     const reports = await db
       .select()
@@ -168,30 +179,7 @@ router.get('/group/:groupId', async (req: AuthRequest, res: Response, next) => {
  */
 router.get('/:reportId', async (req: AuthRequest, res: Response, next) => {
   try {
-    const { reportId } = req.params;
-    const userId = req.user!.id;
-
-    // Get report
-    const [report] = await db
-      .select()
-      .from(groupReports)
-      .where(eq(groupReports.id, reportId))
-      .limit(1);
-
-    if (!report) {
-      throw createError('Report not found', 404);
-    }
-
-    // Verify membership
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, report.groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Report not found or access denied', 404);
-    }
+    const report = await loadReportForMember(req.params.reportId, req.user!.id);
 
     res.json({
       ...report,
@@ -203,65 +191,44 @@ router.get('/:reportId', async (req: AuthRequest, res: Response, next) => {
 });
 
 /**
- * Download report PDF
+ * Download report PDF (proxied from the AI service so its internal URL is never exposed)
  */
 router.get('/:reportId/download', async (req: AuthRequest, res: Response, next) => {
   try {
-    const { reportId } = req.params;
-    const userId = req.user!.id;
-
-    // Get report
-    const [report] = await db
-      .select()
-      .from(groupReports)
-      .where(eq(groupReports.id, reportId))
-      .limit(1);
-
-    if (!report) {
-      throw createError('Report not found', 404);
-    }
-
-    // Verify membership
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, report.groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Report not found or access denied', 404);
-    }
+    const report = await loadReportForMember(req.params.reportId, req.user!.id);
 
     if (report.status !== 'completed' || !report.filePath) {
       throw createError('Report not available for download', 400);
     }
 
-    // Stream the file from AI service (proxy to avoid Docker-internal URL exposure)
     const fileName = `${report.title.replace(/[^a-z0-9]/gi, '_')}.pdf`;
-    
-    const downloadUrl = `${process.env.AI_SERVICE_URL}${report.filePath}`;
-    
+    const downloadUrl = `${getEnv().AI_SERVICE_URL}${report.filePath}`;
+
     try {
-      const aiResponse = await fetch(downloadUrl);
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 30_000);
+      const aiResponse = await fetch(downloadUrl, { signal: controller.signal });
+      clearTimeout(timeout);
+
       if (!aiResponse.ok) {
         throw createError('Failed to fetch report file from AI service', 502);
       }
-      
+
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-      
+
       // Pipe the response body to the client
       const reader = aiResponse.body;
       if (reader) {
         const { Readable } = await import('stream');
-        const nodeStream = Readable.fromWeb(reader as any);
+        const nodeStream = Readable.fromWeb(reader as never);
         nodeStream.pipe(res);
       } else {
         const buffer = Buffer.from(await aiResponse.arrayBuffer());
         res.send(buffer);
       }
     } catch (fetchErr) {
-      if ((fetchErr as any)?.statusCode) throw fetchErr;
+      if ((fetchErr as { statusCode?: number })?.statusCode) throw fetchErr;
       throw createError('AI service unavailable for report download', 502);
     }
   } catch (error) {

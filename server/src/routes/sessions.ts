@@ -2,6 +2,9 @@ import { Router } from 'express';
 import { db, sessions, groupMembers, messages, users } from '../db/index.js';
 import { eq, and, desc, count } from 'drizzle-orm';
 import { authenticate, AuthRequest } from '../middleware/auth.js';
+import { requireSessionAccess, GroupRequest } from '../middleware/groupAccess.js';
+import { validate } from '../middleware/validate.js';
+import { createSessionSchema, updateSessionSchema } from '../validation/schemas.js';
 import { createError } from '../middleware/error.js';
 
 const router = Router();
@@ -9,23 +12,17 @@ const router = Router();
 // All routes require authentication
 router.use(authenticate);
 
-// Helper to check group membership
-async function checkGroupMembership(groupId: string, userId: string) {
-  const [membership] = await db
-    .select()
-    .from(groupMembers)
-    .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
-    .limit(1);
-  return membership;
-}
-
 // Get sessions for a group
 router.get('/group/:groupId', async (req: AuthRequest, res, next) => {
   try {
     const { groupId } = req.params;
     const userId = req.user!.id;
 
-    const membership = await checkGroupMembership(groupId, userId);
+    const [membership] = await db
+      .select()
+      .from(groupMembers)
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
+      .limit(1);
     if (!membership) {
       throw createError('Group not found or access denied', 404);
     }
@@ -52,52 +49,17 @@ router.get('/group/:groupId', async (req: AuthRequest, res, next) => {
   }
 });
 
-// Get single session
-router.get('/:sessionId', async (req: AuthRequest, res, next) => {
-  try {
-    const { sessionId } = req.params;
-    const userId = req.user!.id;
-
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, sessionId))
-      .limit(1);
-
-    if (!session) {
-      throw createError('Session not found', 404);
-    }
-
-    const membership = await checkGroupMembership(session.groupId, userId);
-    if (!membership) {
-      throw createError('Access denied', 403);
-    }
-
-    const [{ count: messageCount }] = await db
-      .select({ count: count() })
-      .from(messages)
-      .where(eq(messages.sessionId, sessionId));
-
-    res.json({
-      ...session,
-      messageCount,
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
 // Create session
-router.post('/', async (req: AuthRequest, res, next) => {
+router.post('/', validate(createSessionSchema), async (req: AuthRequest, res, next) => {
   try {
     const { groupId, title } = req.body;
     const userId = req.user!.id;
 
-    if (!groupId || !title) {
-      throw createError('Group ID and title are required', 400);
-    }
-
-    const membership = await checkGroupMembership(groupId, userId);
+    const [membership] = await db
+      .select()
+      .from(groupMembers)
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)))
+      .limit(1);
     if (!membership) {
       throw createError('Group not found or access denied', 404);
     }
@@ -120,27 +82,33 @@ router.post('/', async (req: AuthRequest, res, next) => {
   }
 });
 
+// All /:sessionId routes: load session + verify group membership once
+router.use('/:sessionId', requireSessionAccess);
+
+// Get single session
+router.get('/:sessionId', async (req: GroupRequest, res, next) => {
+  try {
+    const session = req.session!;
+
+    const [{ count: messageCount }] = await db
+      .select({ count: count() })
+      .from(messages)
+      .where(eq(messages.sessionId, session.id));
+
+    res.json({
+      ...session,
+      messageCount,
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Update session
-router.patch('/:sessionId', async (req: AuthRequest, res, next) => {
+router.patch('/:sessionId', validate(updateSessionSchema), async (req: GroupRequest, res, next) => {
   try {
     const { sessionId } = req.params;
-    const userId = req.user!.id;
     const { title, status } = req.body;
-
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, sessionId))
-      .limit(1);
-
-    if (!session) {
-      throw createError('Session not found', 404);
-    }
-
-    const membership = await checkGroupMembership(session.groupId, userId);
-    if (!membership) {
-      throw createError('Access denied', 403);
-    }
 
     const updateData: Record<string, unknown> = {};
     if (title) updateData.title = title;
@@ -161,30 +129,9 @@ router.patch('/:sessionId', async (req: AuthRequest, res, next) => {
 });
 
 // Delete session
-router.delete('/:sessionId', async (req: AuthRequest, res, next) => {
+router.delete('/:sessionId', async (req: GroupRequest, res, next) => {
   try {
     const { sessionId } = req.params;
-    const userId = req.user!.id;
-
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, sessionId))
-      .limit(1);
-
-    if (!session) {
-      throw createError('Session not found', 404);
-    }
-
-    const [membership] = await db
-      .select()
-      .from(groupMembers)
-      .where(and(eq(groupMembers.groupId, session.groupId), eq(groupMembers.userId, userId)))
-      .limit(1);
-
-    if (!membership) {
-      throw createError('Access denied', 403);
-    }
 
     await db.delete(sessions).where(eq(sessions.id, sessionId));
 
@@ -195,27 +142,11 @@ router.delete('/:sessionId', async (req: AuthRequest, res, next) => {
 });
 
 // Get session messages
-router.get('/:sessionId/messages', async (req: AuthRequest, res, next) => {
+router.get('/:sessionId/messages', async (req: GroupRequest, res, next) => {
   try {
     const { sessionId } = req.params;
-    const userId = req.user!.id;
     const limit = parseInt(req.query.limit as string) || 50;
     const offset = parseInt(req.query.offset as string) || 0;
-
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, sessionId))
-      .limit(1);
-
-    if (!session) {
-      throw createError('Session not found', 404);
-    }
-
-    const membership = await checkGroupMembership(session.groupId, userId);
-    if (!membership) {
-      throw createError('Access denied', 403);
-    }
 
     const sessionMessages = await db
       .select({
@@ -242,26 +173,12 @@ router.get('/:sessionId/messages', async (req: AuthRequest, res, next) => {
   }
 });
 
-// Delete a message
-router.delete('/:sessionId/messages/:messageId', async (req: AuthRequest, res, next) => {
+// Delete a message (own messages, or any message if group owner)
+router.delete('/:sessionId/messages/:messageId', async (req: GroupRequest, res, next) => {
   try {
     const { sessionId, messageId } = req.params;
     const userId = req.user!.id;
-
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, sessionId))
-      .limit(1);
-
-    if (!session) {
-      throw createError('Session not found', 404);
-    }
-
-    const membership = await checkGroupMembership(session.groupId, userId);
-    if (!membership) {
-      throw createError('Access denied', 403);
-    }
+    const membership = req.membership!;
 
     const [message] = await db
       .select()
@@ -285,24 +202,12 @@ router.delete('/:sessionId/messages/:messageId', async (req: AuthRequest, res, n
   }
 });
 
-// Clear all messages in a session
-router.delete('/:sessionId/messages', async (req: AuthRequest, res, next) => {
+// Clear all messages in a session (group owner only)
+router.delete('/:sessionId/messages', async (req: GroupRequest, res, next) => {
   try {
     const { sessionId } = req.params;
-    const userId = req.user!.id;
 
-    const [session] = await db
-      .select()
-      .from(sessions)
-      .where(eq(sessions.id, sessionId))
-      .limit(1);
-
-    if (!session) {
-      throw createError('Session not found', 404);
-    }
-
-    const membership = await checkGroupMembership(session.groupId, userId);
-    if (!membership || membership.role !== 'owner') {
+    if (req.membership!.role !== 'owner') {
       throw createError('Only group owner can clear all messages', 403);
     }
 
