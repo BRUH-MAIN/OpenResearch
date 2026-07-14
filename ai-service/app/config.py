@@ -38,6 +38,13 @@ class Settings(BaseSettings):
     # LLM provider selection: "deepseek" (default) or "groq"
     llm_provider: str = "deepseek"
 
+    # Gemini (embeddings only — 768-dim, matches the pgvector schema)
+    gemini_api_key: str = ""
+    gemini_embedding_model: str = "text-embedding-004"
+
+    # Generated PDF reports; resolved relative to the package, not the cwd
+    reports_dir: str = str(Path(__file__).parent.parent / "reports")
+
     # Rate limiting
     max_context_messages: int = 50
     max_context_tokens: int = 10000
@@ -47,9 +54,6 @@ class Settings(BaseSettings):
     rag_chunks_per_query: int = 3  # chunks retrieved per sub-query
     rag_similarity_threshold: float = 0.65  # min cosine similarity to keep a chunk
     rag_max_context_chunks: int = 15  # max chunks sent to the LLM
-    rag_reranker_top_k: int = 15  # max items kept after cross-encoder reranking
-    rag_reranker_score_threshold: float = 0.01  # min reranker score to keep
-    rag_relevance_filter_max_items: int = 30  # max items evaluated by LLM relevance filter
 
     # Logging
     log_max_bytes: int = 10 * 1024 * 1024  # 10 MB

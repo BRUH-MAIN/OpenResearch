@@ -1,266 +1,216 @@
-"""Embedding service using sentence-transformers for local text embeddings.
+"""Embedding service backed by the Gemini embeddings API.
 
-Uses SPECTER2 model optimized for scientific/academic papers.
-No API key required - runs locally.
+Uses `text-embedding-004`, which produces 768-dimensional vectors — the same
+dimension the pgvector column and HNSW index were built for, so swapping the
+local SPECTER2 model out for a hosted API needed no schema migration.
+
+Trade-off (see docs/adr/0003): we give up "no data leaves the box" and add
+~100ms of network latency per call, and in exchange the service drops torch +
+three transformer models (multi-GB image, ~4GB RAM, minutes of cold start).
 """
 
-import asyncio
+import hashlib
 import logging
-import threading
 import time
-from typing import Optional
-import numpy as np
+
+import httpx
+from tenacity import (
+    retry,
+    retry_if_exception_type,
+    stop_after_attempt,
+    wait_exponential,
+)
 
 from .config import get_settings
 
 logger = logging.getLogger(__name__)
 
-# Lazy load to avoid import overhead — protected by a lock so parallel
-# asyncio.to_thread calls don't each trigger their own model load.
-_model = None
-_tokenizer = None
-_model_lock = threading.Lock()
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta"
+
+# Gemini caps a single embed request; keep documents well under the token limit.
+MAX_CHARS_PER_TEXT = 8000
+# batchEmbedContents accepts up to 100 requests per call.
+MAX_BATCH_SIZE = 100
 
 
-def _load_specter2_base():
-    """Load allenai/specter2_base with explicit sentence-transformers config.
-
-    specter2_base is a plain BERT model without sentence-transformers
-    metadata (modules.json / config_sentence_transformers.json), so
-    SentenceTransformer() prints a noisy warning. We build the pipeline
-    manually to avoid that.
-    """
-    from sentence_transformers import SentenceTransformer, models
-
-    word_model = models.Transformer(
-        "allenai/specter2_base",
-        max_seq_length=512,
-        model_args={"local_files_only": True},
-        tokenizer_args={"local_files_only": True},
-    )
-    pooling_model = models.Pooling(
-        word_model.get_word_embedding_dimension(),
-        pooling_mode_mean_tokens=True,
-    )
-    return SentenceTransformer(modules=[word_model, pooling_model])
-
-
-def _get_model():
-    """Lazy load the sentence-transformer model with robust fallback chain."""
-    global _model, _tokenizer
-    # Fast path — no lock needed once the model is loaded
-    if _model is not None:
-        return _model
-
-    with _model_lock:
-        # Double-check after acquiring lock
-        if _model is not None:
-            return _model
-
-        from sentence_transformers import SentenceTransformer
-
-        # Primary: specter2_base (built manually to avoid missing-config warning)
-        # Fallback: all-MiniLM-L6-v2 (has native ST config)
-        try:
-            logger.info("Loading embedding model: SPECTER2-base …")
-            _model = _load_specter2_base()
-            logger.info("✅ Embedding model loaded: SPECTER2-base")
-            return _model
-        except Exception as exc:
-            logger.warning("Failed to load SPECTER2-base: %s", exc)
-
-        try:
-            logger.info("Loading embedding model: all-MiniLM-L6-v2 …")
-            _model = SentenceTransformer(
-                "sentence-transformers/all-MiniLM-L6-v2",
-                local_files_only=True,
-            )
-            logger.info("✅ Embedding model loaded: all-MiniLM-L6-v2")
-            return _model
-        except Exception as exc:
-            logger.warning("Failed to load all-MiniLM-L6-v2 (local): %s", exc)
-
-        # Last resort: try downloading if not cached
-        try:
-            logger.info("Downloading all-MiniLM-L6-v2 …")
-            _model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-            logger.info("✅ Embedding model downloaded: all-MiniLM-L6-v2")
-            return _model
-        except Exception as exc:
-            logger.warning("Failed to download all-MiniLM-L6-v2: %s", exc)
-
-        logger.error("❌ All embedding model fallbacks failed")
-    return _model
+class EmbeddingRetryableError(Exception):
+    """Rate limit (429) or upstream 5xx — worth retrying with backoff."""
 
 
 class EmbeddingService:
-    """Service for generating text embeddings using local sentence-transformers.
-    
-    Uses SPECTER2 model which is specifically trained on scientific papers.
-    No API key required - runs entirely locally.
-    """
-    
-    # SPECTER2 produces 768-dimensional vectors
+    """Generates text embeddings via the Gemini API."""
+
     EMBEDDING_DIMENSION = 768
-    
-    def __init__(self):
+
+    def __init__(self) -> None:
         self._initialized = False
-        self._model = None
-        
+        self._api_key = ""
+        self._model = ""
+
     def initialize(self) -> bool:
-        """Initialize the embedding model. Returns True if successful."""
-        try:
-            self._model = _get_model()
-            if self._model is None:
-                logger.error("Embedding model is None — all fallbacks failed")
-                self._initialized = False
-                return False
-            self._initialized = True
-            logger.info("Embedding service initialized (SPECTER2 - local)")
-            return True
-        except Exception as e:
-            logger.error("Failed to initialize embedding service: %s", e)
+        """Validate configuration. Returns True if an API key is present."""
+        settings = get_settings()
+        self._api_key = settings.gemini_api_key
+        self._model = settings.gemini_embedding_model
+
+        if not self._api_key:
+            logger.error("GEMINI_API_KEY is not set — embeddings unavailable")
+            self._initialized = False
             return False
-    
+
+        self._initialized = True
+        logger.info("Embedding service initialized (Gemini %s)", self._model)
+        return True
+
     @property
     def is_configured(self) -> bool:
-        """Check if the service is properly configured."""
-        return self._initialized and self._model is not None
-    
-    def _sync_embed(
-        self,
-        text: str,
-        task_type: str = "RETRIEVAL_DOCUMENT"
-    ) -> list[float]:
-        """
-        Synchronous embedding using sentence-transformers.
-        """
-        if not self.is_configured:
-            # Lazy init if not already done
-            self.initialize()
-            if not self.is_configured:
-                raise RuntimeError("Embedding service not initialized")
-        
-        # Truncate text to model's max length (512 tokens typical)
-        # SPECTER2 handles this internally, but we limit for efficiency
-        text = text[:4096]
-        
-        # Generate embedding
-        embedding = self._model.encode(text, convert_to_numpy=True)
-        
-        # Convert to list
-        return embedding.tolist()
-    
+        return self._initialized and bool(self._api_key)
+
+    def _url(self, method: str) -> str:
+        return f"{GEMINI_BASE_URL}/models/{self._model}:{method}?key={self._api_key}"
+
+    @staticmethod
+    def _content(text: str) -> dict:
+        return {"parts": [{"text": text[:MAX_CHARS_PER_TEXT]}]}
+
+    @retry(
+        retry=retry_if_exception_type(
+            (EmbeddingRetryableError, httpx.TimeoutException, httpx.ConnectError)
+        ),
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=1, max=8),
+        reraise=True,
+    )
+    async def _post(self, method: str, payload: dict) -> dict:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            response = await client.post(self._url(method), json=payload)
+
+        if response.status_code == 429 or response.status_code >= 500:
+            raise EmbeddingRetryableError(
+                f"Gemini embeddings returned {response.status_code}"
+            )
+        response.raise_for_status()
+        return response.json()
+
     async def generate_embedding(
         self,
         text: str,
-        task_type: str = "RETRIEVAL_DOCUMENT"
+        task_type: str = "RETRIEVAL_DOCUMENT",
     ) -> tuple[list[float], int]:
-        """
-        Generate embedding for text (async wrapper).
-        
-        Args:
-            text: Text to embed
-            task_type: Type of embedding task (RETRIEVAL_DOCUMENT, RETRIEVAL_QUERY, etc.)
-            
-        Returns:
-            Tuple of (embedding vector, latency_ms)
-        """
-        start_time = time.time()
-        
+        """Embed a single text. Returns (vector, latency_ms)."""
+        start = time.time()
+
+        if not self.is_configured:
+            self.initialize()
+
         try:
-            # Run sync call in thread pool to not block event loop
-            embedding = await asyncio.to_thread(
-                self._sync_embed,
-                text,
-                task_type,
+            data = await self._post(
+                "embedContent",
+                {
+                    "model": f"models/{self._model}",
+                    "content": self._content(text),
+                    "taskType": task_type,
+                },
             )
-            
-            latency_ms = int((time.time() - start_time) * 1000)
-            
-            # Ensure correct dimension
-            if len(embedding) < self.EMBEDDING_DIMENSION:
-                embedding.extend([0.0] * (self.EMBEDDING_DIMENSION - len(embedding)))
-            elif len(embedding) > self.EMBEDDING_DIMENSION:
-                embedding = embedding[:self.EMBEDDING_DIMENSION]
-                
-            return embedding, latency_ms
-                
-        except Exception as e:
-            # Fallback to mock embedding for development/when model fails
-            logger.warning("Embedding generation failed: %s, using mock embedding", e)
-            latency_ms = int((time.time() - start_time) * 1000)
-            return self._generate_mock_embedding(text), latency_ms
-    
+            embedding = data["embedding"]["values"]
+            return self._normalize_dimension(embedding), self._elapsed_ms(start)
+        except Exception as exc:
+            logger.warning("Embedding failed (%s); falling back to mock vector", exc)
+            return self._mock_embedding(text), self._elapsed_ms(start)
+
     async def generate_embeddings_batch(
         self,
         texts: list[str],
-        task_type: str = "RETRIEVAL_DOCUMENT"
+        task_type: str = "RETRIEVAL_DOCUMENT",
     ) -> tuple[list[list[float]], int]:
-        """
-        Generate embeddings for multiple texts.
-        
-        Returns:
-            Tuple of (list of embedding vectors, total latency_ms)
-        """
-        embeddings = []
-        total_latency = 0
-        
-        for text in texts:
-            embedding, latency = await self.generate_embedding(text, task_type)
-            embeddings.append(embedding)
-            total_latency += latency
-            
-        return embeddings, total_latency
-    
-    def _generate_mock_embedding(self, text: str) -> list[float]:
-        """Generate a deterministic mock embedding for testing."""
-        # Use hash of text to generate deterministic pseudo-random embedding
-        np.random.seed(hash(text) % (2**32))
-        embedding = np.random.randn(self.EMBEDDING_DIMENSION).astype(float)
-        # Normalize to unit length
-        embedding = embedding / np.linalg.norm(embedding)
-        return embedding.tolist()
-    
+        """Embed many texts in as few round-trips as the API allows."""
+        start = time.time()
+
+        if not texts:
+            return [], 0
+
+        if not self.is_configured:
+            self.initialize()
+
+        embeddings: list[list[float]] = []
+
+        try:
+            for batch_start in range(0, len(texts), MAX_BATCH_SIZE):
+                batch = texts[batch_start : batch_start + MAX_BATCH_SIZE]
+                data = await self._post(
+                    "batchEmbedContents",
+                    {
+                        "requests": [
+                            {
+                                "model": f"models/{self._model}",
+                                "content": self._content(text),
+                                "taskType": task_type,
+                            }
+                            for text in batch
+                        ]
+                    },
+                )
+                embeddings.extend(
+                    self._normalize_dimension(item["values"])
+                    for item in data["embeddings"]
+                )
+
+            return embeddings, self._elapsed_ms(start)
+        except Exception as exc:
+            logger.warning(
+                "Batch embedding failed (%s); falling back to mock vectors", exc
+            )
+            return [self._mock_embedding(t) for t in texts], self._elapsed_ms(start)
+
+    @staticmethod
+    def _elapsed_ms(start: float) -> int:
+        return int((time.time() - start) * 1000)
+
+    def _normalize_dimension(self, embedding: list[float]) -> list[float]:
+        if len(embedding) < self.EMBEDDING_DIMENSION:
+            embedding = embedding + [0.0] * (self.EMBEDDING_DIMENSION - len(embedding))
+        elif len(embedding) > self.EMBEDDING_DIMENSION:
+            embedding = embedding[: self.EMBEDDING_DIMENSION]
+        return embedding
+
+    def _mock_embedding(self, text: str) -> list[float]:
+        """Deterministic unit vector, so tests and outages degrade rather than crash."""
+        digest = hashlib.sha256(text.encode("utf-8")).digest()
+        raw = [
+            (digest[i % len(digest)] / 255.0) - 0.5
+            for i in range(self.EMBEDDING_DIMENSION)
+        ]
+        magnitude = sum(v * v for v in raw) ** 0.5 or 1.0
+        return [v / magnitude for v in raw]
+
     def chunk_text(
         self,
         text: str,
         chunk_size: int = 1000,
-        overlap: int = 200
+        overlap: int = 200,
     ) -> list[str]:
-        """
-        Split text into overlapping chunks for embedding.
-        
-        Args:
-            text: Text to chunk
-            chunk_size: Target size of each chunk in characters
-            overlap: Number of characters to overlap between chunks
-            
-        Returns:
-            List of text chunks
-        """
+        """Split text into overlapping chunks, preferring sentence boundaries."""
         if not text or len(text) <= chunk_size:
             return [text] if text else []
-        
+
         chunks = []
         start = 0
-        
+
         while start < len(text):
             end = start + chunk_size
-            
-            # Try to break at sentence boundary
+
+            # Prefer to break at a sentence end within the last 20% of the chunk
             if end < len(text):
-                # Look for sentence end in last 20% of chunk
                 search_start = int(end - chunk_size * 0.2)
                 for sep in ['. ', '.\n', '! ', '? ', '\n\n']:
                     idx = text.rfind(sep, search_start, end)
                     if idx != -1:
                         end = idx + len(sep)
                         break
-            
+
             chunks.append(text[start:end].strip())
             start = end - overlap
-            
+
         return [c for c in chunks if c]
 
 

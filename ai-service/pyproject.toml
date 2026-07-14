@@ -13,15 +13,12 @@ dependencies = [
     "langchain-core>=0.2.0",
     "langchain-groq>=0.1.0",
     "langchain-openai>=0.1.0",
-    "sentence-transformers>=2.2.0",
-    "torch>=2.0.0",
-    "transformers>=4.36.0",
     "asyncpg>=0.29.0",
     "sqlalchemy[asyncio]>=2.0.25",
     "pgvector>=0.2.4",
     "reportlab>=4.0.0",
+    "pypdf>=4.0.0",
     "tenacity>=8.2.0",
-    "numpy>=1.26.0",
 ]
 
 [project.optional-dependencies]
@@ -29,6 +26,7 @@ test = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
+    "respx>=0.21.0",
 ]
 
 [dependency-groups]
@@ -36,6 +34,7 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
+    "respx>=0.21.0",
 ]
 
 [build-system]
@@ -47,6 +46,7 @@ dev-dependencies = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
+    "respx>=0.21.0",
 ]
 
 [tool.hatch.build.targets.wheel]

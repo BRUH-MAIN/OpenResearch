@@ -4,69 +4,45 @@ from typing import Optional
 import logging
 import uuid
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 
 from .config import get_settings
 from .embeddings import embedding_service
-from .database import convert_db_url_for_asyncpg
+from .db_engine import init_engine, dispose_engine, get_session_factory, is_connected as engine_is_connected
 
 logger = logging.getLogger(__name__)
+
+
+def _validate_group_id(group_id: str) -> None:
+    """Every read and write is scoped by group_id — a malformed one must fail loudly
+    rather than reach SQL, since group isolation is the security boundary here."""
+    if not group_id:
+        raise ValueError("group_id is REQUIRED for vector isolation")
+    try:
+        uuid.UUID(group_id)
+    except (ValueError, AttributeError, TypeError) as exc:
+        raise ValueError("group_id must be a valid UUID.") from exc
 
 
 class VectorStore:
     """Group-isolated vector store using PostgreSQL + pgvector."""
     
     def __init__(self):
-        self.engine = None
         self.session_factory = None
-        self._connected = False
-    
+
     async def connect(self) -> bool:
-        """Initialize database connection. Returns True if successful."""
-        settings = get_settings()
-        
-        if not settings.database_url:
-            print("DATABASE_URL not configured")
+        """Bind to the shared engine. Returns True if the database is reachable."""
+        if not await init_engine():
             return False
-        
-        try:
-            # Convert URL and get connect_args for SSL
-            db_url, connect_args = convert_db_url_for_asyncpg(settings.database_url)
-            
-            self.engine = create_async_engine(
-                db_url,
-                echo=settings.debug,
-                pool_size=5,
-                max_overflow=10,
-                connect_args=connect_args,
-            )
-            
-            self.session_factory = async_sessionmaker(
-                self.engine,
-                class_=AsyncSession,
-                expire_on_commit=False,
-            )
-            
-            # Test connection and ensure pgvector extension
-            async with self.engine.begin() as conn:
-                await conn.execute(text("SELECT 1"))
-            
-            self._connected = True
-            return True
-            
-        except Exception as e:
-            print(f"Vector store connection failed: {e}")
-            return False
-    
+        self.session_factory = get_session_factory()
+        return True
+
     async def disconnect(self):
-        """Close database connection."""
-        if self.engine:
-            await self.engine.dispose()
-            self._connected = False
-    
+        await dispose_engine()
+        self.session_factory = None
+
     @property
     def is_connected(self) -> bool:
-        return self._connected
+        return engine_is_connected() and self.session_factory is not None
     
     async def insert_vector(
         self,
@@ -98,12 +74,11 @@ class VectorStore:
         if not self.is_connected:
             raise RuntimeError("Vector store not connected")
         
-        if not group_id:
-            raise ValueError("groupId is REQUIRED for vector isolation")
-        
+        _validate_group_id(group_id)
+
         # Generate embedding
         embedding, _ = await embedding_service.generate_embedding(content)
-        
+
         import json
         async with self.session_factory() as session:
             result = await session.execute(
@@ -138,48 +113,70 @@ class VectorStore:
         metadata: Optional[dict] = None
     ) -> list[str]:
         """
-        Insert vector embeddings for paper content (chunked).
-        
+        Embed and store a paper as chunks: title+abstract first, then full text.
+
+        All chunks are embedded in one batched API call and written in one
+        transaction — previously this made N embedding requests and N commits.
+
         Returns:
             List of inserted vector IDs
         """
-        if not group_id:
-            raise ValueError("groupId is REQUIRED for vector isolation")
-        
-        vector_ids = []
-        
-        # Always embed title + abstract together as first chunk
-        title_abstract = f"{title}\n\n{abstract}"
-        enriched_metadata = {**(metadata or {}), "chunk_type": "title_abstract", "title": title}
-        vector_id = await self.insert_vector(
-            group_id=group_id,
-            paper_id=paper_id,
-            content=title_abstract,
-            content_type="paper",
-            content_id=paper_id,
-            chunk_index=0,
-            metadata=enriched_metadata
-        )
-        if vector_id:
-            vector_ids.append(vector_id)
-        
-        # Chunk and embed full text if available
+        import json
+
+        _validate_group_id(group_id)
+
+        if not self.is_connected:
+            raise RuntimeError("Vector store not connected")
+
+        base_metadata = metadata or {}
+
+        # Chunk 0 is always title + abstract: the densest summary of the paper.
+        chunks: list[tuple[str, dict]] = [
+            (
+                f"{title}\n\n{abstract}",
+                {**base_metadata, "chunk_type": "title_abstract", "title": title},
+            )
+        ]
         if full_text:
-            chunks = embedding_service.chunk_text(full_text)
-            for i, chunk in enumerate(chunks, start=1):
-                vector_id = await self.insert_vector(
-                    group_id=group_id,
-                    paper_id=paper_id,
-                    content=chunk,
-                    content_type="paper",
-                    content_id=paper_id,
-                    chunk_index=i,
-                    metadata={**(metadata or {}), "chunk_type": "full_text", "title": title}
-                )
-                if vector_id:
-                    vector_ids.append(vector_id)
-        
-        return vector_ids
+            chunks.extend(
+                (chunk, {**base_metadata, "chunk_type": "full_text", "title": title})
+                for chunk in embedding_service.chunk_text(full_text)
+            )
+
+        embeddings, latency_ms = await embedding_service.generate_embeddings_batch(
+            [content for content, _ in chunks]
+        )
+        logger.info(
+            "Embedded %d chunks for paper %s in %dms", len(chunks), paper_id, latency_ms
+        )
+
+        # One INSERT with N value tuples (rather than executemany, which cannot
+        # return generated ids for textual SQL).
+        params: dict = {"group_id": group_id, "paper_id": paper_id}
+        value_clauses = []
+        for index, ((content, chunk_metadata), embedding) in enumerate(
+            zip(chunks, embeddings)
+        ):
+            params[f"content_{index}"] = content
+            params[f"embedding_{index}"] = f"[{','.join(map(str, embedding))}]"
+            params[f"metadata_{index}"] = json.dumps(chunk_metadata)
+            value_clauses.append(
+                f"(:group_id, :paper_id, 'paper', :paper_id, {index}, "
+                f":content_{index}, :embedding_{index}, :metadata_{index})"
+            )
+
+        async with self.session_factory() as session:
+            result = await session.execute(
+                text(f"""
+                    INSERT INTO group_paper_vectors
+                    (group_id, paper_id, content_type, content_id, chunk_index, content, embedding, metadata)
+                    VALUES {', '.join(value_clauses)}
+                    RETURNING id
+                """),
+                params,
+            )
+            await session.commit()
+            return [str(row.id) for row in result.fetchall()]
     
     async def search_group_vectors(
         self,
@@ -207,12 +204,7 @@ class VectorStore:
         if not self.is_connected:
             raise RuntimeError("Vector store not connected")
         
-        if not group_id:
-            raise ValueError("groupId is REQUIRED for vector search")
-        try:
-            uuid.UUID(group_id)
-        except (ValueError, AttributeError, TypeError) as exc:
-            raise ValueError("group_id must be a valid UUID.") from exc
+        _validate_group_id(group_id)
         
         # Generate query embedding
         query_embedding, _ = await embedding_service.generate_embedding(
@@ -320,12 +312,7 @@ class VectorStore:
         if not self.is_connected:
             raise RuntimeError("Vector store not connected")
 
-        if not group_id:
-            raise ValueError("groupId is REQUIRED for vector search")
-        try:
-            uuid.UUID(group_id)
-        except (ValueError, AttributeError, TypeError) as exc:
-            raise ValueError("group_id must be a valid UUID.") from exc
+        _validate_group_id(group_id)
 
         # Generate query embedding
         query_embedding, _ = await embedding_service.generate_embedding(

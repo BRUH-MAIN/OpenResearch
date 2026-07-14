@@ -6,31 +6,27 @@ pydantic-settings>=2.1.0
 httpx>=0.26.0
 python-dotenv>=1.0.0
 
-# LLM Providers (via LangChain)
+# LLM providers (DeepSeek primary, Groq fallback) via LangChain
+langchain-core>=0.2.0
 langchain-openai>=0.1.0
 langchain-groq>=0.1.0
 
-langchain-core>=0.2.0
+# Embeddings: Gemini text-embedding-004 over plain HTTP (no local models)
 
-# Local Embeddings (sentence-transformers with SPECTER2 for scientific papers)
---extra-index-url https://download.pytorch.org/whl/cpu
-torch>=2.0.0
-sentence-transformers>=2.2.0
-transformers>=4.36.0
-
-# Database (for reading context)
+# Database
 asyncpg>=0.29.0
 sqlalchemy[asyncio]>=2.0.25
 pgvector>=0.2.4
 
-# PDF Generation
+# PDF generation / parsing
 reportlab>=4.0.0
+pypdf>=4.0.0
 
 # Utilities
 tenacity>=8.2.0
-numpy>=1.26.0
 
 # Testing
 pytest>=8.0.0
 pytest-asyncio>=0.23.0
 pytest-cov>=4.1.0
+respx>=0.21.0

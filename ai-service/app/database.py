@@ -1,114 +1,46 @@
-"""Database connection for reading context from the main OpenResearch database."""
+"""Reads and writes OpenResearch rows (sessions, papers, artifacts) for the AI service.
 
+Connections come from the shared engine in db_engine.py — this module owns no
+pool of its own, and no DDL (see docs/adr/0001).
+"""
+
+import logging
 from typing import Optional
-from urllib.parse import urlparse, parse_qs, urlencode
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+
 from sqlalchemy import text
-import ssl
 
-from .config import get_settings
+from .db_engine import (
+    init_engine,
+    dispose_engine,
+    get_session_factory,
+    is_connected as engine_is_connected,
+    convert_db_url_for_asyncpg,  # re-exported for backwards compatibility
+)
 
-
-def convert_db_url_for_asyncpg(db_url: str) -> tuple[str, dict]:
-    """
-    Convert a PostgreSQL URL to asyncpg format, handling SSL parameters.
-    
-    Returns:
-        Tuple of (cleaned_url, connect_args)
-    """
-    # Parse the URL
-    parsed = urlparse(db_url)
-    
-    # Extract query parameters
-    query_params = parse_qs(parsed.query)
-    
-    # Check for SSL requirements
-    ssl_mode = query_params.pop('sslmode', [None])[0]
-    query_params.pop('channel_binding', None)  # Remove channel_binding (not supported by asyncpg)
-    
-    # Build connect_args for SSL
-    connect_args = {}
-    if ssl_mode in ('require', 'verify-ca', 'verify-full'):
-        # Create SSL context for asyncpg
-        ssl_context = ssl.create_default_context()
-        ssl_context.check_hostname = False
-        ssl_context.verify_mode = ssl.CERT_NONE
-        connect_args['ssl'] = ssl_context
-    
-    # Rebuild the URL without incompatible params
-    new_query = urlencode({k: v[0] if len(v) == 1 else v for k, v in query_params.items()}, doseq=True)
-    
-    # Convert to asyncpg scheme
-    scheme = parsed.scheme
-    if scheme == "postgresql":
-        scheme = "postgresql+asyncpg"
-    elif scheme == "postgres":
-        scheme = "postgresql+asyncpg"
-    
-    # Rebuild URL
-    if new_query:
-        new_url = f"{scheme}://{parsed.netloc}{parsed.path}?{new_query}"
-    else:
-        new_url = f"{scheme}://{parsed.netloc}{parsed.path}"
-    
-    return new_url, connect_args
+logger = logging.getLogger(__name__)
 
 
 class Database:
     """Async database connection for reading session/message context."""
     
     def __init__(self):
-        self.engine = None
         self.session_factory = None
-        self._connected = False
-    
+
     async def connect(self) -> bool:
-        """Initialize database connection. Returns True if successful."""
-        settings = get_settings()
-        
-        if not settings.database_url:
-            print("DATABASE_URL not configured")
+        """Bind to the shared engine. Returns True if the database is reachable."""
+        if not await init_engine():
             return False
-        
-        try:
-            # Convert URL and get connect_args for SSL
-            db_url, connect_args = convert_db_url_for_asyncpg(settings.database_url)
-            
-            self.engine = create_async_engine(
-                db_url,
-                echo=settings.debug,
-                pool_size=5,
-                max_overflow=10,
-                connect_args=connect_args,
-            )
-            
-            self.session_factory = async_sessionmaker(
-                self.engine,
-                class_=AsyncSession,
-                expire_on_commit=False,
-            )
-            
-            # Test connection
-            async with self.engine.begin() as conn:
-                await conn.execute(text("SELECT 1"))
-            
-            self._connected = True
-            return True
-            
-        except Exception as e:
-            print(f"Database connection failed: {e}")
-            return False
-    
+        self.session_factory = get_session_factory()
+        return True
+
     async def disconnect(self):
-        """Close database connection."""
-        if self.engine:
-            await self.engine.dispose()
-            self._connected = False
-    
+        await dispose_engine()
+        self.session_factory = None
+
     @property
     def is_connected(self) -> bool:
-        return self._connected
-    
+        return engine_is_connected() and self.session_factory is not None
+
     async def get_session_messages(
         self,
         session_id: str,

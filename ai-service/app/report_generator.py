@@ -15,22 +15,18 @@ from reportlab.platypus import (
 )
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_JUSTIFY
 
+from .config import get_settings
+
 
 class ReportGenerator:
     """Generate PDF reports for research groups."""
-    
-    REPORTS_DIR = os.environ.get("REPORTS_DIR", "/app/reports")  # Docker path with fallback
-    
+
     def __init__(self, output_dir: Optional[str] = None):
-        self.output_dir = output_dir or self.REPORTS_DIR
-        # Only create directory if it's accessible
-        try:
-            os.makedirs(self.output_dir, exist_ok=True)
-        except PermissionError:
-            # Fallback to temp directory for local dev/testing
-            import tempfile
-            self.output_dir = os.path.join(tempfile.gettempdir(), "openresearch_reports")
-            os.makedirs(self.output_dir, exist_ok=True)
+        # One source of truth for the reports directory, shared with the download
+        # route. It previously wrote to a hardcoded /app/reports while the route
+        # read ./reports — the same path only inside Docker, broken locally.
+        self.output_dir = output_dir or get_settings().reports_dir
+        os.makedirs(self.output_dir, exist_ok=True)
         
         # Setup styles
         self.styles = getSampleStyleSheet()
