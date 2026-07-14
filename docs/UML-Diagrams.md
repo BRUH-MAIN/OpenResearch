@@ -1,3 +1,16 @@
+> [!WARNING]
+> **This document describes the pre-refactor system and is now out of date.**
+>
+> It still specifies features that have been removed (agentic tasks, multi-step
+> workflows, citation graphs, claim lineage, methodology matrices,
+> recommendations, friends) and the local SPECTER2 embedding model, which was
+> replaced by a hosted API.
+>
+> It has been kept rather than deleted because it is a course deliverable, but it
+> must be regenerated against the current scope before submission — an examiner
+> comparing it to the code will find the mismatch. See the README and
+> `docs/adr/` for what the system actually does now.
+
 # UML Diagrams — OpenResearch Platform
 
 **Document Version:** 1.0
