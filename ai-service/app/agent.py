@@ -38,8 +38,9 @@ for a team of researchers.
 You have three tools:
   • search_group_papers — the team's OWN indexed papers. Always start here.
   • search_arxiv — the wider literature, for work the team does not yet have.
-  • read_paper — the full text of one of the team's papers, when an abstract is
-    not enough and you need the detail.
+  • read_paper — the full text of one of the team's OWN papers, when a retrieved
+    passage is not enough. It cannot read an arXiv result; you already have that
+    paper's abstract from the search.
 
 Work iteratively. Search, read what comes back, and let it tell you what to ask
 next. If the team's papers do not cover something the question needs, say so and
@@ -110,8 +111,10 @@ def _tool_schemas() -> list[dict]:
             "function": {
                 "name": "read_paper",
                 "description": (
-                    "Read the full text of one of the team's papers, identified by its "
-                    "title. Use when an abstract or a retrieved passage is not enough."
+                    "Read the full text of one of the TEAM'S OWN papers, by title. Only "
+                    "works for papers already in the group — an arXiv result cannot be "
+                    "read this way, and its abstract is already in the search result. "
+                    "Use when a retrieved passage is not enough and you need the detail."
                 ),
                 "parameters": {
                     "type": "object",

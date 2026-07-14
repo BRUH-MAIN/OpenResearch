@@ -149,7 +149,7 @@ required to understand retrieval or embeddings in order to use the system.
 - **Server side:** Docker; PostgreSQL 16 with the `pgvector` extension; Node.js
   20; Python 3.12.
 - **Client side:** any modern browser with WebSocket support.
-- **External dependencies:** an embedding API (Gemini `text-embedding-004`), a
+- **External dependencies:** an embedding API (Gemini `gemini-embedding-001`), a
   chat LLM API (DeepSeek, with Groq as fallback), and the public arXiv API.
 
 ### 2.5 Design and Implementation Constraints

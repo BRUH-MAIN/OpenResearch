@@ -41,7 +41,7 @@ The Python service reads and writes rows; it never creates tables
 |---|---|
 | `group_id` | **Every query filters on this.** Group isolation is enforced here, in the `WHERE` clause. |
 | `content` | The chunk text (~1000 chars, 200-char overlap, snapped to sentence boundaries). |
-| `embedding` | `vector(768)` — Gemini `text-embedding-004` ([ADR 0003](adr/0003-hosted-embeddings.md)). |
+| `embedding` | `vector(768)` — Gemini `gemini-embedding-001`, truncated from 3072 and re-normalised ([ADR 0003](adr/0003-hosted-embeddings.md)). |
 | `content_tsv` | Generated `tsvector`, maintained by Postgres, for the BM25 half of retrieval. |
 | `content_type` | `paper` \| `qa` \| `summary` \| `chat_response`. |
 

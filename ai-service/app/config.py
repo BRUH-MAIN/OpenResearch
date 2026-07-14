@@ -40,9 +40,11 @@ class Settings(BaseSettings):
     # LLM provider selection: "deepseek" (default) or "groq"
     llm_provider: str = "deepseek"
 
-    # Gemini (embeddings only — 768-dim, matches the pgvector schema)
+    # Gemini (embeddings only). gemini-embedding-001 emits 3072 dimensions by
+    # default; we ask for 768 via Matryoshka truncation so it keeps fitting the
+    # vector(768) column and its HNSW index. text-embedding-004 was retired.
     gemini_api_key: str = ""
-    gemini_embedding_model: str = "text-embedding-004"
+    gemini_embedding_model: str = "gemini-embedding-001"
 
     # Generated PDF reports; resolved relative to the package, not the cwd
     reports_dir: str = str(Path(__file__).parent.parent / "reports")

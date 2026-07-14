@@ -28,12 +28,29 @@ that is a bad trade.
 
 ## Decision
 
-Use Gemini `text-embedding-004` over plain HTTPS. Delete PyTorch,
-sentence-transformers, transformers, and the cross-encoder reranker.
+Use Gemini embeddings over plain HTTPS. Delete PyTorch, sentence-transformers,
+transformers, and the cross-encoder reranker.
 
-The deciding detail: `text-embedding-004` returns **768 dimensions** — the exact
-width of the existing `vector(768)` column and its HNSW index. The swap needed no
-migration and no re-indexing.
+The deciding detail is dimensionality. The existing column is `vector(768)` with
+an HNSW index built for that width, so a model of any other width would force a
+migration and a full re-index.
+
+`gemini-embedding-001` natively emits **3072** dimensions — which would not fit.
+But it is trained with **Matryoshka representation learning**: the leading
+dimensions of its vector are themselves a valid, usable embedding, so the model
+can be asked for a prefix. Passing `outputDimensionality: 768` returns exactly
+that, and the schema is untouched.
+
+Truncating has a consequence worth knowing: it breaks unit length. The real API
+returns a 768-prefix with an L2 norm around **0.59**, not 1.0. Cosine distance is
+scale-invariant, so pgvector would survive it — but the similarity scores handed
+to the UI would not be comparable between vectors, and an inner-product index
+would silently rank wrongly. So the service re-normalises every vector once, on
+the way out, and a test asserts it.
+
+(The original choice here was `text-embedding-004`, which is natively 768. Google
+retired it; the model name is one line of config, which is the point of keeping
+the provider behind one class.)
 
 Retrieval keeps hybrid search (pgvector cosine + Postgres BM25, fused with
 Reciprocal Rank Fusion). Dropping the cross-encoder means RRF's ranking is now

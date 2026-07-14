@@ -3,14 +3,17 @@
 Every Gemini call is mocked with respx — the suite never touches a paid API.
 """
 
+import json
+import math
+
 import httpx
 import pytest
 import respx
 
 from app.embeddings import EmbeddingService, MAX_BATCH_SIZE
 
-EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent"
-BATCH_URL = "https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:batchEmbedContents"
+EMBED_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:embedContent"
+BATCH_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-embedding-001:batchEmbedContents"
 
 
 @pytest.fixture
@@ -18,7 +21,7 @@ def service(monkeypatch):
     svc = EmbeddingService()
     svc._initialized = True
     svc._api_key = "test-key"
-    svc._model = "text-embedding-004"
+    svc._model = "gemini-embedding-001"
     return svc
 
 
@@ -48,6 +51,34 @@ class TestGenerateEmbedding:
 
         body = route.calls.last.request.read().decode()
         assert "RETRIEVAL_QUERY" in body
+
+    @respx.mock
+    async def test_asks_for_768_of_the_models_3072_dimensions(self, service):
+        # gemini-embedding-001 returns 3072 by default, which would not fit the
+        # vector(768) column. The request must say so explicitly.
+        route = respx.post(url__startswith=EMBED_URL).mock(
+            return_value=httpx.Response(200, json={"embedding": {"values": vector()}})
+        )
+
+        await service.generate_embedding("text")
+
+        body = json.loads(route.calls.last.request.content)
+        assert body["outputDimensionality"] == 768
+
+    @respx.mock
+    async def test_normalises_the_truncated_vector_to_unit_length(self, service):
+        # Truncating a Matryoshka embedding leaves it well short of unit length
+        # (~0.59 from the real API). Similarity scores are only comparable once
+        # it is normalised.
+        raw = [0.5] * 768  # norm = sqrt(768 * 0.25) ≈ 13.86, nowhere near 1
+        respx.post(url__startswith=EMBED_URL).mock(
+            return_value=httpx.Response(200, json={"embedding": {"values": raw}})
+        )
+
+        embedding, _ = await service.generate_embedding("text")
+
+        norm = math.sqrt(sum(x * x for x in embedding))
+        assert norm == pytest.approx(1.0, abs=1e-6)
 
     @respx.mock
     async def test_sends_the_key_as_a_header_never_in_the_url(self, service):
@@ -171,7 +202,7 @@ class TestConfiguration:
     def test_is_unconfigured_without_an_api_key(self, monkeypatch):
         svc = EmbeddingService()
         monkeypatch.setattr("app.embeddings.get_settings", lambda: type("S", (), {
-            "gemini_api_key": "", "gemini_embedding_model": "text-embedding-004"
+            "gemini_api_key": "", "gemini_embedding_model": "gemini-embedding-001"
         })())
 
         assert svc.initialize() is False

@@ -112,7 +112,7 @@ Open http://localhost:3000.
 
 | Key | Needed for | Get one |
 |---|---|---|
-| `GEMINI_API_KEY` | embeddings (`text-embedding-004`, 768-dim) | [aistudio.google.com](https://aistudio.google.com/apikey) |
+| `GEMINI_API_KEY` | embeddings (`gemini-embedding-001`, truncated to 768-dim) | [aistudio.google.com](https://aistudio.google.com/apikey) |
 | `DEEPSEEK_API_KEY` | chat, Q&A, summaries (primary) | [platform.deepseek.com](https://platform.deepseek.com/api_keys) |
 | `GROQ_API_KEY` | chat fallback if DeepSeek fails | [console.groq.com](https://console.groq.com/keys) |
 | `JWT_SECRET`, `JWT_REFRESH_SECRET` | auth — must differ, 32+ chars | `openssl rand -hex 32` |
@@ -159,7 +159,7 @@ reasoning is written down:
 |---|---|
 | [0001](docs/adr/0001-service-boundaries.md) | Three services — and why only one may own the schema |
 | [0002](docs/adr/0002-jwt-access-refresh-split.md) | 15-minute access tokens, refresh tokens in an httpOnly cookie |
-| [0003](docs/adr/0003-hosted-embeddings.md) | Hosted embeddings over local models — a 2.81 GB image became 480 MB |
+| [0003](docs/adr/0003-hosted-embeddings.md) | Hosted embeddings over local models — a 2.81 GB image became 480 MB, and Matryoshka truncation kept the schema |
 | [0004](docs/adr/0004-hybrid-retrieval.md) | Vector + BM25 with Reciprocal Rank Fusion |
 | [0005](docs/adr/0005-scope-cut.md) | Deleting six half-built features to finish one |
 | [0006](docs/adr/0006-research-agent.md) | Rebuilding one agent properly — and hand-writing the ReAct loop rather than calling a framework |

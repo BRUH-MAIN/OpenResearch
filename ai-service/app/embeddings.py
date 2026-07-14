@@ -1,8 +1,14 @@
 """Embedding service backed by the Gemini embeddings API.
 
-Uses `text-embedding-004`, which produces 768-dimensional vectors — the same
-dimension the pgvector column and HNSW index were built for, so swapping the
-local SPECTER2 model out for a hosted API needed no schema migration.
+Uses `gemini-embedding-001`, asking for 768 dimensions so the vectors keep
+fitting the pgvector column and HNSW index that were built for that width —
+swapping the local SPECTER2 model out for a hosted API needed no migration.
+
+The model natively emits 3072 dimensions. It is trained with Matryoshka
+representation learning, so the leading 768 values are themselves a usable
+embedding, and `outputDimensionality` asks the API for exactly those. Truncating
+does cost some fidelity, and it breaks unit length — hence the re-normalisation
+below, which Google's own guidance calls for.
 
 Trade-off (see docs/adr/0003): we give up "no data leaves the box" and add
 ~100ms of network latency per call, and in exchange the service drops torch +
@@ -35,6 +41,22 @@ MAX_BATCH_SIZE = 100
 
 class EmbeddingRetryableError(Exception):
     """Rate limit (429) or upstream 5xx — worth retrying with backoff."""
+
+
+def _unit(vector: list[float]) -> list[float]:
+    """Scale a vector to unit length.
+
+    Truncating a Matryoshka embedding to 768 of its 3072 dimensions leaves it
+    with a norm well below 1 (~0.59 in practice). Cosine distance is
+    scale-invariant, so pgvector would survive it — but the similarity numbers we
+    hand back to the UI would not be comparable between vectors, and the moment
+    anyone reaches for an inner-product index it would silently rank wrongly.
+    Normalising once, here, keeps both honest.
+    """
+    magnitude = sum(x * x for x in vector) ** 0.5
+    if magnitude == 0:
+        return vector
+    return [x / magnitude for x in vector]
 
 
 class EmbeddingService:
@@ -78,6 +100,10 @@ class EmbeddingService:
     def _content(text: str) -> dict:
         return {"parts": [{"text": text[:MAX_CHARS_PER_TEXT]}]}
 
+    def _payload_extras(self) -> dict:
+        # Ask for 768 of the model's 3072 dimensions (Matryoshka truncation).
+        return {"outputDimensionality": self.EMBEDDING_DIMENSION}
+
     @retry(
         retry=retry_if_exception_type(
             (EmbeddingRetryableError, httpx.TimeoutException, httpx.ConnectError)
@@ -101,8 +127,8 @@ class EmbeddingService:
         # generic "embedding failed" that follows is not enough to act on.
         if response.status_code in (400, 401, 403):
             logger.error(
-                "Gemini rejected the request (%s). Check GEMINI_API_KEY — an AI "
-                "Studio key starts with 'AIza'. Detail: %s",
+                "Gemini rejected the request (%s). Check GEMINI_API_KEY and "
+                "GEMINI_EMBEDDING_MODEL. Detail: %s",
                 response.status_code,
                 response.text[:200],
             )
@@ -128,10 +154,11 @@ class EmbeddingService:
                     "model": f"models/{self._model}",
                     "content": self._content(text),
                     "taskType": task_type,
+                    **self._payload_extras(),
                 },
             )
             embedding = data["embedding"]["values"]
-            return self._normalize_dimension(embedding), self._elapsed_ms(start)
+            return self._prepare(embedding), self._elapsed_ms(start)
         except Exception as exc:
             logger.warning("Embedding failed (%s); falling back to mock vector", exc)
             return self._mock_embedding(text), self._elapsed_ms(start)
@@ -163,14 +190,14 @@ class EmbeddingService:
                                 "model": f"models/{self._model}",
                                 "content": self._content(text),
                                 "taskType": task_type,
+                                **self._payload_extras(),
                             }
                             for text in batch
                         ]
                     },
                 )
                 embeddings.extend(
-                    self._normalize_dimension(item["values"])
-                    for item in data["embeddings"]
+                    self._prepare(item["values"]) for item in data["embeddings"]
                 )
 
             return embeddings, self._elapsed_ms(start)
@@ -184,7 +211,11 @@ class EmbeddingService:
     def _elapsed_ms(start: float) -> int:
         return int((time.time() - start) * 1000)
 
-    def _normalize_dimension(self, embedding: list[float]) -> list[float]:
+    def _prepare(self, embedding: list[float]) -> list[float]:
+        """Fit the vector to the column, then restore unit length."""
+        return _unit(self._fit_dimension(embedding))
+
+    def _fit_dimension(self, embedding: list[float]) -> list[float]:
         if len(embedding) < self.EMBEDDING_DIMENSION:
             embedding = embedding + [0.0] * (self.EMBEDDING_DIMENSION - len(embedding))
         elif len(embedding) > self.EMBEDDING_DIMENSION:
