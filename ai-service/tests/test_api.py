@@ -210,3 +210,59 @@ class TestHelpers:
         many = [dict(CONTEXT_ITEMS[0], id=f"vec-{i}") for i in range(10)]
 
         assert len(deps.build_sources(many, limit=5)) == 5
+
+
+class TestPdfExtraction:
+    """The PDF upload path: text extraction is what gives RAG the full paper."""
+
+    @staticmethod
+    def _pdf_bytes(lines: list[str]) -> bytes:
+        import io as _io
+
+        from reportlab.lib.pagesizes import letter
+        from reportlab.pdfgen import canvas
+
+        buf = _io.BytesIO()
+        c = canvas.Canvas(buf, pagesize=letter)
+        y = 720
+        for line in lines:
+            c.drawString(72, y, line)
+            y -= 20
+        c.showPage()
+        c.save()
+        return buf.getvalue()
+
+    def test_extracts_the_text_layer(self, client):
+        pdf = self._pdf_bytes(["Deep Residual Learning", "We present a residual framework."])
+
+        res = client.post(
+            "/papers/extract-text",
+            files={"file": ("paper.pdf", pdf, "application/pdf")},
+        )
+
+        assert res.status_code == 200
+        body = res.json()
+        assert "Deep Residual Learning" in body["text"]
+        assert body["page_count"] == 1
+        assert body["truncated"] is False
+
+    def test_rejects_a_non_pdf(self, client):
+        res = client.post(
+            "/papers/extract-text",
+            files={"file": ("notes.txt", b"just text", "text/plain")},
+        )
+
+        assert res.status_code == 400
+
+    def test_rejects_a_pdf_with_no_text_layer(self, client):
+        # A scanned page has no extractable text; OCR is out of scope, so this
+        # must fail loudly rather than silently index nothing.
+        empty = self._pdf_bytes([])
+
+        res = client.post(
+            "/papers/extract-text",
+            files={"file": ("scan.pdf", empty, "application/pdf")},
+        )
+
+        assert res.status_code == 422
+        assert "scanned" in res.json()["detail"].lower()
