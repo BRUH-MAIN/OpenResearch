@@ -50,6 +50,20 @@ class TestGenerateEmbedding:
         assert "RETRIEVAL_QUERY" in body
 
     @respx.mock
+    async def test_sends_the_key_as_a_header_never_in_the_url(self, service):
+        # httpx logs request URLs. A `?key=...` query parameter therefore writes
+        # the API key into the logs in plaintext, which is how it leaks.
+        route = respx.post(url__startswith=EMBED_URL).mock(
+            return_value=httpx.Response(200, json={"embedding": {"values": vector()}})
+        )
+
+        await service.generate_embedding("text")
+
+        request = route.calls.last.request
+        assert "test-key" not in str(request.url)
+        assert request.headers["x-goog-api-key"] == "test-key"
+
+    @respx.mock
     async def test_pads_a_short_vector_to_the_column_width(self, service):
         # The pgvector column is fixed at 768; a short vector must not reach it.
         respx.post(url__startswith=EMBED_URL).mock(

@@ -190,6 +190,36 @@ class TestLoop:
         ]
         assert capped, "the agent should say it stopped because it hit the cap"
 
+    async def test_a_malformed_tool_call_does_not_kill_the_run(self, wire):
+        # Real models emit broken tool calls: Groq rejects them with
+        # `tool_use_failed`, and llama-3.3-70b does it reliably enough that it
+        # cannot be used for this at all. The agent must fall back to answering
+        # with the evidence it already has, not fail the request.
+        class ExplodingAfterOne(ScriptedLLM):
+            async def ainvoke(self, messages):
+                self.calls.append(messages)
+                if len(self.calls) == 1:
+                    return FakeResponse(
+                        tool_calls=[tool_call("search_group_papers", {"query": "depth"})]
+                    )
+                raise RuntimeError("tool_use_failed: <function=search{...}</function>")
+
+        llm = ExplodingAfterOne([])
+        wire(script=[], group_chunks=[CHUNK])
+        # swap in the exploding client after `wire` has patched the module
+        import app.agent as mod
+        mod.llm_client.bind_tools = llm.bind_tools
+
+        events = await collect(ResearchAgent("g1"))
+
+        # It gathered evidence, then answered anyway.
+        assert any(e.get("done") for e in events)
+        tokens = "".join(e["token"] for e in events if "token" in e)
+        assert tokens == "Synthesized answer."
+
+        done = [e for e in events if e.get("done")][0]
+        assert len(done["sources"]) == 1
+
     async def test_survives_a_tool_that_throws(self, wire, monkeypatch):
         wire(
             script=[

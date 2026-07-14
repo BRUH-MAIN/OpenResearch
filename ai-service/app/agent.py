@@ -275,7 +275,24 @@ class ResearchAgent:
         iterations = 0
 
         for iterations in range(1, MAX_ITERATIONS + 1):
-            response = await llm.ainvoke(messages)
+            try:
+                response = await llm.ainvoke(messages)
+            except Exception as exc:
+                # Models do emit malformed tool calls — Groq rejects them with
+                # `tool_use_failed`, and larger Llama variants do it more often
+                # than smaller ones. That is a reason to stop investigating and
+                # answer with what we have, not to fail the whole request.
+                logger.warning("Agent LLM call failed at step %d: %s", iterations, exc)
+                yield {
+                    "observation": {
+                        "n": iterations,
+                        "tool": "-",
+                        "summary": "The model stopped mid-investigation; answering with what was gathered.",
+                        "sources_so_far": len(self.evidence),
+                    }
+                }
+                break
+
             tool_calls = getattr(response, "tool_calls", None) or []
 
             if not tool_calls:

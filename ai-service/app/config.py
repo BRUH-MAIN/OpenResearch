@@ -26,13 +26,15 @@ class Settings(BaseSettings):
 
     # Groq API (fallback LLM provider)
     groq_api_key: str = ""
+    # llama-3.1-8b-instant, not a bigger model, and deliberately: the research
+    # agent needs reliable tool-calling, and on Groq the 70b variants routinely
+    # emit malformed calls ("<function=name{...}</function>"), which Groq itself
+    # rejects with `tool_use_failed`. Bigger is not better here.
     groq_model: str = "llama-3.1-8b-instant"
     groq_available_models: list[str] = [
         "llama-3.1-8b-instant",
-        "llama-3.3-70b-versatile",
-        "llama-3.1-70b-versatile",
+        "llama-3.3-70b-versatile",  # better prose, unreliable tool calls
         "gemma2-9b-it",
-        "mixtral-8x7b-32768",
     ]
 
     # LLM provider selection: "deepseek" (default) or "groq"

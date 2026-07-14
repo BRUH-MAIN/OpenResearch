@@ -76,6 +76,20 @@ Quality is bounded by three things and only one of them is the agent: what is
 actually indexed, the model, and retrieval quality. The loop adds *iterative*
 retrieval; it cannot manufacture evidence that is not there.
 
+### On the model
+
+The agent runs on `llama-3.1-8b-instant`, and the smaller model is a deliberate
+choice, not a cost compromise. Groq's 70b variants write better prose but emit
+malformed tool calls — `<function=search_group_papers{...}</function>` — which
+Groq itself rejects with `tool_use_failed`. For a loop whose entire value is
+reliable tool dispatch, the smaller model that calls tools correctly beats the
+larger one that does not.
+
+Discovering that also exposed a weakness worth fixing: a single malformed call
+was aborting the whole investigation. It now falls back to answering with the
+evidence already gathered, because a model fumbling one call is a reason to stop
+searching, not a reason to fail the request.
+
 ### On testing an agent
 
 The loop is tested twice, at two different levels, because they fail differently.

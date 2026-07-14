@@ -67,7 +67,12 @@ class EmbeddingService:
         return self._initialized and bool(self._api_key)
 
     def _url(self, method: str) -> str:
-        return f"{GEMINI_BASE_URL}/models/{self._model}:{method}?key={self._api_key}"
+        return f"{GEMINI_BASE_URL}/models/{self._model}:{method}"
+
+    def _headers(self) -> dict[str, str]:
+        # The key goes in a header, NOT in the query string: httpx logs request
+        # URLs, so `?key=...` would write the credential into the logs in plaintext.
+        return {"x-goog-api-key": self._api_key}
 
     @staticmethod
     def _content(text: str) -> dict:
@@ -83,12 +88,25 @@ class EmbeddingService:
     )
     async def _post(self, method: str, payload: dict) -> dict:
         async with httpx.AsyncClient(timeout=30.0) as client:
-            response = await client.post(self._url(method), json=payload)
+            response = await client.post(
+                self._url(method), json=payload, headers=self._headers()
+            )
 
         if response.status_code == 429 or response.status_code >= 500:
             raise EmbeddingRetryableError(
                 f"Gemini embeddings returned {response.status_code}"
             )
+
+        # A 4xx here is almost always a bad or wrong-product API key, and the
+        # generic "embedding failed" that follows is not enough to act on.
+        if response.status_code in (400, 401, 403):
+            logger.error(
+                "Gemini rejected the request (%s). Check GEMINI_API_KEY — an AI "
+                "Studio key starts with 'AIza'. Detail: %s",
+                response.status_code,
+                response.text[:200],
+            )
+
         response.raise_for_status()
         return response.json()
 
